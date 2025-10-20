@@ -12,7 +12,7 @@ graph TD
     D --> E[Supabase Auth]
     D --> F[Supabase Database]
     D --> G[Supabase Storage]
-    B --> H[OpenAI GPT-4 API]
+    B --> H[Claude AI API]
     B --> I[Stripe Payment API]
 
     subgraph "Frontend Layer"
@@ -45,7 +45,7 @@ graph TD
 
 * File Storage: Supabase Storage
 
-* AI Engine: OpenAI GPT-4 Turbo API (Client-side integration)
+* AI Engine: Claude AI API (Client-side integration)
 
 * Payment: Stripe API (Client-side integration)
 
@@ -185,7 +185,7 @@ graph TD
     B --> F[Supabase Database]
     B --> G[Supabase Storage]
     A --> H[External API Calls]
-    H --> I[OpenAI GPT-4 API]
+    H --> I[Claude AI API]
     H --> J[Stripe Payment API]
     C --> K[Protected Routes]
     D --> L[Contract State]

@@ -15,7 +15,7 @@ HelloACA leverages advanced AI technology to provide instant contract insights, 
 
 ### Core Capabilities
 - **⚡ Instant Analysis**: Upload and analyze contracts in under 30 seconds
-- **🤖 AI-Powered Insights**: Advanced clause detection and risk assessment using GPT-4
+- **🤖 AI-Powered Insights**: Advanced clause detection and risk assessment using Claude AI
 - **💬 Interactive Chat**: Ask questions about your contracts with context-aware AI responses
 - **📊 Risk Classification**: Automated categorization of contract risks with severity indicators
 - **📄 PDF Reports**: Generate professional, branded analysis reports
@@ -46,7 +46,7 @@ HelloACA leverages advanced AI technology to provide instant contract insights, 
 - **Supabase** - Backend-as-a-Service with PostgreSQL database
 - **Supabase Auth** - Authentication with email/password and social login
 - **Supabase Storage** - Secure file storage for contract documents
-- **OpenAI GPT-4 Turbo** - Advanced AI for contract analysis and chat
+- **Claude AI (Anthropic)** - Advanced AI for contract analysis and chat
 - **Stripe** - Payment processing for subscription management
 
 ### Development & Deployment
@@ -61,7 +61,7 @@ HelloACA leverages advanced AI technology to provide instant contract insights, 
 - Node.js 18+ and npm
 - Git for version control
 - Supabase account for backend services
-- OpenAI API key for AI functionality
+- Claude AI API key for AI functionality
 - Stripe account for payment processing
 
 ### Quick Start
@@ -100,8 +100,8 @@ Create a `.env` file in the root directory with the following variables:
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-# OpenAI Configuration
-VITE_OPENAI_API_KEY=your_openai_api_key
+# Claude AI Configuration
+VITE_CLAUDE_API_KEY=your_claude_api_key
 
 # Stripe Configuration
 VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
@@ -113,7 +113,7 @@ VITE_APP_URL=http://localhost:5173
 ### Getting API Keys
 
 1. **Supabase**: Create a project at [supabase.com](https://supabase.com) and get your URL and anon key
-2. **OpenAI**: Get your API key from [platform.openai.com](https://platform.openai.com)
+2. **Claude AI**: Get your API key from [console.anthropic.com](https://console.anthropic.com)
 3. **Stripe**: Create an account at [stripe.com](https://stripe.com) and get your publishable key
 
 ## 🏗️ Project Structure
@@ -131,7 +131,7 @@ helloaca/
 │   │   └── ChatInterface.tsx # AI chat interface
 │   ├── lib/                # Utility libraries
 │   │   ├── supabase.ts     # Supabase client configuration
-│   │   ├── claude.ts       # OpenAI API integration
+│   │   ├── claude.ts       # Claude AI API integration
 │   │   └── utils.ts        # Helper functions
 │   ├── contexts/           # React contexts
 │   │   └── AuthContext.tsx # Authentication state management
@@ -169,9 +169,9 @@ helloaca/
 3. Configure storage buckets for file uploads
 4. Enable authentication providers as needed
 
-### OpenAI Integration
+### Claude AI Integration
 
-The application uses GPT-4 Turbo for:
+The application uses Claude AI for:
 - Contract clause extraction
 - Risk assessment and classification
 - Interactive chat responses
@@ -257,7 +257,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- OpenAI for providing powerful AI capabilities
+- Anthropic for providing powerful Claude AI capabilities
 - Supabase for excellent backend-as-a-service platform
 - Vercel for seamless deployment experience
 - The open-source community for amazing tools and libraries
