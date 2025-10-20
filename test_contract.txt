@@ -1,0 +1,54 @@
+NON-DISCLOSURE AGREEMENT
+
+This Non-Disclosure Agreement ("Agreement") is entered into on [DATE] between Company ABC, a corporation organized under the laws of [STATE] ("Disclosing Party"), and [RECEIVING PARTY NAME] ("Receiving Party").
+
+RECITALS
+
+WHEREAS, Disclosing Party possesses certain confidential and proprietary information relating to its business operations, technology, and trade secrets; and
+
+WHEREAS, Receiving Party desires to receive such confidential information for the purpose of evaluating potential business opportunities;
+
+NOW, THEREFORE, in consideration of the mutual covenants contained herein, the parties agree as follows:
+
+1. CONFIDENTIAL INFORMATION
+
+For purposes of this Agreement, "Confidential Information" shall mean all non-public, proprietary or confidential information disclosed by Disclosing Party to Receiving Party, whether orally, in writing, or in any other form, including but not limited to:
+- Technical data, trade secrets, know-how, research, product plans
+- Business information, customer lists, supplier information
+- Financial information, pricing, and cost data
+- Marketing strategies and business plans
+
+2. OBLIGATIONS OF RECEIVING PARTY
+
+Receiving Party agrees to:
+a) Hold all Confidential Information in strict confidence
+b) Not disclose Confidential Information to any third parties without prior written consent
+c) Use Confidential Information solely for the purpose of evaluating potential business opportunities
+d) Take reasonable precautions to protect the confidentiality of such information
+
+3. TERM
+
+This Agreement shall remain in effect for a period of three (3) years from the date of execution, unless terminated earlier by mutual written consent of both parties.
+
+4. RETURN OF MATERIALS
+
+Upon termination of this Agreement, Receiving Party shall promptly return or destroy all documents, materials, and other tangible items containing Confidential Information.
+
+5. NO LICENSE
+
+Nothing in this Agreement grants any license or right to Receiving Party under any patent, copyright, trade secret, or other intellectual property right of Disclosing Party.
+
+6. REMEDIES
+
+Receiving Party acknowledges that any breach of this Agreement may cause irreparable harm to Disclosing Party, for which monetary damages would be inadequate. Therefore, Disclosing Party shall be entitled to seek injunctive relief and other equitable remedies.
+
+IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first written above.
+
+DISCLOSING PARTY:                    RECEIVING PARTY:
+
+Company ABC                          [RECEIVING PARTY NAME]
+
+By: _________________________       By: _________________________
+Name: [NAME]                         Name: [NAME]
+Title: [TITLE]                       Title: [TITLE]
+Date: _______________               Date: _______________

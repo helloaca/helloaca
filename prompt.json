@@ -1,0 +1,194 @@
+{
+  "project": {
+    "name": "helloaca",
+    "description": "AI Contract Analyzer that helps small law firms, real estate agents, and business owners detect contract risks, clauses, and obligations within 30 seconds.",
+    "branding": {
+      "primary_color": "#4ECCA3",
+      "secondary_color": "#000000",
+      "background_color": "#FFFFFF",
+      "logo_style": "minimal wordmark with AI-inspired letter A and a balance-scale icon integrated subtly"
+    }
+  },
+  "architecture": {
+    "frontend": "Next.js + TailwindCSS + TypeScript",
+    "backend": "FastAPI + PostgreSQL + Supabase",
+    "ai_engine": "GPT-5 or GPT-4-turbo for clause and risk extraction",
+    "file_storage": "Supabase Storage (PDF, DOCX uploads)",
+    "authentication": "Clerk or Supabase Auth (email + OAuth)",
+    "deployment": "Vercel (frontend), Supabase (backend & db)"
+  },
+  "design_system": {
+    "typography": {
+      "font_primary": "Inter, sans-serif",
+      "font_secondary": "Space Grotesk, sans-serif",
+      "text_color": "#000000",
+      "heading_weight": 700,
+      "body_weight": 400
+    },
+    "buttons": {
+      "primary": {
+        "background": "#4ECCA3",
+        "text_color": "#FFFFFF",
+        "hover": "#3DBB90",
+        "border_radius": "12px"
+      },
+      "secondary": {
+        "background": "#FFFFFF",
+        "border": "1px solid #4ECCA3",
+        "text_color": "#000000",
+        "hover_background": "#4ECCA3",
+        "hover_text_color": "#FFFFFF"
+      }
+    },
+    "cards": {
+      "background": "#FFFFFF",
+      "border_radius": "20px",
+      "shadow": "0px 6px 18px rgba(0,0,0,0.06)",
+      "padding": "24px"
+    }
+  },
+  "core_features": [
+    {
+      "name": "Contract Upload",
+      "description": "User uploads a contract (PDF or DOCX). File is processed via OCR (if image-based) and sent to the AI analysis endpoint.",
+      "fields": ["file_upload", "file_name", "file_size", "user_id"]
+    },
+    {
+      "name": "AI Risk & Clause Analysis",
+      "description": "AI model scans uploaded contract for key clauses, obligations, deadlines, and risks. Returns structured JSON and summary.",
+      "output_format": {
+        "clauses": ["Clause Title", "Extracted Text", "Risk Level", "Recommendation"],
+        "summary": "Plain-text summary of contract obligations and risks"
+      }
+    },
+    {
+      "name": "Chat with Contract",
+      "description": "User chats with an AI agent about specific contract details (like 'Who is responsible for payment?'). AI uses semantic retrieval from contract text.",
+      "ui_elements": ["ChatInput", "MessageList", "PDFHighlightSync"]
+    },
+    {
+      "name": "AI PDF Report Export",
+      "description": "Generate downloadable AI report (PDF) summarizing all findings, risks, and recommendations. Includes brand styling.",
+      "branding": {
+        "header_color": "#4ECCA3",
+        "footer_color": "#000000",
+        "font": "Inter"
+      }
+    },
+    {
+      "name": "Dashboard & History",
+      "description": "Users can view previous analyzed contracts, chat logs, and report downloads.",
+      "features": ["search", "filter_by_date", "delete_history"]
+    }
+  ],
+  "pricing_model": {
+    "tiers": [
+      {
+        "name": "Free Plan",
+        "price": "$0",
+        "features": ["1 contract per month", "Basic clause analysis", "No PDF export"]
+      },
+      {
+        "name": "Pro Plan",
+        "price": "$49/month",
+        "features": ["10 contracts/month", "AI chat", "Risk classification", "Report export"]
+      },
+      {
+        "name": "Business Plan",
+        "price": "$299/month",
+        "features": ["Unlimited contracts", "Team collaboration", "Multilingual analysis", "White-label reports"]
+      }
+    ],
+    "payment_gateway": "Stripe"
+  },
+  "api_endpoints": [
+    {
+      "name": "POST /api/upload",
+      "function": "Handles file upload and saves metadata to database"
+    },
+    {
+      "name": "POST /api/analyze",
+      "function": "Sends document text to AI for clause/risk analysis and returns structured output"
+    },
+    {
+      "name": "POST /api/chat",
+      "function": "Handles chat queries and returns context-aware responses"
+    },
+    {
+      "name": "GET /api/reports",
+      "function": "Fetch user reports and analysis history"
+    }
+  ],
+  "data_model": {
+    "tables": {
+      "users": ["id", "email", "password_hash", "plan", "created_at"],
+      "contracts": ["id", "user_id", "file_name", "file_url", "analysis_json", "created_at"],
+      "messages": ["id", "contract_id", "user_id", "message", "response", "timestamp"]
+    }
+  },
+  "ui_layout": {
+    "pages": [
+      {
+        "name": "Landing Page",
+        "sections": [
+          {
+            "hero": {
+              "title": "Understand Any Contract in Seconds",
+              "subtitle": "Upload. Analyze. Understand. Make better legal decisions with AI.",
+              "cta_primary": "Try for Free",
+              "cta_secondary": "See Demo",
+              "background": "#FFFFFF"
+            }
+          },
+          {
+            "feature_grid": {
+              "cards": [
+                {"icon": "upload", "title": "Upload & Scan", "desc": "Drag your contract or NDA directly."},
+                {"icon": "search", "title": "Instant AI Insights", "desc": "Get full analysis in 30 seconds."},
+                {"icon": "chat", "title": "Chat with Contract", "desc": "Ask AI your legal questions."}
+              ]
+            }
+          },
+          {
+            "testimonials": {
+              "background": "#F9F9F9",
+              "quotes": [
+                {"text": "HelloACA saved me hours of review time!", "author": "Real Estate Agent"},
+                {"text": "Incredible tool for small law teams.", "author": "Law Firm Partner"}
+              ]
+            }
+          },
+          {
+            "footer": {
+              "background": "#000000",
+              "text_color": "#FFFFFF",
+              "links": ["About", "Pricing", "Privacy", "Contact"]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Dashboard",
+        "sections": [
+          {"header": "Welcome back, {{user.name}}"},
+          {"widget": "Recent Contracts"},
+          {"widget": "Upload Button"},
+          {"widget": "Plan Upgrade Banner"}
+        ]
+      },
+      {
+        "name": "Chat Interface",
+        "layout": {
+          "left_panel": "Contract Preview",
+          "right_panel": "AI Chat Window",
+          "accent_color": "#4ECCA3"
+        }
+      }
+    ]
+  },
+  "roadmap": {
+    "mvp": ["Upload & Analyze", "PDF Export", "Basic Chat", "Pro Plan"],
+    "phase_2": ["Team Collaboration", "Multilingual Support", "White-label Reports"],
+    "phase_3": ["API Integration", "Contract Comparison AI", "Mobile App"]
+  }
+}
