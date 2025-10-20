@@ -91,11 +91,8 @@ const Register: React.FC = () => {
       const result = await signUp(
         formData.email,
         formData.password,
-        {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          plan: selectedPlan
-        }
+        formData.firstName,
+        formData.lastName
       )
 
       if (result.success) {

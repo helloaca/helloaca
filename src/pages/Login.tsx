@@ -46,7 +46,7 @@ const Login: React.FC = () => {
     setErrors({})
 
     try {
-      const result = await signIn(email, password, rememberMe)
+      const result = await signIn(email, password)
       
       if (result.success) {
         navigate('/dashboard')

@@ -1,5 +1,4 @@
 import { supabase } from './supabase'
-import { claudeService } from './claude'
 import { FileProcessor, ProcessedFile } from './fileProcessor'
 
 export interface Contract {
@@ -278,14 +277,15 @@ export class ContractService {
 
       // Validate the parsed analysis
       try {
-        this.validateAnalysisResponse(parsedAnalysis)
+        this.validateAnalysis(parsedAnalysis)
         console.log('✅ Analysis validation passed')
       } catch (validationError) {
-        console.error('❌ Analysis validation failed:', validationError)
+        const error = validationError as Error
+        console.error('❌ Analysis validation failed:', error)
         console.log('📊 Analysis data for debugging:', JSON.stringify(parsedAnalysis, null, 2))
         
         // If validation fails due to insufficient content, try concise prompt
-        if (validationError.message.includes('insufficient') || validationError.message.includes('truncated')) {
+        if (error.message.includes('insufficient') || error.message.includes('truncated')) {
           console.log('🔄 Retrying with concise prompt due to validation failure...')
           return this.retryWithConcisePrompt(contractText)
         }
@@ -308,11 +308,12 @@ export class ContractService {
       return legacyAnalysis
 
     } catch (error) {
-      console.error('❌ AI analysis failed:', error)
+      const err = error as Error
+      console.error('❌ AI analysis failed:', err)
       console.error('📊 Error details:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack?.substring(0, 500)
+        name: err.name,
+        message: err.message,
+        stack: err.stack?.substring(0, 500)
       })
       
       // Return fallback analysis with detailed error logging
@@ -381,7 +382,7 @@ export class ContractService {
         clauseAnalysisCount: parsedAnalysis.clauseAnalysis?.length || 0
       })
 
-      this.validateAnalysisResponse(parsedAnalysis)
+      this.validateAnalysis(parsedAnalysis)
       console.log('✅ Retry analysis validation passed')
 
       const legacyAnalysis = this.convertToLegacyFormat(parsedAnalysis)
@@ -404,23 +405,7 @@ export class ContractService {
     }
   }
 
-  /**
-   * Check if analysis was truncated/incomplete
-   */
-  private static isAnalysisTruncated(analysis: any): boolean {
-    // Check for truncation indicators
-    const hasTruncationFinding = analysis.keyFindings?.some((f: any) => 
-      f.title.includes('Truncated') || 
-      f.title.includes('Incomplete') ||
-      f.description.includes('cut off')
-    )
 
-    // Check if analysis is suspiciously short
-    const hasVeryFewFindings = (analysis.keyFindings?.length || 0) < 3
-    const hasNoClauses = !analysis.clauseAnalysis || analysis.clauseAnalysis.length === 0
-
-    return hasTruncationFinding || (hasVeryFewFindings && hasNoClauses)
-  }
 
   /**
    * Build concise analysis prompt for retry attempts

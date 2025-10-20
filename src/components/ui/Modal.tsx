@@ -79,7 +79,7 @@ const Modal: React.FC<ModalProps> = ({
               )}
               {showCloseButton && (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={onClose}
                   className="p-2"
