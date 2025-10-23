@@ -30,135 +30,287 @@ const TermsOfService: React.FC = () => {
             
             <div className="prose prose-lg max-w-none text-gray-600">
               <p className="text-sm text-gray-500 mb-8">
-                Last updated: {new Date().toLocaleDateString()}
+                <strong>Effective Date:</strong> December 31, 2024<br />
+                <strong>Last Updated:</strong> December 31, 2024
               </p>
 
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Acceptance of Terms</h2>
                 <p>
-                  By accessing and using HelloACA's contract analysis platform ("Service"), you accept and agree 
-                  to be bound by the terms and provision of this agreement. If you do not agree to abide by the 
-                  above, please do not use this service.
+                  By accessing or using HelloACA ("Service"), you agree to be bound by these Terms of Service ("Terms"). 
+                  If you disagree with any part of these terms, you may not access the Service.
                 </p>
               </section>
 
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">2. Description of Service</h2>
                 <p>
-                  HelloACA provides AI-powered contract analysis services that help users review, analyze, and 
-                  understand legal documents. Our platform offers:
+                  HelloACA is an AI-powered contract analysis platform that provides:
                 </p>
                 <ul>
-                  <li>Automated contract analysis and risk assessment</li>
-                  <li>Key term extraction and summarization</li>
-                  <li>Compliance checking and recommendations</li>
-                  <li>Document storage and management</li>
-                  <li>Reporting and analytics tools</li>
+                  <li>Automated contract review and analysis</li>
+                  <li>Risk assessment and identification</li>
+                  <li>Interactive AI-powered contract consultation</li>
+                  <li>Professional reporting and documentation</li>
+                  <li>Secure document storage and management</li>
                 </ul>
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">3. User Accounts</h2>
-                <p>
-                  To access certain features of the Service, you must register for an account. You agree to:
-                </p>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">3. User Accounts and Registration</h2>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">3.1 Account Creation</h3>
                 <ul>
-                  <li>Provide accurate, current, and complete information during registration</li>
-                  <li>Maintain the security of your password and account</li>
-                  <li>Notify us immediately of any unauthorized use of your account</li>
-                  <li>Accept responsibility for all activities under your account</li>
+                  <li>You must provide accurate, complete information during registration</li>
+                  <li>You are responsible for maintaining account security</li>
+                  <li>You must be at least 18 years old to use the Service</li>
+                  <li>One person or entity per account</li>
+                </ul>
+                
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">3.2 Account Security</h3>
+                <ul>
+                  <li>You are responsible for all activities under your account</li>
+                  <li>Notify us immediately of any unauthorized access</li>
+                  <li>Use strong passwords and enable two-factor authentication when available</li>
                 </ul>
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">4. Acceptable Use</h2>
-                <p>You agree not to use the Service to:</p>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">4. Acceptable Use Policy</h2>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">4.1 Permitted Uses</h3>
                 <ul>
-                  <li>Upload or analyze illegal, harmful, or inappropriate content</li>
-                  <li>Violate any applicable laws or regulations</li>
-                  <li>Infringe on intellectual property rights</li>
-                  <li>Attempt to gain unauthorized access to our systems</li>
-                  <li>Interfere with or disrupt the Service</li>
-                  <li>Use the Service for any commercial purpose without authorization</li>
+                  <li>Contract analysis for legitimate business purposes</li>
+                  <li>Educational and research purposes</li>
+                  <li>Professional legal document review</li>
+                </ul>
+                
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">4.2 Prohibited Uses</h3>
+                <ul>
+                  <li>Uploading illegal, harmful, or malicious content</li>
+                  <li>Attempting to reverse engineer or hack the Service</li>
+                  <li>Sharing account credentials with unauthorized parties</li>
+                  <li>Using the Service for spam or fraudulent activities</li>
+                  <li>Violating any applicable laws or regulations</li>
                 </ul>
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">5. Intellectual Property</h2>
-                <p>
-                  The Service and its original content, features, and functionality are and will remain the 
-                  exclusive property of HelloACA and its licensors. The Service is protected by copyright, 
-                  trademark, and other laws. You retain ownership of your uploaded documents, but grant us 
-                  a limited license to process them for analysis purposes.
-                </p>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">5. AI Analysis and Limitations</h2>
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                  <div className="flex">
+                    <div className="ml-3">
+                      <p className="text-sm text-yellow-700">
+                        <strong>Important Legal Disclaimer:</strong> HelloACA uses artificial intelligence for contract analysis. 
+                        AI analysis is provided as a tool to assist, not replace, professional legal advice.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">5.1 AI Technology Disclaimer</h3>
+                <ul>
+                  <li>HelloACA uses artificial intelligence for contract analysis</li>
+                  <li>AI analysis is provided as a tool to assist, not replace, professional legal advice</li>
+                  <li>Results may contain errors or omissions</li>
+                  <li>Users should verify all AI-generated insights</li>
+                </ul>
+                
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">5.2 No Legal Advice</h3>
+                <ul>
+                  <li>HelloACA does not provide legal advice</li>
+                  <li>The Service is not a substitute for professional legal counsel</li>
+                  <li>Users should consult qualified attorneys for legal matters</li>
+                  <li>We are not responsible for legal decisions based on our analysis</li>
+                </ul>
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. Privacy and Data Protection</h2>
-                <p>
-                  Your privacy is important to us. Our <a href='./privacy'>Privacy Policy</a> explains how we collect, use, and protect 
-                  your information when you use our Service. By using our Service, you agree to the collection 
-                  and use of information in accordance with our Privacy Policy.
-                </p>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. Data and Privacy</h2>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">6.1 Document Upload and Processing</h3>
+                <ul>
+                  <li>You retain ownership of all uploaded documents</li>
+                  <li>We process documents solely to provide the Service</li>
+                  <li>Documents are encrypted during transmission and storage</li>
+                  <li>We do not use your documents to train AI models without consent</li>
+                </ul>
+                
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">6.2 Data Retention</h3>
+                <ul>
+                  <li>Documents are retained according to your subscription plan</li>
+                  <li>You may delete documents at any time</li>
+                  <li>We may retain anonymized analytics data</li>
+                  <li>Account data is retained for legal and operational purposes</li>
+                </ul>
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Subscription and Payment</h2>
-                <p>
-                  Some features of the Service are available through paid subscriptions. By purchasing a 
-                  subscription, you agree to pay all applicable fees. Subscriptions automatically renew 
-                  unless cancelled. Refunds are provided according to our refund policy.
-                </p>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Subscription and Billing</h2>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">7.1 Subscription Plans</h3>
+                <ul>
+                  <li>Free Plan: Limited features and usage</li>
+                  <li>Pro Plan: $49/month for individual users</li>
+                  <li>Business Plan: $299/month for teams</li>
+                  <li>Enterprise Plan: Custom pricing</li>
+                </ul>
+                
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">7.2 Billing Terms</h3>
+                <ul>
+                  <li>Subscriptions are billed monthly or annually in advance</li>
+                  <li>All fees are non-refundable except as required by law</li>
+                  <li>Prices may change with 30 days' notice</li>
+                  <li>Automatic renewal unless cancelled</li>
+                </ul>
+                
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">7.3 Cancellation</h3>
+                <ul>
+                  <li>You may cancel your subscription at any time</li>
+                  <li>Cancellation takes effect at the end of the current billing period</li>
+                  <li>No refunds for partial months</li>
+                  <li>Data may be deleted after account closure</li>
+                </ul>
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">8. Disclaimers</h2>
-                <p>
-                  The Service is provided "as is" without warranties of any kind. HelloACA does not guarantee 
-                  the accuracy, completeness, or reliability of any analysis results. The Service is not a 
-                  substitute for professional legal advice.
-                </p>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">8. Intellectual Property</h2>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">8.1 Service IP</h3>
+                <ul>
+                  <li>HelloACA owns all rights to the Service, including AI models</li>
+                  <li>Users receive a limited license to use the Service</li>
+                  <li>No rights are granted beyond the scope of these Terms</li>
+                </ul>
+                
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">8.2 User Content</h3>
+                <ul>
+                  <li>You retain ownership of uploaded documents</li>
+                  <li>You grant us a license to process documents for Service provision</li>
+                  <li>You represent that you have rights to upload all content</li>
+                </ul>
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">9. Limitation of Liability</h2>
-                <p>
-                  In no event shall HelloACA be liable for any indirect, incidental, special, consequential, 
-                  or punitive damages, including without limitation, loss of profits, data, use, goodwill, 
-                  or other intangible losses.
-                </p>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">9. Disclaimers and Limitations</h2>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">9.1 Service Availability</h3>
+                <ul>
+                  <li>We strive for 99.5% uptime but cannot guarantee continuous availability</li>
+                  <li>Maintenance and updates may cause temporary interruptions</li>
+                  <li>We are not liable for service interruptions</li>
+                </ul>
+                
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">9.2 Accuracy Disclaimer</h3>
+                <ul>
+                  <li>AI analysis is provided "as is" without warranties</li>
+                  <li>We do not guarantee accuracy, completeness, or reliability</li>
+                  <li>Users must verify all analysis results independently</li>
+                </ul>
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">10. Termination</h2>
-                <p>
-                  We may terminate or suspend your account and access to the Service immediately, without 
-                  prior notice, for conduct that we believe violates these Terms or is harmful to other 
-                  users, us, or third parties.
-                </p>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">10. Limitation of Liability</h2>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">10.1 Liability Limits</h3>
+                <ul>
+                  <li>Our liability is limited to the amount paid for the Service</li>
+                  <li>We are not liable for indirect, consequential, or punitive damages</li>
+                  <li>Some jurisdictions may not allow liability limitations</li>
+                </ul>
+                
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">10.2 Indemnification</h3>
+                <ul>
+                  <li>Users agree to indemnify HelloACA against claims arising from their use</li>
+                  <li>This includes violations of Terms or applicable laws</li>
+                </ul>
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">11. Changes to Terms</h2>
-                <p>
-                  We reserve the right to modify these terms at any time. We will notify users of any 
-                  material changes. Your continued use of the Service after such modifications constitutes 
-                  acceptance of the updated terms.
-                </p>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">11. Termination</h2>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">11.1 Termination by User</h3>
+                <ul>
+                  <li>Users may terminate their account at any time</li>
+                  <li>Data export tools are available before termination</li>
+                </ul>
+                
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">11.2 Termination by HelloACA</h3>
+                <ul>
+                  <li>We may terminate accounts for Terms violations</li>
+                  <li>We may suspend Service for non-payment</li>
+                  <li>30 days' notice for termination without cause</li>
+                </ul>
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">12. Contact Information</h2>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">12. Governing Law and Disputes</h2>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">12.1 Governing Law</h3>
+                <p>These Terms are governed by applicable law and disputes will be resolved in appropriate courts.</p>
+                
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">12.2 Dispute Resolution</h3>
+                <ul>
+                  <li>Good faith negotiation required before litigation</li>
+                  <li>Arbitration may be required for certain disputes</li>
+                  <li>Class action waivers may apply</li>
+                </ul>
+              </section>
+
+              <section className="mb-8">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">13. Changes to Terms</h2>
+                <ul>
+                  <li>We may update these Terms with reasonable notice</li>
+                  <li>Continued use constitutes acceptance of changes</li>
+                  <li>Material changes require explicit consent</li>
+                </ul>
+              </section>
+
+              <section className="mb-8">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">14. Security and Compliance</h2>
+                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+                  <div className="flex">
+                    <div className="ml-3">
+                      <p className="text-sm text-blue-700">
+                        <strong>Security Standards:</strong> HelloACA maintains SOC 2 Type II compliance, 
+                        end-to-end encryption (AES-256), and GDPR/CCPA compliance to protect your data.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <ul>
+                  <li>SOC 2 Type II compliance for security controls</li>
+                  <li>End-to-end encryption (AES-256) for all data</li>
+                  <li>GDPR and CCPA compliance for data protection</li>
+                  <li>Regular security audits and penetration testing</li>
+                  <li>24/7 security monitoring and incident response</li>
+                </ul>
+              </section>
+
+              <section className="mb-8">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">15. Contact Information</h2>
                 <p>
                   If you have any questions about these Terms of Service, please contact us at:
                 </p>
-                <div className="bg-gray-50 p-4 rounded-lg mt-4">
-                  <p><strong>Email:</strong> legal@helloaca.com</p>
-                  <p><strong>Address:</strong> HelloACA Legal Team<br />
-                  123 Legal Tech Avenue<br />
-                  San Francisco, CA 94105</p>
+                <div className="bg-gray-50 p-6 rounded-lg mt-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <p><strong>Legal Inquiries:</strong></p>
+                      <p>Email: legal@helloaca.xyz</p>
+                    </div>
+                    <div>
+                      <p><strong>General Support:</strong></p>
+                      <p>Email: support@helloaca.xyz</p>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <p><strong>Website:</strong> https://helloaca.xyz</p>
+                  </div>
                 </div>
               </section>
+
+              <div className="bg-red-50 border-l-4 border-red-400 p-4 mt-8">
+                <div className="flex">
+                  <div className="ml-3">
+                    <p className="text-sm text-red-700">
+                      <strong>Important Notice:</strong> This document has been prepared to comply with applicable 
+                      data protection and privacy laws. Users should consult with qualified legal counsel for 
+                      specific legal advice regarding their use of the Service.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

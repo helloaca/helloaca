@@ -1,4 +1,4 @@
-  import React, { useState } from 'react'
+import React, { useState } from 'react'
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import Button from '../components/ui/Button'
@@ -221,8 +221,8 @@ const ForgotPassword: React.FC = () => {
             <h3 className="text-sm font-medium text-gray-900 mb-2">Having trouble?</h3>
             <p className="text-sm text-gray-600">
               If you're still having issues, please contact our support team at{' '}
-              <a href="mailto:support@helloaca.com" className="text-[#4ECCA3] hover:text-[#3DBB90]">
-                support@helloaca.com
+              <a href="mailto:support@helloaca.xyz" className="text-[#4ECCA3] hover:text-[#3DBB90]">
+                    support@helloaca.xyz
               </a>
             </p>
           </div>

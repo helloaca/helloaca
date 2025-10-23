@@ -150,8 +150,8 @@ const Contact: React.FC = () => {
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-1">Email</h3>
-                      <p className="text-gray-600">support@helloaca.com</p>
-                      <p className="text-gray-600">sales@helloaca.com</p>
+                      <p className="text-gray-600">support@helloaca.xyz</p>
+                <p className="text-gray-600">sales@helloaca.xyz</p>
                     </div>
                   </div>
 
@@ -190,21 +190,21 @@ const Contact: React.FC = () => {
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2">Need technical support?</h3>
                     <p className="text-gray-600 text-sm">
-                      Check our documentation or email support@helloaca.com for technical issues.
+                      Check our documentation or email support@helloaca.xyz for technical issues.
                     </p>
                   </div>
 
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2">Interested in enterprise plans?</h3>
                     <p className="text-gray-600 text-sm">
-                      Contact our sales team at sales@helloaca.com for custom pricing and features.
+                      Contact our sales team at sales@helloaca.xyz for custom pricing and features.
                     </p>
                   </div>
 
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2">Media inquiries?</h3>
                     <p className="text-gray-600 text-sm">
-                      Reach out to press@helloaca.com for media-related questions.
+                      Reach out to press@helloaca.xyz for media-related questions.
                     </p>
                   </div>
                 </div>
