@@ -429,7 +429,7 @@ const Register: React.FC = () => {
                   }`}
                   onClick={() => {
                     setSelectedPlan(plan.id)
-                    trackPricing.planSelect(plan.id)
+                    trackPricing.selectPlan(plan.id)
                   }}
                 >
                   <div className="flex items-start justify-between">
