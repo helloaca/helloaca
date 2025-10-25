@@ -27,7 +27,7 @@ const Register: React.FC = () => {
     general?: string
   }>({})
 
-  const { signUp } = useAuth()
+  const { signUp, signInWithGoogle } = useAuth()
   const navigate = useNavigate()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,9 +108,22 @@ const Register: React.FC = () => {
     }
   }
 
-  const handleGoogleSignup = () => {
-    // TODO: Implement Google OAuth with Supabase
-    console.log('Google signup clicked - To be implemented')
+  const handleGoogleSignup = async () => {
+    setIsLoading(true)
+    setErrors({})
+
+    try {
+      const result = await signInWithGoogle()
+      
+      if (!result.success) {
+        setErrors({ general: result.error || 'Google sign-up failed' })
+      }
+      // Note: On success, the user will be redirected to dashboard by OAuth flow
+    } catch (error) {
+      setErrors({ general: 'An unexpected error occurred during Google sign-up' })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleMicrosoftSignup = () => {
@@ -173,7 +186,8 @@ const Register: React.FC = () => {
             <div className="space-y-3 mb-6">
               <button
                 onClick={handleGoogleSignup}
-                className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                disabled={isLoading}
+                className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
