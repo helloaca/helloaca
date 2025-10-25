@@ -1,549 +1,100 @@
-// contractService.ts - Complete Implementation
-
-import { supabase } from '../config/supabase';
-import { claude } from './claude';
-
-interface ContractAnalysis {
-  overallRiskLevel: 'High Risk Level' | 'Medium Risk' | 'Low Risk';
-  keyFindings: Array<{
-    title: string;
-    description: string;
-    severity: 'High' | 'Medium' | 'Low';
-    category: 'risk' | 'opportunity' | 'obligation';
-  }>;
-  clauseAnalysis: Array<{
-    title: string;
-    content: string;
-    analysis: string;
-    riskLevel: 'high' | 'medium' | 'low' | 'none';
-    issues: string[];
-    suggestions: string[];
-  }>;
-  summary: string;
-}
-
-export class ContractService {
-  /**
-   * Comprehensive AI-powered contract analysis with automatic retry
-   * This identifies ALL risks, missing clauses, and provides actionable suggestions
-   */
-  async analyzeContractWithAI(contractId: string, retryCount: number = 0): Promise<ContractAnalysis> {
-    const MAX_RETRIES = 2;
-    
-    try {
-      const contract = await this.getContract(contractId);
-      
-      if (!contract.extractedText) {
-        throw new Error('Contract text not available for analysis');
-      }
-
-      console.log('🔍 Starting comprehensive contract analysis...');
-      console.log(`📄 Contract: ${contract.title}`);
-      console.log(`📝 Text length: ${contract.extractedText.length} characters`);
-      if (retryCount > 0) {
-        console.log(`🔄 Retry attempt ${retryCount}/${MAX_RETRIES}`);
-      }
-
-      // Build the analysis prompt (use concise version if retrying)
-      const prompt = retryCount === 0 
-        ? this.buildAnalysisPrompt(contract)
-        : this.buildConciseAnalysisPrompt(contract);
-
-      // Get AI analysis
-      console.log('🤖 Sending to Claude AI...');
-      const response = await claude.sendMessage(prompt);
-
-      // Parse and validate response
-      const analysis = this.parseAnalysisResponse(response);
-
-      // Check if response was truncated
-      if (this.isAnalysisTruncated(analysis)) {
-        console.warn('⚠️ Analysis appears truncated');
-        
-        // Retry with more concise prompt
-        if (retryCount < MAX_RETRIES) {
-          console.log('🔄 Retrying with more concise prompt...');
-          return this.analyzeContractWithAI(contractId, retryCount + 1);
-        } else {
-          console.error('❌ Max retries reached, analysis still truncated');
-          // Return what we have - it's better than nothing
-        }
-      }
-
-      // Validate analysis quality
-      this.validateAnalysis(analysis);
-
-      // Save to database
-      await this.saveAnalysis(contractId, analysis);
-
-      console.log('✅ Analysis complete and saved');
-      return analysis;
-
-    } catch (error) {
-      console.error('❌ Analysis failed:', error);
-      
-      // If this was a parsing error and we haven't retried yet, try again
-      if (error.message.includes('truncated') && retryCount < MAX_RETRIES) {
-        console.log('🔄 Retrying due to truncation...');
-        return this.analyzeContractWithAI(contractId, retryCount + 1);
-      }
-      
-      throw error;
-    }
-  }
-
-  /**
-   * Check if analysis was truncated/incomplete
-   */
-  private isAnalysisTruncated(analysis: ContractAnalysis): boolean {
-    // Check for truncation indicators
-    const hasTruncationFinding = analysis.keyFindings?.some(f => 
-      f.title.includes('Truncated') || 
-      f.title.includes('Incomplete') ||
-      f.description.includes('cut off')
-    );
-
-    // Check if analysis is suspiciously short
-    const hasVeryFewFindings = (analysis.keyFindings?.length || 0) < 3;
-    const hasNoClauses = !analysis.clauseAnalysis || analysis.clauseAnalysis.length === 0;
-
-    return hasTruncationFinding || (hasVeryFewFindings && hasNoClauses);
-  }
-
-  /**
-   * Build concise analysis prompt for retry attempts
-   */
-  private buildConciseAnalysisPrompt(contract: any): string {
-    return `You are a contract attorney. Analyze this contract and identify the TOP 5 most critical risks only.
-
-CONTRACT:
-${contract.extractedText}
-
-Return ONLY this JSON (keep it SHORT):
-
 {
-  "overallRiskLevel": "High Risk Level" | "Medium Risk" | "Low Risk",
-  "keyFindings": [
-    {
-      "title": "Brief risk title",
-      "description": "1-2 sentence explanation of the risk and impact",
-      "severity": "High" | "Medium" | "Low",
-      "category": "risk"
+  "brandConfig": {
+    "companyName": "Your Company Name",
+    "primaryColor": "#3B82F6",
+    "secondaryColor": "#1E40AF",
+    "backgroundColor": "#F9FAFB",
+    "textColor": "#111827",
+    "mutedTextColor": "#6B7280",
+    "borderColor": "#E5E7EB",
+    "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+    "logoUrl": "https://your-domain.com/logo.png",
+    "websiteUrl": "https://your-domain.com",
+    "supportEmail": "support@your-domain.com"
+  },
+  "emailTemplates": {
+    "confirmSignup": {
+      "subject": "Confirm your email address",
+      "preheader": "Please verify your email to complete registration",
+      "heading": "Confirm Your Email",
+      "body": "Thank you for signing up. Please confirm your email address to activate your account.",
+      "buttonText": "Confirm Email",
+      "buttonUrl": "{{ .ConfirmationURL }}",
+      "footerText": "If you did not create an account, you can safely ignore this email.",
+      "htmlTemplate": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Confirm Your Email</title></head><body style=\"margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#F9FAFB\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#F9FAFB;padding:40px 20px\"><tr><td align=\"center\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)\"><tr><td style=\"padding:40px 40px 30px;text-align:center;border-bottom:1px solid #E5E7EB\"><img src=\"{{LOGO_URL}}\" alt=\"{{COMPANY_NAME}}\" style=\"height:40px;margin-bottom:20px\"><h1 style=\"margin:0;font-size:24px;font-weight:600;color:#111827\">Confirm Your Email</h1></td></tr><tr><td style=\"padding:40px\"><p style=\"margin:0 0 24px;font-size:16px;line-height:24px;color:#111827\">Thank you for signing up. Please confirm your email address to activate your account.</p><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td align=\"center\" style=\"padding:0 0 24px\"><a href=\"{{ .ConfirmationURL }}\" style=\"display:inline-block;padding:12px 32px;background-color:#3B82F6;color:#ffffff;text-decoration:none;border-radius:6px;font-size:16px;font-weight:500\">Confirm Email</a></td></tr></table><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280\">If the button above doesn't work, copy and paste this link into your browser:</p><p style=\"margin:8px 0 0;font-size:14px;line-height:20px;color:#3B82F6;word-break:break-all\">{{ .ConfirmationURL }}</p></td></tr><tr><td style=\"padding:30px 40px;background-color:#F9FAFB;border-top:1px solid #E5E7EB\"><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280;text-align:center\">If you did not create an account, you can safely ignore this email.</p><p style=\"margin:16px 0 0;font-size:12px;line-height:16px;color:#9CA3AF;text-align:center\">© {{YEAR}} {{COMPANY_NAME}}. All rights reserved.<br><a href=\"{{WEBSITE_URL}}\" style=\"color:#9CA3AF;text-decoration:none\">{{WEBSITE_URL}}</a></p></td></tr></table></td></tr></table></body></html>"
+    },
+    "inviteUser": {
+      "subject": "You've been invited to join {{ .SiteURL }}",
+      "preheader": "Accept your invitation to get started",
+      "heading": "You're Invited",
+      "body": "You've been invited to join our platform. Click the button below to accept your invitation and set up your account.",
+      "buttonText": "Accept Invitation",
+      "buttonUrl": "{{ .ConfirmationURL }}",
+      "footerText": "This invitation was sent to {{ .Email }}. If you weren't expecting this invitation, you can ignore this email.",
+      "htmlTemplate": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>You're Invited</title></head><body style=\"margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#F9FAFB\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#F9FAFB;padding:40px 20px\"><tr><td align=\"center\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)\"><tr><td style=\"padding:40px 40px 30px;text-align:center;border-bottom:1px solid #E5E7EB\"><img src=\"{{LOGO_URL}}\" alt=\"{{COMPANY_NAME}}\" style=\"height:40px;margin-bottom:20px\"><h1 style=\"margin:0;font-size:24px;font-weight:600;color:#111827\">You're Invited</h1></td></tr><tr><td style=\"padding:40px\"><p style=\"margin:0 0 24px;font-size:16px;line-height:24px;color:#111827\">You've been invited to join our platform. Click the button below to accept your invitation and set up your account.</p><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td align=\"center\" style=\"padding:0 0 24px\"><a href=\"{{ .ConfirmationURL }}\" style=\"display:inline-block;padding:12px 32px;background-color:#3B82F6;color:#ffffff;text-decoration:none;border-radius:6px;font-size:16px;font-weight:500\">Accept Invitation</a></td></tr></table><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280\">If the button above doesn't work, copy and paste this link into your browser:</p><p style=\"margin:8px 0 0;font-size:14px;line-height:20px;color:#3B82F6;word-break:break-all\">{{ .ConfirmationURL }}</p></td></tr><tr><td style=\"padding:30px 40px;background-color:#F9FAFB;border-top:1px solid #E5E7EB\"><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280;text-align:center\">This invitation was sent to {{ .Email }}. If you weren't expecting this invitation, you can ignore this email.</p><p style=\"margin:16px 0 0;font-size:12px;line-height:16px;color:#9CA3AF;text-align:center\">© {{YEAR}} {{COMPANY_NAME}}. All rights reserved.<br><a href=\"{{WEBSITE_URL}}\" style=\"color:#9CA3AF;text-decoration:none\">{{WEBSITE_URL}}</a></p></td></tr></table></td></tr></table></body></html>"
+    },
+    "magicLink": {
+      "subject": "Your sign-in link",
+      "preheader": "Click to sign in securely",
+      "heading": "Sign In",
+      "body": "Click the button below to sign in to your account. This link will expire in 1 hour.",
+      "buttonText": "Sign In",
+      "buttonUrl": "{{ .ConfirmationURL }}",
+      "footerText": "If you did not request this link, you can safely ignore this email.",
+      "htmlTemplate": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Sign In</title></head><body style=\"margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#F9FAFB\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#F9FAFB;padding:40px 20px\"><tr><td align=\"center\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)\"><tr><td style=\"padding:40px 40px 30px;text-align:center;border-bottom:1px solid #E5E7EB\"><img src=\"{{LOGO_URL}}\" alt=\"{{COMPANY_NAME}}\" style=\"height:40px;margin-bottom:20px\"><h1 style=\"margin:0;font-size:24px;font-weight:600;color:#111827\">Sign In</h1></td></tr><tr><td style=\"padding:40px\"><p style=\"margin:0 0 24px;font-size:16px;line-height:24px;color:#111827\">Click the button below to sign in to your account. This link will expire in 1 hour.</p><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td align=\"center\" style=\"padding:0 0 24px\"><a href=\"{{ .ConfirmationURL }}\" style=\"display:inline-block;padding:12px 32px;background-color:#3B82F6;color:#ffffff;text-decoration:none;border-radius:6px;font-size:16px;font-weight:500\">Sign In</a></td></tr></table><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280\">If the button above doesn't work, copy and paste this link into your browser:</p><p style=\"margin:8px 0 0;font-size:14px;line-height:20px;color:#3B82F6;word-break:break-all\">{{ .ConfirmationURL }}</p></td></tr><tr><td style=\"padding:30px 40px;background-color:#F9FAFB;border-top:1px solid #E5E7EB\"><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280;text-align:center\">If you did not request this link, you can safely ignore this email.</p><p style=\"margin:16px 0 0;font-size:12px;line-height:16px;color:#9CA3AF;text-align:center\">© {{YEAR}} {{COMPANY_NAME}}. All rights reserved.<br><a href=\"{{WEBSITE_URL}}\" style=\"color:#9CA3AF;text-decoration:none\">{{WEBSITE_URL}}</a></p></td></tr></table></td></tr></table></body></html>"
+    },
+    "changeEmailAddress": {
+      "subject": "Confirm your new email address",
+      "preheader": "Verify your email change request",
+      "heading": "Confirm Email Change",
+      "body": "You recently requested to change your email address. Please confirm this change by clicking the button below.",
+      "buttonText": "Confirm New Email",
+      "buttonUrl": "{{ .ConfirmationURL }}",
+      "footerText": "If you did not request this change, please contact support immediately.",
+      "htmlTemplate": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Confirm Email Change</title></head><body style=\"margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#F9FAFB\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#F9FAFB;padding:40px 20px\"><tr><td align=\"center\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)\"><tr><td style=\"padding:40px 40px 30px;text-align:center;border-bottom:1px solid #E5E7EB\"><img src=\"{{LOGO_URL}}\" alt=\"{{COMPANY_NAME}}\" style=\"height:40px;margin-bottom:20px\"><h1 style=\"margin:0;font-size:24px;font-weight:600;color:#111827\">Confirm Email Change</h1></td></tr><tr><td style=\"padding:40px\"><p style=\"margin:0 0 24px;font-size:16px;line-height:24px;color:#111827\">You recently requested to change your email address. Please confirm this change by clicking the button below.</p><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td align=\"center\" style=\"padding:0 0 24px\"><a href=\"{{ .ConfirmationURL }}\" style=\"display:inline-block;padding:12px 32px;background-color:#3B82F6;color:#ffffff;text-decoration:none;border-radius:6px;font-size:16px;font-weight:500\">Confirm New Email</a></td></tr></table><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280\">If the button above doesn't work, copy and paste this link into your browser:</p><p style=\"margin:8px 0 0;font-size:14px;line-height:20px;color:#3B82F6;word-break:break-all\">{{ .ConfirmationURL }}</p></td></tr><tr><td style=\"padding:30px 40px;background-color:#F9FAFB;border-top:1px solid #E5E7EB\"><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280;text-align:center\">If you did not request this change, please contact support immediately at <a href=\"mailto:{{SUPPORT_EMAIL}}\" style=\"color:#3B82F6;text-decoration:none\">{{SUPPORT_EMAIL}}</a></p><p style=\"margin:16px 0 0;font-size:12px;line-height:16px;color:#9CA3AF;text-align:center\">© {{YEAR}} {{COMPANY_NAME}}. All rights reserved.<br><a href=\"{{WEBSITE_URL}}\" style=\"color:#9CA3AF;text-decoration:none\">{{WEBSITE_URL}}</a></p></td></tr></table></td></tr></table></body></html>"
+    },
+    "resetPassword": {
+      "subject": "Reset your password",
+      "preheader": "Click to create a new password",
+      "heading": "Reset Password",
+      "body": "You requested to reset your password. Click the button below to create a new password. This link will expire in 1 hour.",
+      "buttonText": "Reset Password",
+      "buttonUrl": "{{ .ConfirmationURL }}",
+      "footerText": "If you did not request a password reset, please ignore this email or contact support if you have concerns.",
+      "htmlTemplate": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Reset Password</title></head><body style=\"margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#F9FAFB\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#F9FAFB;padding:40px 20px\"><tr><td align=\"center\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)\"><tr><td style=\"padding:40px 40px 30px;text-align:center;border-bottom:1px solid #E5E7EB\"><img src=\"{{LOGO_URL}}\" alt=\"{{COMPANY_NAME}}\" style=\"height:40px;margin-bottom:20px\"><h1 style=\"margin:0;font-size:24px;font-weight:600;color:#111827\">Reset Password</h1></td></tr><tr><td style=\"padding:40px\"><p style=\"margin:0 0 24px;font-size:16px;line-height:24px;color:#111827\">You requested to reset your password. Click the button below to create a new password. This link will expire in 1 hour.</p><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td align=\"center\" style=\"padding:0 0 24px\"><a href=\"{{ .ConfirmationURL }}\" style=\"display:inline-block;padding:12px 32px;background-color:#3B82F6;color:#ffffff;text-decoration:none;border-radius:6px;font-size:16px;font-weight:500\">Reset Password</a></td></tr></table><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280\">If the button above doesn't work, copy and paste this link into your browser:</p><p style=\"margin:8px 0 0;font-size:14px;line-height:20px;color:#3B82F6;word-break:break-all\">{{ .ConfirmationURL }}</p></td></tr><tr><td style=\"padding:30px 40px;background-color:#F9FAFB;border-top:1px solid #E5E7EB\"><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280;text-align:center\">If you did not request a password reset, please ignore this email or contact support if you have concerns.</p><p style=\"margin:16px 0 0;font-size:12px;line-height:16px;color:#9CA3AF;text-align:center\">© {{YEAR}} {{COMPANY_NAME}}. All rights reserved.<br><a href=\"{{WEBSITE_URL}}\" style=\"color:#9CA3AF;text-decoration:none\">{{WEBSITE_URL}}</a></p></td></tr></table></td></tr></table></body></html>"
+    },
+    "reauthentication": {
+      "subject": "Verify your identity",
+      "preheader": "Confirm it's you before continuing",
+      "heading": "Verify Your Identity",
+      "body": "For your security, please verify your identity to continue with this action.",
+      "buttonText": "Verify Identity",
+      "buttonUrl": "{{ .ConfirmationURL }}",
+      "footerText": "If you did not attempt this action, please secure your account immediately.",
+      "htmlTemplate": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Verify Your Identity</title></head><body style=\"margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#F9FAFB\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#F9FAFB;padding:40px 20px\"><tr><td align=\"center\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)\"><tr><td style=\"padding:40px 40px 30px;text-align:center;border-bottom:1px solid #E5E7EB\"><img src=\"{{LOGO_URL}}\" alt=\"{{COMPANY_NAME}}\" style=\"height:40px;margin-bottom:20px\"><h1 style=\"margin:0;font-size:24px;font-weight:600;color:#111827\">Verify Your Identity</h1></td></tr><tr><td style=\"padding:40px\"><p style=\"margin:0 0 24px;font-size:16px;line-height:24px;color:#111827\">For your security, please verify your identity to continue with this action.</p><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td align=\"center\" style=\"padding:0 0 24px\"><a href=\"{{ .ConfirmationURL }}\" style=\"display:inline-block;padding:12px 32px;background-color:#3B82F6;color:#ffffff;text-decoration:none;border-radius:6px;font-size:16px;font-weight:500\">Verify Identity</a></td></tr></table><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280\">If the button above doesn't work, copy and paste this link into your browser:</p><p style=\"margin:8px 0 0;font-size:14px;line-height:20px;color:#3B82F6;word-break:break-all\">{{ .ConfirmationURL }}</p></td></tr><tr><td style=\"padding:30px 40px;background-color:#F9FAFB;border-top:1px solid #E5E7EB\"><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280;text-align:center\">If you did not attempt this action, please secure your account immediately at <a href=\"{{WEBSITE_URL}}\" style=\"color:#3B82F6;text-decoration:none\">{{WEBSITE_URL}}</a></p><p style=\"margin:16px 0 0;font-size:12px;line-height:16px;color:#9CA3AF;text-align:center\">© {{YEAR}} {{COMPANY_NAME}}. All rights reserved.<br><a href=\"{{WEBSITE_URL}}\" style=\"color:#9CA3AF;text-decoration:none\">{{WEBSITE_URL}}</a></p></td></tr></table></td></tr></table></body></html>"
     }
-  ],
-  "clauseAnalysis": [
-    {
-      "title": "Clause name",
-      "content": "Original clause text",
-      "analysis": "Brief 1-2 sentence analysis",
-      "riskLevel": "high" | "medium" | "low",
-      "issues": ["Issue 1", "Issue 2"],
-      "suggestions": ["Improved clause text in 1-2 sentences"]
-    }
-  ],
-  "summary": "2-3 sentence overall assessment"
-}
-
-CRITICAL RULES:
-- Maximum 5 findings
-- Maximum 3 clause analyses  
-- Keep descriptions under 2 sentences
-- Keep suggestions under 2 sentences
-- ENSURE JSON IS COMPLETE with all brackets closed
-- Return ONLY valid JSON, nothing else
-
-Focus on: missing termination clause, vague payment terms, missing dispute resolution, undefined key terms, and missing liability limits.`;
-  }
-
-  /**
-   * Build comprehensive analysis prompt
-   */
-  private buildAnalysisPrompt(contract: any): string {
-    return `You are a senior contract attorney with 20+ years of experience reviewing business agreements. Your role is to conduct a thorough legal analysis and identify ALL potential risks, missing clauses, and problematic terms.
-
-CRITICAL: Your response MUST be valid, complete JSON. Do not truncate or cut off mid-response.
-
-CONTRACT INFORMATION:
-Title: ${contract.title}
-Type: ${contract.type || 'Business Agreement'}
-Date Uploaded: ${contract.uploadDate}
-
-FULL CONTRACT TEXT:
-${contract.extractedText}
-
-================================================================================
-ANALYSIS REQUIREMENTS:
-================================================================================
-
-You must analyze this contract as if you're advising a client who is about to sign it. Identify EVERY potential problem, missing protection, and legal risk.
-
-CRITICAL AREAS TO EXAMINE:
-
-1. MISSING CLAUSES (Common in contracts):
-   - Termination rights (how can parties exit?)
-   - Duration/Term (when does it end?)
-   - Dispute resolution (arbitration, mediation, litigation?)
-   - Governing law (which jurisdiction applies?)
-   - Amendment process (how to modify the agreement?)
-   - Force majeure (what if external events prevent performance?)
-   - Liability limitations (who's liable for what?)
-   - Indemnification (who protects whom from claims?)
-   - Intellectual property rights
-   - Confidentiality scope and duration
-   - Non-compete/Non-solicitation
-   - Assignment rights (can parties transfer the agreement?)
-   - Notice requirements (how to communicate officially?)
-   - Severability (what if one clause is invalid?)
-   - Entire agreement clause
-   - Survival clause (what survives termination?)
-
-2. VAGUE OR AMBIGUOUS TERMS:
-   - Undefined payment schedules
-   - Unclear deadlines
-   - Subjective performance standards
-   - Missing specific amounts, dates, or metrics
-   - Terms like "reasonable", "prompt", "soon" without definition
-
-3. ONE-SIDED PROVISIONS:
-   - Terms that heavily favor one party
-   - Unfair liability allocations
-   - Unequal termination rights
-   - Imbalanced obligations
-
-4. RISKY CLAUSES:
-   - Overly broad confidentiality
-   - Automatic renewals without notice
-   - Hidden fees or charges
-   - Restrictive non-compete terms
-   - Unlimited liability exposure
-
-5. PAYMENT ISSUES:
-   - No specific payment dates
-   - Missing late payment penalties
-   - Unclear refund policies
-   - No expense reimbursement terms
-   - Vague installment terms
-
-================================================================================
-OUTPUT FORMAT:
-================================================================================
-
-Return your analysis as a JSON object with this EXACT structure:
-
-{
-  "overallRiskLevel": "High Risk Level" | "Medium Risk" | "Low Risk",
-  "keyFindings": [
-    {
-      "title": "Specific, clear title of the issue",
-      "description": "Detailed explanation of WHY this is a problem and what could go wrong. Include real-world implications.",
-      "severity": "High" | "Medium" | "Low",
-      "category": "risk" | "opportunity" | "obligation"
-    }
-  ],
-  "clauseAnalysis": [
-    {
-      "title": "Name of the clause or topic",
-      "content": "Exact text from the contract (quote it directly)",
-      "analysis": "Detailed explanation of what this means, why it's problematic, and potential consequences",
-      "riskLevel": "high" | "medium" | "low" | "none",
-      "issues": [
-        "Specific issue #1",
-        "Specific issue #2",
-        "Specific issue #3"
-      ],
-      "suggestions": [
-        "Complete replacement clause text that fixes ALL issues. Write it as if it's ready to copy-paste into a contract. Be specific with amounts, dates, procedures."
-      ]
-    }
-  ],
-  "summary": "Overall assessment of the contract - is it safe to sign? What are the biggest red flags?"
-}
-
-================================================================================
-EXAMPLES OF WHAT TO INCLUDE:
-================================================================================
-
-EXAMPLE KEY FINDING:
-{
-  "title": "No Termination Clause",
-  "description": "This agreement contains no provision allowing either party to terminate the relationship. This means you could be locked into this agreement indefinitely with no legal way to exit, even if circumstances change or the relationship becomes unworkable. Without termination rights, you lose negotiating leverage and could face breach of contract claims if you simply stop performing.",
-  "severity": "High",
-  "category": "risk"
-}
-
-EXAMPLE CLAUSE ANALYSIS:
-{
-  "title": "Payment Terms",
-  "content": "Payments made weekly in cryptocurrency. May be paid in installments.",
-  "analysis": "This payment clause is dangerously vague. It doesn't specify which day of the week payments are due, which cryptocurrency to use, the wallet address, or how long installments can extend. This ambiguity creates multiple problems: you have no recourse if payments are delayed, no way to prove breach if payments stop, and no clarity on when the debt is satisfied.",
-  "riskLevel": "high",
-  "issues": [
-    "No specific payment day or date defined",
-    "No cryptocurrency type specified (Bitcoin? Ethereum? Stablecoin?)",
-    "No wallet address for payments",
-    "Installment terms completely undefined - could stretch indefinitely",
-    "No late payment penalties or interest",
-    "No procedure if payment fails or is disputed"
-  ],
-  "suggestions": [
-    "PAYMENT TERMS: The Cave shall pay Collab Manager via cryptocurrency transfer within seven (7) days of confirmed project funding as follows: (a) ONE THOUSAND US DOLLARS ($1,000) for projects securing funding under $2,000,000; (b) TWO THOUSAND US DOLLARS ($2,000) for projects securing funding over $2,000,000. Payments shall be made in USDC (USD Coin) to wallet address [SPECIFIC ADDRESS]. If paid in installments, payment schedule shall be: 50% within 7 days, remaining 50% within 14 days. Late payments shall incur 1.5% interest per month. All payments are non-refundable once services are rendered."
-  ]
-}
-
-================================================================================
-QUALITY STANDARDS:
-================================================================================
-
-1. Every keyFinding must identify a real, specific problem (not generic observations)
-2. Every suggestion must be complete, copy-paste-ready contract language
-3. Include at least 5-10 key findings for any contract (there are always issues to find)
-4. Be specific: instead of "payment terms unclear", say "No payment deadline specified, creating enforcement problems"
-5. Think like an attorney protecting a client: what could go wrong? What's missing?
-6. For missing clauses, explain what protection the client loses by not having them
-
-================================================================================
-IMPORTANT REMINDERS:
-================================================================================
-
-- If you see vague language like "reasonable time", "promptly", "good faith" - flag it as ambiguous
-- If a clause is one-sided, explain how it could be abused
-- If something is missing that's standard in this type of agreement, note it as a gap
-- Every risk you identify in your analysis MUST appear in keyFindings
-- Every problematic clause MUST appear in clauseAnalysis with specific fixes
-- Your suggestions should be better than the original - add specificity, protection, and clarity
-
-================================================================================
-IMPORTANT JSON FORMATTING RULES:
-================================================================================
-
-1. Keep descriptions concise but informative (2-3 sentences max per finding)
-2. Limit to 8-10 key findings maximum
-3. Limit to 5-6 clause analyses maximum
-4. Each suggestion should be 2-3 sentences of contract language
-5. ENSURE THE JSON IS COMPLETE - close all brackets and braces
-6. Test your JSON is valid before returning it
-
-Return ONLY the JSON object. No additional commentary outside the JSON.`;
-  }
-
-  /**
-   * Parse and extract JSON from Claude's response
-   */
-  private parseAnalysisResponse(response: string): ContractAnalysis {
-    try {
-      console.log('🔍 Parsing Claude response...');
-      console.log('📝 Response length:', response.length);
-      
-      let jsonString = response.trim();
-
-      // Remove markdown code blocks if present
-      // Try multiple patterns as Claude formats responses differently
-      
-      // Pattern 1: ```json\n...\n```
-      let match = jsonString.match(/```json\s*([\s\S]*?)\s*```/);
-      
-      // Pattern 2: ```\n...\n```
-      if (!match) {
-        match = jsonString.match(/```\s*([\s\S]*?)\s*```/);
-      }
-      
-      // Pattern 3: Look for the opening { and closing } of JSON
-      if (!match) {
-        const startIndex = jsonString.indexOf('{');
-        const lastIndex = jsonString.lastIndexOf('}');
-        if (startIndex !== -1 && lastIndex !== -1 && lastIndex > startIndex) {
-          jsonString = jsonString.substring(startIndex, lastIndex + 1);
-        }
-      } else {
-        jsonString = match[1].trim();
-      }
-
-      console.log('📄 Extracted JSON string length:', jsonString.length);
-      console.log('📄 First 100 chars:', jsonString.substring(0, 100));
-      console.log('📄 Last 100 chars:', jsonString.substring(jsonString.length - 100));
-
-      // Check if JSON seems complete (ends with })
-      if (!jsonString.trim().endsWith('}')) {
-        console.warn('⚠️ JSON appears incomplete - does not end with }');
-        // Try to find the last complete object
-        const lastBrace = jsonString.lastIndexOf('}');
-        if (lastBrace > 0) {
-          console.log('🔧 Attempting to use JSON up to last complete brace');
-          jsonString = jsonString.substring(0, lastBrace + 1);
-        }
-      }
-
-      // Parse JSON
-      const analysis = JSON.parse(jsonString) as ContractAnalysis;
-
-      console.log('✅ JSON parsed successfully');
-      console.log(`   📊 Risk Level: ${analysis.overallRiskLevel}`);
-      console.log(`   🔍 Key Findings: ${analysis.keyFindings?.length || 0}`);
-      console.log(`   📋 Clauses Analyzed: ${analysis.clauseAnalysis?.length || 0}`);
-
-      return analysis;
-
-    } catch (error) {
-      console.error('❌ Failed to parse analysis response');
-      console.error('Error:', error);
-      console.error('Response length:', response.length);
-      console.error('Response preview (first 500 chars):', response.substring(0, 500));
-      console.error('Response preview (last 500 chars):', response.substring(response.length - 500));
-      
-      // Try aggressive repair - attempt to close incomplete JSON
-      try {
-        console.log('🔄 Attempting aggressive JSON repair...');
-        let repairedJson = response;
-        
-        // Extract just the JSON part
-        const startIndex = repairedJson.indexOf('{');
-        const lastBraceIndex = repairedJson.lastIndexOf('}');
-        
-        if (startIndex !== -1 && lastBraceIndex !== -1) {
-          repairedJson = repairedJson.substring(startIndex, lastBraceIndex + 1);
-          
-          // Count opening and closing brackets
-          const openBraces = (repairedJson.match(/{/g) || []).length;
-          const closeBraces = (repairedJson.match(/}/g) || []).length;
-          const openBrackets = (repairedJson.match(/\[/g) || []).length;
-          const closeBrackets = (repairedJson.match(/\]/g) || []).length;
-          
-          console.log(`🔍 Braces: ${openBraces} open, ${closeBraces} close`);
-          console.log(`🔍 Brackets: ${openBrackets} open, ${closeBrackets} close`);
-          
-          // Try to close any unclosed arrays or objects
-          if (openBrackets > closeBrackets) {
-            // Remove incomplete array element if it exists
-            const lastComma = repairedJson.lastIndexOf(',');
-            if (lastComma > repairedJson.lastIndexOf(']')) {
-              repairedJson = repairedJson.substring(0, lastComma);
-            }
-            repairedJson += ']'.repeat(openBrackets - closeBrackets);
-          }
-          
-          if (openBraces > closeBraces) {
-            repairedJson += '}'.repeat(openBraces - closeBraces);
-          }
-          
-          console.log('🔧 Repaired JSON (last 200 chars):', repairedJson.substring(repairedJson.length - 200));
-          
-          const analysis = JSON.parse(repairedJson) as ContractAnalysis;
-          console.log('✅ Repaired JSON parsed successfully!');
-          console.log(`   📊 Risk Level: ${analysis.overallRiskLevel}`);
-          console.log(`   🔍 Key Findings: ${analysis.keyFindings?.length || 0}`);
-          console.log(`   📋 Clauses Analyzed: ${analysis.clauseAnalysis?.length || 0}`);
-          
-          return analysis;
-        }
-      } catch (repairError) {
-        console.error('❌ JSON repair also failed:', repairError);
-      }
-      
-      throw new Error('Failed to parse AI analysis. The response was incomplete or invalid JSON. Please try again.');
-    }
-  }
-
-  /**
-   * Validate that the analysis is comprehensive and useful
-   */
-  private validateAnalysis(analysis: ContractAnalysis): void {
-    const issues: string[] = [];
-
-    // Check overall risk level
-    if (!analysis.overallRiskLevel) {
-      issues.push('Missing overall risk level');
-    }
-
-    // Check key findings
-    if (!analysis.keyFindings || analysis.keyFindings.length === 0) {
-      issues.push('No key findings identified - analysis is incomplete');
-    } else if (analysis.keyFindings.length < 3) {
-      console.warn('⚠️ Only found', analysis.keyFindings.length, 'findings - this seems low');
-    }
-
-    // Check for placeholder/generic content
-    const hasPlaceholder = analysis.keyFindings?.some(
-      finding => 
-        finding.title === 'Analysis incomplete' ||
-        finding.description.includes('Perform manual review') ||
-        finding.description.length < 50 // Too short to be useful
-    );
-
-    if (hasPlaceholder) {
-      issues.push('Analysis contains placeholder content - not a real analysis');
-    }
-
-    // Check clause analysis
-    if (!analysis.clauseAnalysis || analysis.clauseAnalysis.length === 0) {
-      console.warn('⚠️ No clause analysis provided');
-    } else {
-      // Check if clauses have actual suggestions
-      const hasRealSuggestions = analysis.clauseAnalysis.some(
-        clause => clause.suggestions && clause.suggestions.length > 0
-      );
-
-      if (!hasRealSuggestions) {
-        console.warn('⚠️ Clauses analyzed but no suggestions provided');
-      }
-    }
-
-    // If there are critical issues, throw error
-    if (issues.length > 0) {
-      console.error('❌ Analysis validation failed:');
-      issues.forEach(issue => console.error('   -', issue));
-      throw new Error(`Analysis validation failed: ${issues.join(', ')}`);
-    }
-
-    console.log('✅ Analysis validation passed');
-  }
-
-  /**
-   * Save analysis to database
-   */
-  async saveAnalysis(contractId: string, analysis: ContractAnalysis): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('contracts')
-        .update({
-          analysis: analysis,
-          risk_level: analysis.overallRiskLevel,
-          analyzed_at: new Date().toISOString(),
-          status: 'analyzed'
-        })
-        .eq('id', contractId);
-
-      if (error) throw error;
-      
-      console.log('💾 Analysis saved to database');
-    } catch (error) {
-      console.error('❌ Error saving analysis:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get contract by ID
-   */
-  async getContract(contractId: string): Promise<any> {
-    const { data, error } = await supabase
-      .from('contracts')
-      .select('*')
-      .eq('id', contractId)
-      .single();
-
-    if (error) throw error;
-    if (!data) throw new Error('Contract not found');
-
-    return data;
-  }
-
-  /**
-   * Re-analyze a contract (if user wants fresh analysis)
-   */
-  async reanalyzeContract(contractId: string): Promise<ContractAnalysis> {
-    console.log('🔄 Re-analyzing contract...');
-    return this.analyzeContractWithAI(contractId);
+  },
+  "instructions": {
+    "setup": [
+      "1. Update brandConfig with your company details and brand colors",
+      "2. Replace placeholder values: {{LOGO_URL}}, {{COMPANY_NAME}}, {{WEBSITE_URL}}, {{SUPPORT_EMAIL}}, {{YEAR}}",
+      "3. Keep Supabase variables intact: {{ .ConfirmationURL }}, {{ .Email }}, {{ .SiteURL }}",
+      "4. Go to Supabase Dashboard > Authentication > Email Templates",
+      "5. For each template type, paste the corresponding htmlTemplate",
+      "6. Test each template before deploying to production"
+    ],
+    "customization": [
+      "Adjust colors in the style attributes to match your brand",
+      "Modify font-family to match your website typography",
+      "Change border-radius values for sharper or rounder corners",
+      "Update padding/spacing values for tighter or looser layouts",
+      "Add your logo URL and ensure it's publicly accessible"
+    ],
+    "notes": [
+      "All templates use inline CSS for maximum email client compatibility",
+      "Templates are responsive and work on mobile devices",
+      "Design is intentionally minimal and formal",
+      "Supabase template variables ({{ .ConfirmationURL }}, etc.) will be replaced automatically"
+    ]
   }
 }
-
-export const contractService = new ContractService();

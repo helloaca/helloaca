@@ -30,8 +30,8 @@ const PrivacyPolicy: React.FC = () => {
             
             <div className="prose prose-lg max-w-none text-gray-600">
               <p className="text-sm text-gray-500 mb-8">
-                <strong>Effective Date:</strong> December 31, 2024<br />
-                <strong>Last Updated:</strong> December 31, 2024
+                <strong>Effective Date:</strong> December 31, 2025<br />
+                <strong>Last Updated:</strong> December 31, 2025
               </p>
 
               <section className="mb-8">

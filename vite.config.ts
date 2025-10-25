@@ -13,5 +13,10 @@ export default defineConfig({
   optimizeDeps: {
     include: ['pdfjs-dist']
   },
-  assetsInclude: ['**/*.worker.js']
+  assetsInclude: ['**/*.worker.js'],
+  server: {
+    fs: {
+      allow: ['..', './api']
+    }
+  }
 })

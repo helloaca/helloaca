@@ -232,6 +232,24 @@ Please provide a helpful response based on the contract and our conversation.`
     // Save user message to database
     await saveMessageToDatabase(userMessage)
 
+    // Check if user is requesting emojis and handle with formal policy response
+    const emojiRequestPattern = /emoji|emoticon|smiley|😀|😊|🙂|👍|❤️|💯|🔥|✨|🎉|🚀|💪|👏|🤝|📈|💼|⭐|✅|❌|⚠️|🔍|📊|💡|🎯|🏆|📝|📋|🔧|⚙️|🛠️|🎨|🌟|💎|🔑|🎪|🎭|🎨|🎵|🎶|🎸|🎤|🎧|🎬|🎮|🎲|🎯|🎪|🎭|🎨|🎵|🎶|🎸|🎤|🎧|🎬|🎮|🎲/i
+    
+    if (emojiRequestPattern.test(currentInput)) {
+      const formalPolicyResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'ai',
+        content: 'I maintain a formal communication style without emojis to ensure professional standards in our contract analysis discussions. This helps maintain the serious and professional nature of legal document review. I\'m happy to assist you with any contract-related questions using clear, professional language.',
+        timestamp: new Date(),
+        relevantSections: ['Communication Policy']
+      }
+      
+      setMessages(prev => [...prev, formalPolicyResponse])
+      await saveMessageToDatabase(formalPolicyResponse)
+      setIsLoading(false)
+      return
+    }
+
     try {
       // Import Claude service dynamically
       const { claudeService } = await import('../lib/claude')

@@ -4,9 +4,11 @@ import mammoth from 'mammoth'
 // Enhanced PDF.js worker configuration with fallbacks
 const setupPDFWorker = () => {
   try {
-    // Primary: Use local worker file
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js'
-    console.log('📄 PDF.js worker configured with local file')
+    // Get the current origin to ensure we use the correct port
+    const currentOrigin = window.location.origin
+    // Primary: Use local worker file with correct origin
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `${currentOrigin}/pdf.worker.min.js`
+    console.log('📄 PDF.js worker configured with local file:', pdfjsLib.GlobalWorkerOptions.workerSrc)
   } catch (error) {
     console.warn('📄 Local PDF worker setup failed, trying CDN fallback:', error)
     try {

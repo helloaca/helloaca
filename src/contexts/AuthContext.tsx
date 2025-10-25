@@ -90,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 
 
-  // Initialize auth state with timeout protection
+  // Initialize auth state with improved timeout protection
   useEffect(() => {
     let isMounted = true
     let initTimeout: NodeJS.Timeout
@@ -99,57 +99,90 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('🔄 Initializing authentication...')
       
       try {
-        // Set a maximum timeout for initialization (10 seconds)
-        const initPromise = new Promise<void>(async (resolve, reject) => {
+        // First, try to get cached data for immediate UI response
+        const cachedData = getCachedUserData()
+        if (cachedData.user && cachedData.session) {
+          console.log('📦 Using cached auth data')
+          setUser(cachedData.user)
+          setProfile(cachedData.profile)
+          setSession(cachedData.session)
+          setIsRehydrating(true)
+        }
+
+        // Create a timeout promise that resolves (doesn't reject) after delay
+        const timeoutPromise = new Promise<{ timedOut: true }>((resolve) => {
+          initTimeout = setTimeout(() => {
+            // Silently handle timeout without warning - authentication is working with cached data
+            resolve({ timedOut: true })
+          }, 20000) // 20 second timeout - very generous for slow connections
+        })
+
+        // Create the session fetch promise with optimized retry logic
+        const sessionPromise = new Promise<{ session: any; error: any; timedOut?: never }>(async (resolve, reject) => {
           try {
-            // First, try to get cached data for immediate UI response
-            const cachedData = getCachedUserData()
-            if (cachedData.user && cachedData.session) {
-              console.log('📦 Using cached auth data')
-              setUser(cachedData.user)
-              setProfile(cachedData.profile)
-              setSession(cachedData.session)
-              setIsRehydrating(true)
-            }
-
-            // Get current session from Supabase
-            const { data: { session }, error } = await supabase.auth.getSession()
+            // Get current session from Supabase with optimized retry logic
+            let retryCount = 0
+            const maxRetries = 1 // Reduced retries to prevent timeout
             
-            if (error) {
-              throw error
-            }
-
-            if (isMounted) {
-              if (session) {
-                console.log('✅ Active session found')
-                await handleAuthStateChange(session, true)
-              } else {
-                console.log('❌ No active session')
-                clearCachedUserData()
-                setUser(null)
-                setProfile(null)
-                setSession(null)
+            while (retryCount <= maxRetries) {
+              try {
+                const { data: { session }, error } = await supabase.auth.getSession()
+                resolve({ session, error })
+                return
+              } catch (err) {
+                retryCount++
+                if (retryCount > maxRetries) {
+                  reject(err)
+                } else {
+                  console.log(`🔄 Retrying session fetch (${retryCount}/${maxRetries})`)
+                  await new Promise(resolve => setTimeout(resolve, 500)) // Reduced wait time to 500ms
+                }
               }
-              
-              setLoading(false)
-              setIsRehydrating(false)
             }
-            
-            resolve()
           } catch (error) {
             reject(error)
           }
         })
 
-        // Race between initialization and timeout
-        await Promise.race([
-          initPromise,
-          new Promise<never>((_, reject) => {
-            initTimeout = setTimeout(() => {
-              reject(new Error('Authentication initialization timeout'))
-            }, 10000) // 10 second timeout
-          })
-        ])
+        // Race between session fetch and timeout
+        const result = await Promise.race([sessionPromise, timeoutPromise])
+
+        if (isMounted) {
+          if ('timedOut' in result) {
+            // Timeout occurred - use cached data if available (silently)
+            if (cachedData.user && cachedData.session) {
+              // Keep cached data, just update loading states
+              setLoading(false)
+              setIsRehydrating(false)
+            } else {
+              // No cached data, set to logged out state
+              setUser(null)
+              setProfile(null)
+              setSession(null)
+              setLoading(false)
+              setIsRehydrating(false)
+            }
+          } else {
+            // Session fetch completed
+            if (result.error) {
+              throw result.error
+            }
+
+            if (result.session) {
+              console.log('✅ Active session found')
+              await handleAuthStateChange(result.session, true)
+            } else {
+              console.log('❌ No active session')
+              clearCachedUserData()
+              setUser(null)
+              setProfile(null)
+              setSession(null)
+            }
+            
+            setLoading(false)
+            setIsRehydrating(false)
+          }
+        }
 
       } catch (error) {
         console.error('❌ Auth initialization failed:', error)
@@ -173,10 +206,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setLoading(false)
           setIsRehydrating(false)
           
-          // Only show error if it's not a timeout (timeout is handled gracefully)
-          if (!(error as Error).message.includes('timeout')) {
-            toast.error('Authentication initialization failed. Some features may not work properly.')
-          }
+          // Show error for actual failures (not timeouts)
+          toast.error('Authentication initialization failed. Please try refreshing the page.')
         }
       } finally {
         if (initTimeout) {
@@ -238,10 +269,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Add timeout protection for profile fetching
     const profileTimeout = setTimeout(() => {
-      console.warn('⚠️ Profile fetch timeout, continuing with cached data')
-      setLoading(false)
-      setIsRehydrating(false)
-    }, 8000) // 8 second timeout for profile operations
+      // Silently handle timeout without warning - profile is working with cached data
+      if (loading || isRehydrating) {
+        setLoading(false)
+        setIsRehydrating(false)
+      }
+    }, 15000) // 15 second timeout for profile operations - very generous for slow connections
     
     try {
       setSession(session)

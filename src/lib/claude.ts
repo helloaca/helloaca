@@ -19,10 +19,19 @@ export interface ClaudeMessage {
 export const claudeService = {
   async sendMessage(messages: ClaudeMessage[], contractContext?: string, forceJsonResponse?: boolean): Promise<string> {
     try {
-      // Prepare system message with contract context if available
-      const systemMessage = contractContext 
+      // Prepare system message with contract context if available and strict no-emoji policy
+      const baseSystemMessage = contractContext 
         ? `You are an AI assistant specialized in contract analysis. You have access to the following contract content: ${contractContext}. Please provide helpful, accurate responses about the contract terms, obligations, and any questions the user might have.`
         : 'You are an AI assistant specialized in contract analysis. Please provide helpful responses about contract-related questions.'
+      
+      // Add strict no-emoji policy to system message
+      const systemMessage = `${baseSystemMessage}
+
+IMPORTANT COMMUNICATION POLICY:
+- You must not use emojis in your responses under any circumstances
+- If a user requests emojis, politely explain that you maintain a formal communication style without emojis to ensure professional standards
+- Keep all responses professional and emoji-free
+- Maintain a formal, business-appropriate tone at all times`
 
       const requestOptions: any = {
         model: 'claude-sonnet-4-5',
