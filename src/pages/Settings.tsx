@@ -124,6 +124,7 @@ const Settings: React.FC = () => {
     try {
       await signOut()
       toast.success('Signed out successfully!')
+      navigate('/')
     } catch (error) {
       console.error('Error signing out:', error)
       toast.error('Failed to sign out. Please try again.')

@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react'
 import { Session } from '@supabase/supabase-js'
 import { toast } from 'sonner'
 import { AuthUser, UserProfile, supabase } from '../lib/supabase'
+import { trackAuth, setUserProperties } from '../lib/analytics'
 
 interface AuthContextType {
   user: AuthUser | null
@@ -354,6 +355,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 if (createdProfile) {
                   console.log('✅ Profile created successfully')
                   setProfile(createdProfile)
+                  // Set user properties for analytics
+                  setUserProperties({
+                    user_id: createdProfile.id,
+                    plan: createdProfile.plan,
+                    company: createdProfile.company || undefined
+                  })
                   // Cache the new data
                   cacheUserData(authUser, createdProfile, session)
                 }
@@ -361,6 +368,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } else if (existingProfile) {
               console.log('✅ Profile loaded successfully')
               setProfile(existingProfile)
+              // Set user properties for analytics
+              setUserProperties({
+                user_id: existingProfile.id,
+                plan: existingProfile.plan,
+                company: existingProfile.company || undefined
+              })
               // Cache the data
               cacheUserData(authUser, existingProfile, session)
             }
@@ -423,6 +436,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         return { success: false, error: error.message }
       }
+      // Track successful sign up
+      trackAuth.signUp('email')
       toast.success('Account created successfully! Please check your email to verify your account.')
       return { success: true }
     } catch (err) {
@@ -440,6 +455,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         return { success: false, error: error.message }
       }
+      // Track successful sign in
+      trackAuth.signIn('email')
       return { success: true }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred'
@@ -458,6 +475,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         return { success: false, error: error.message }
       }
+      // Track successful Google sign in
+      trackAuth.signIn('google')
       return { success: true }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred'
@@ -469,6 +488,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { error } = await supabase.auth.signOut()
       if (error) throw error
+      // Track successful sign out
+      trackAuth.signOut()
       setUser(null)
       setProfile(null)
       setSession(null)

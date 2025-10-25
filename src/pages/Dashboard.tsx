@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom'
 import { ContractService, Contract } from '@/lib/contractService'
 import { FileProcessor } from '@/lib/fileProcessor'
 import { toast } from 'sonner'
+import { trackContracts } from '@/lib/analytics'
 
 const Dashboard: React.FC = () => {
   const { user, profile, loading: authLoading, isRehydrating } = useAuth()
@@ -95,6 +96,8 @@ const Dashboard: React.FC = () => {
   }
 
   const handleContractView = (contractId: string) => {
+    // Track contract view
+    trackContracts.view(contractId)
     // Navigate to contract analysis page with the contract ID
     navigate(`/analyze/${contractId}`)
   }
@@ -136,6 +139,9 @@ const Dashboard: React.FC = () => {
       
       // Reload contracts to show the new one
       await loadUserContracts()
+      
+      // Track successful contract upload
+      trackContracts.upload(file.name, file.size)
       
       // Navigate to the analysis page after a short delay
       setTimeout(() => {

@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import Button from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { useAuth } from '../contexts/AuthContext'
+import { trackForms, trackPricing } from '../lib/analytics'
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -379,6 +380,11 @@ const Register: React.FC = () => {
                 type="submit"
                 className="w-full"
                 disabled={isLoading || !acceptTerms}
+                onClick={() => {
+                  if (!isLoading && acceptTerms) {
+                    trackForms.submit('registration', selectedPlan)
+                  }
+                }}
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center">
@@ -421,7 +427,10 @@ const Register: React.FC = () => {
                       ? 'ring-2 ring-[#4ECCA3] border-[#4ECCA3]'
                       : 'hover:border-gray-300'
                   }`}
-                  onClick={() => setSelectedPlan(plan.id)}
+                  onClick={() => {
+                    setSelectedPlan(plan.id)
+                    trackPricing.planSelect(plan.id)
+                  }}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

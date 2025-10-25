@@ -142,14 +142,36 @@ const PrivacyPolicy: React.FC = () => {
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">5. Information Sharing and Disclosure</h2>
-                <h3 className="text-xl font-semibold text-gray-800 mb-3">5.1 We Do Not Sell Your Data</h3>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">5. Analytics and Tracking</h2>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">5.1 Google Analytics</h3>
+                <p>
+                  We use Google Analytics (Measurement ID: G-0JVYR712V0) to understand how users interact with our website and services. This helps us improve user experience and optimize our platform.
+                </p>
+                <ul>
+                  <li><strong>Data Collected:</strong> Page views, user interactions, session duration, and anonymized usage patterns</li>
+                  <li><strong>Purpose:</strong> Website optimization, user experience improvement, and performance analysis</li>
+                  <li><strong>Data Retention:</strong> Google Analytics data is retained for 26 months</li>
+                  <li><strong>Opt-Out:</strong> You can opt out of Google Analytics tracking using browser settings or Google's opt-out tools</li>
+                </ul>
+
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">5.2 Cookie Usage</h3>
+                <ul>
+                  <li>Essential cookies for authentication and security</li>
+                  <li>Analytics cookies for Google Analytics (can be disabled)</li>
+                  <li>Preference cookies to remember your settings</li>
+                  <li>No third-party advertising cookies</li>
+                </ul>
+              </section>
+
+              <section className="mb-8">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. Information Sharing and Disclosure</h2>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">6.1 We Do Not Sell Your Data</h3>
                 <p>
                   We do not sell, rent, or trade your personal information or documents to third parties 
                   for their commercial purposes.
                 </p>
 
-                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">5.2 Limited Sharing</h3>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">6.2 Limited Sharing</h3>
                 <p>We may share your information only in the following circumstances:</p>
                 <ul>
                   <li><strong>Service Providers:</strong> Trusted third parties who assist in service delivery (cloud hosting, payment processing)</li>
@@ -159,7 +181,7 @@ const PrivacyPolicy: React.FC = () => {
                   <li><strong>Safety and Security:</strong> To protect rights, property, or safety of users or others</li>
                 </ul>
 
-                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">5.3 Team and Organization Sharing</h3>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">6.3 Team and Organization Sharing</h3>
                 <ul>
                   <li>Business and Enterprise plans allow document sharing within your organization</li>
                   <li>Administrators can manage user access and permissions</li>
@@ -168,7 +190,7 @@ const PrivacyPolicy: React.FC = () => {
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. Data Security and Protection</h2>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Data Security and Protection</h2>
                 <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
                   <div className="flex">
                     <div className="ml-3">
@@ -180,7 +202,7 @@ const PrivacyPolicy: React.FC = () => {
                   </div>
                 </div>
 
-                <h3 className="text-xl font-semibold text-gray-800 mb-3">6.1 Technical Safeguards</h3>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">7.1 Technical Safeguards</h3>
                 <ul>
                   <li><strong>Encryption:</strong> AES-256 encryption for data at rest and in transit</li>
                   <li><strong>Access Controls:</strong> Multi-factor authentication and role-based permissions</li>
@@ -188,7 +210,7 @@ const PrivacyPolicy: React.FC = () => {
                   <li><strong>Secure Infrastructure:</strong> SOC 2 Type II compliant cloud providers</li>
                 </ul>
 
-                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">6.2 Operational Safeguards</h3>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">7.2 Operational Safeguards</h3>
                 <ul>
                   <li><strong>Employee Training:</strong> Regular security awareness and privacy training</li>
                   <li><strong>Access Limitations:</strong> Principle of least privilege for employee access</li>
@@ -196,7 +218,7 @@ const PrivacyPolicy: React.FC = () => {
                   <li><strong>Regular Audits:</strong> Third-party security assessments and penetration testing</li>
                 </ul>
 
-                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">6.3 Data Backup and Recovery</h3>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">7.3 Data Backup and Recovery</h3>
                 <ul>
                   <li>Automated, encrypted backups with geographic redundancy</li>
                   <li>Disaster recovery procedures with defined recovery time objectives</li>
@@ -295,7 +317,7 @@ const PrivacyPolicy: React.FC = () => {
                 <ul>
                   <li><strong>Cloud Infrastructure:</strong> AWS, Google Cloud (SOC 2 compliant)</li>
                   <li><strong>Payment Processing:</strong> Stripe, PayPal (PCI DSS compliant)</li>
-                  <li><strong>Analytics:</strong> Google Analytics, Mixpanel (anonymized data)</li>
+                  <li><strong>Analytics:</strong> Google Analytics (Measurement ID: G-0JVYR712V0) for website usage analytics with anonymized data</li>
                   <li><strong>Customer Support:</strong> Intercom, Zendesk</li>
                   <li><strong>Email Services:</strong> SendGrid, Mailchimp</li>
                 </ul>

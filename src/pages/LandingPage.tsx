@@ -4,8 +4,11 @@ import Footer from '@/components/layout/Footer'
 import Button from '@/components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Upload, Search, MessageCircle, CheckCircle, Star } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { trackPricing } from '@/lib/analytics'
 
 const LandingPage: React.FC = () => {
+  const navigate = useNavigate()
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -207,7 +210,14 @@ const LandingPage: React.FC = () => {
                     No PDF export
                   </li>
                 </ul>
-                <Button variant="outline" className="w-full">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    trackPricing.planSelect('free')
+                    navigate('/register')
+                  }}
+                >
                   Get Started
                 </Button>
               </CardContent>
@@ -244,7 +254,13 @@ const LandingPage: React.FC = () => {
                     PDF report export
                   </li>
                 </ul>
-                <Button className="w-full">
+                <Button 
+                  className="w-full"
+                  onClick={() => {
+                    trackPricing.planSelect('pro')
+                    navigate('/register')
+                  }}
+                >
                   Start Pro Trial
                 </Button>
               </CardContent>
@@ -276,7 +292,14 @@ const LandingPage: React.FC = () => {
                     White-label reports
                   </li>
                 </ul>
-                <Button variant="outline" className="w-full">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    trackPricing.planSelect('business')
+                    navigate('/register')
+                  }}
+                >
                   Contact Sales
                 </Button>
               </CardContent>

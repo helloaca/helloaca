@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Menu, X, Settings, LogOut } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import Button from '../ui/Button'
+import { toast } from 'sonner'
 
 interface HeaderProps {
   showAuth?: boolean
@@ -69,8 +70,14 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
 
   // Handle sign out
   const handleSignOut = async () => {
-    await signOut()
-    navigate('/')
+    try {
+      await signOut()
+      toast.success('Signed out successfully!')
+      navigate('/')
+    } catch (error) {
+      console.error('Error signing out:', error)
+      toast.error('Failed to sign out. Please try again.')
+    }
   }
 
   return (

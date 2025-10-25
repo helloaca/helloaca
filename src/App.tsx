@@ -1,7 +1,9 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import { Toaster } from './components/ui/toast'
+import { initGA, trackPageView } from './lib/analytics'
 import LandingPage from './pages/LandingPage'
 import Dashboard from './pages/Dashboard'
 import ContractAnalysis from './pages/ContractAnalysis'
@@ -17,10 +19,28 @@ import TermsOfService from './pages/TermsOfService'
 import Contact from './pages/Contact'
 import Pricing from './pages/Pricing'
 
+// Component to handle page tracking
+function PageTracker() {
+  const location = useLocation()
+
+  useEffect(() => {
+    // Initialize Google Analytics on first load
+    initGA()
+  }, [])
+
+  useEffect(() => {
+    // Track page views on route changes
+    trackPageView(location.pathname + location.search)
+  }, [location])
+
+  return null
+}
+
 function App() {
   return (
     <AuthProvider>
       <div className="min-h-screen bg-white">
+        <PageTracker />
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
