@@ -1,361 +1,549 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Download, FileText, Calendar, Filter, Search, Eye, Trash2, Share2, ArrowLeft } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Search, Filter, Download, Share2, Trash2, Eye, Plus, FileText, Calendar, Clock, AlertCircle, Loader2 } from 'lucide-react'
+import Header from '../components/layout/Header'
+import Footer from '../components/layout/Footer'
 import Button from '../components/ui/Button'
-import { Card } from '../components/ui/Card'
+import { useAuth } from '../contexts/AuthContext'
+import { ContractService, Contract, ContractAnalysis } from '../lib/contractService'
+import { toast } from 'sonner'
 
-interface Report {
-  id: string
-  contractName: string
-  reportType: 'standard' | 'white-label'
-  createdAt: Date
-  fileSize: string
-  downloadUrl: string
-  status: 'ready' | 'generating' | 'failed'
+interface ReportData extends Contract {
+  analysis?: ContractAnalysis
 }
 
 const Reports: React.FC = () => {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const [reports, setReports] = useState<ReportData[]>([])
+  const [filteredReports, setFilteredReports] = useState<ReportData[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterType, setFilterType] = useState<'all' | 'standard' | 'white-label'>('all')
-  const [sortBy, setSortBy] = useState<'date' | 'name' | 'type'>('date')
+  const [filterType, setFilterType] = useState('all')
+  const [sortBy, setSortBy] = useState('newest')
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
-  // Mock reports data
-  const [reports] = useState<Report[]>([
-    {
-      id: '1',
-      contractName: 'Service Agreement - ABC Corp.pdf',
-      reportType: 'standard',
-      createdAt: new Date('2024-01-15'),
-      fileSize: '2.4 MB',
-      downloadUrl: '/reports/report-1.pdf',
-      status: 'ready'
-    },
-    {
-      id: '2',
-      contractName: 'Employment Contract - John Doe.pdf',
-      reportType: 'white-label',
-      createdAt: new Date('2024-01-14'),
-      fileSize: '1.8 MB',
-      downloadUrl: '/reports/report-2.pdf',
-      status: 'ready'
-    },
-    {
-      id: '3',
-      contractName: 'NDA - Tech Startup.pdf',
-      reportType: 'standard',
-      createdAt: new Date('2024-01-13'),
-      fileSize: '1.2 MB',
-      downloadUrl: '/reports/report-3.pdf',
-      status: 'generating'
-    },
-    {
-      id: '4',
-      contractName: 'Lease Agreement - Office Space.pdf',
-      reportType: 'standard',
-      createdAt: new Date('2024-01-12'),
-      fileSize: '3.1 MB',
-      downloadUrl: '/reports/report-4.pdf',
-      status: 'ready'
+  // Load reports on component mount
+  useEffect(() => {
+    loadReports()
+  }, [user])
+
+  // Filter and sort reports when dependencies change
+  useEffect(() => {
+    let filtered = [...reports]
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(report =>
+        report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        report.file_name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
     }
-  ])
 
-  const filteredReports = reports
-    .filter(report => {
-      const matchesSearch = report.contractName.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesFilter = filterType === 'all' || report.reportType === filterType
-      return matchesSearch && matchesFilter
-    })
-    .sort((a, b) => {
+    // Apply type filter
+    if (filterType !== 'all') {
+      filtered = filtered.filter(report => {
+        if (filterType === 'completed') return report.analysis_status === 'completed'
+        if (filterType === 'processing') return report.analysis_status === 'processing'
+        if (filterType === 'failed') return report.analysis_status === 'failed'
+        return true
+      })
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
       switch (sortBy) {
-        case 'date':
-          return b.createdAt.getTime() - a.createdAt.getTime()
+        case 'newest':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        case 'oldest':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         case 'name':
-          return a.contractName.localeCompare(b.contractName)
-        case 'type':
-          return a.reportType.localeCompare(b.reportType)
+          return a.title.localeCompare(b.title)
         default:
           return 0
       }
     })
 
-  const handleDownload = (report: Report) => {
-    // In a real app, this would trigger the actual download
-    console.log('Downloading report:', report.id)
-  }
+    setFilteredReports(filtered)
+  }, [reports, searchTerm, filterType, sortBy])
 
-  const handleDelete = (reportId: string) => {
-    // In a real app, this would delete the report
-    console.log('Deleting report:', reportId)
-  }
+  const loadReports = async () => {
+    if (!user?.id) return
 
-  const handleShare = (report: Report) => {
-    // In a real app, this would open a share dialog
-    console.log('Sharing report:', report.id)
-  }
-
-  const getStatusBadge = (status: Report['status']) => {
-    switch (status) {
-      case 'ready':
-        return <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Ready</span>
-      case 'generating':
-        return <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">Generating</span>
-      case 'failed':
-        return <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">Failed</span>
+    try {
+      setIsLoading(true)
+      setError(null)
+      const contractsWithAnalysis = await ContractService.getUserContractsWithAnalysis(user.id)
+      setReports(contractsWithAnalysis)
+    } catch (err) {
+      console.error('Error loading reports:', err)
+      setError('Failed to load reports. Please try again.')
+      toast.error('Failed to load reports')
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const getReportTypeBadge = (type: Report['reportType']) => {
-    return type === 'white-label' ? (
-      <span className="px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">White Label</span>
-    ) : (
-      <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">Standard</span>
+  const handleDownload = async (report: ReportData) => {
+    try {
+      if (!report.analysis) {
+        toast.error('No analysis data available for download')
+        return
+      }
+
+      // Create a comprehensive report content
+      const reportContent = {
+        title: report.title,
+        fileName: report.file_name,
+        uploadDate: report.upload_date,
+        analysisDate: report.analysis.created_at,
+        summary: report.analysis.analysis_data?.summary || 'No summary available',
+        keyFindings: report.analysis.analysis_data?.structuredAnalysis?.keyFindings || [],
+        clauseAnalysis: report.analysis.analysis_data?.structuredAnalysis?.clauseAnalysis || [],
+        riskScore: report.analysis.analysis_data?.structuredAnalysis?.riskScore || 'N/A'
+      }
+
+      // Convert to JSON string with formatting
+      const jsonContent = JSON.stringify(reportContent, null, 2)
+      
+      // Create and download file
+      const blob = new Blob([jsonContent], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${report.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_analysis_report.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+
+      toast.success('Report downloaded successfully')
+    } catch (error) {
+      console.error('Download error:', error)
+      toast.error('Failed to download report')
+    }
+  }
+
+  const handleShare = async (report: ReportData) => {
+    try {
+      const shareUrl = `${window.location.origin}/contract-analysis/${report.id}`
+      await navigator.clipboard.writeText(shareUrl)
+      toast.success('Report link copied to clipboard')
+    } catch (error) {
+      console.error('Share error:', error)
+      toast.error('Failed to copy link')
+    }
+  }
+
+  const handleDelete = async (reportId: string) => {
+    try {
+      setIsDeleting(true)
+      // Note: This would need to be implemented in ContractService
+      // For now, we'll just remove from local state
+      setReports(prev => prev.filter(r => r.id !== reportId))
+      setDeleteConfirm(null)
+      toast.success('Report deleted successfully')
+    } catch (error) {
+      console.error('Delete error:', error)
+      toast.error('Failed to delete report')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'text-green-600 bg-green-100'
+      case 'processing': return 'text-yellow-600 bg-yellow-100'
+      case 'failed': return 'text-red-600 bg-red-100'
+      default: return 'text-gray-600 bg-gray-100'
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed': return <FileText className="w-4 h-4" />
+      case 'processing': return <Clock className="w-4 h-4" />
+      case 'failed': return <AlertCircle className="w-4 h-4" />
+      default: return <FileText className="w-4 h-4" />
+    }
+  }
+
+  // Calculate stats
+  const stats = {
+    total: reports.length,
+    completed: reports.filter(r => r.analysis_status === 'completed').length,
+    processing: reports.filter(r => r.analysis_status === 'processing').length,
+    failed: reports.filter(r => r.analysis_status === 'failed').length
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-[#4ECCA3]" />
+            <p className="text-gray-600">Loading reports...</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col overflow-x-hidden">
+      <Header />
+      
+      <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 overflow-x-hidden">
         {/* Back Button */}
-        <div className="mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center text-gray-600 hover:text-gray-900 transition-colors mb-4"
+        <div className="mb-6">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/dashboard')}
+            className="min-h-[44px]"
           >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Back
-          </button>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
         </div>
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Reports</h1>
-          <p className="text-gray-600">Download and manage your contract analysis reports</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Contract Reports</h1>
+          <p className="text-gray-600">View and manage your contract analysis reports</p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="p-6">
-            <div className="flex items-center">
-              <FileText className="h-8 w-8 text-[#4ECCA3]" />
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900">{reports.length}</p>
-                <p className="text-gray-600">Total Reports</p>
+        {/* Stats Cards - Responsive: 2 cols on mobile, 4 on desktop */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+          <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200 min-w-0">
+            <div className="flex items-center min-w-0">
+              <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 flex-shrink-0" />
+              <div className="ml-3 sm:ml-4 min-w-0 flex-1">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 truncate">{stats.total}</p>
+                <p className="text-xs sm:text-sm text-gray-600 truncate">Total Reports</p>
               </div>
             </div>
-          </Card>
-          
-          <Card className="p-6">
-            <div className="flex items-center">
-              <Download className="h-8 w-8 text-blue-500" />
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900">
-                  {reports.filter(r => r.status === 'ready').length}
-                </p>
-                <p className="text-gray-600">Ready to Download</p>
+          </div>
+          <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200 min-w-0">
+            <div className="flex items-center min-w-0">
+              <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 flex-shrink-0" />
+              <div className="ml-3 sm:ml-4 min-w-0 flex-1">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 truncate">{stats.completed}</p>
+                <p className="text-xs sm:text-sm text-gray-600 truncate">Completed</p>
               </div>
             </div>
-          </Card>
-          
-          <Card className="p-6">
-            <div className="flex items-center">
-              <Calendar className="h-8 w-8 text-yellow-500" />
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900">
-                  {reports.filter(r => r.createdAt.getMonth() === new Date().getMonth()).length}
-                </p>
-                <p className="text-gray-600">This Month</p>
+          </div>
+          <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200 min-w-0">
+            <div className="flex items-center min-w-0">
+              <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-600 flex-shrink-0" />
+              <div className="ml-3 sm:ml-4 min-w-0 flex-1">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 truncate">{stats.processing}</p>
+                <p className="text-xs sm:text-sm text-gray-600 truncate">Processing</p>
               </div>
             </div>
-          </Card>
-          
-          <Card className="p-6">
-            <div className="flex items-center">
-              <Share2 className="h-8 w-8 text-purple-500" />
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900">
-                  {reports.filter(r => r.reportType === 'white-label').length}
-                </p>
-                <p className="text-gray-600">White Label</p>
+          </div>
+          <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200 min-w-0">
+            <div className="flex items-center min-w-0">
+              <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 flex-shrink-0" />
+              <div className="ml-3 sm:ml-4 min-w-0 flex-1">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 truncate">{stats.failed}</p>
+                <p className="text-xs sm:text-sm text-gray-600 truncate">Failed</p>
               </div>
             </div>
-          </Card>
+          </div>
         </div>
 
-        {/* Filters and Search */}
-        <Card className="p-6 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+        {/* Filters - Stack on mobile */}
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 mb-8 overflow-x-hidden">
+          <div className="flex flex-col sm:flex-row gap-4 min-w-0">
             {/* Search */}
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
                   placeholder="Search reports..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4ECCA3] focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4ECCA3] focus:border-transparent min-h-[44px]"
                 />
               </div>
             </div>
 
-            {/* Filter by Type */}
-            <div className="flex items-center space-x-2">
-              <Filter className="h-4 w-4 text-gray-400" />
+            {/* Filter and Sort */}
+            <div className="flex flex-col sm:flex-row gap-4 min-w-0">
               <select
                 value={filterType}
-                onChange={(e) => setFilterType(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4ECCA3] focus:border-transparent"
+                onChange={(e) => setFilterType(e.target.value)}
+                className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4ECCA3] focus:border-transparent min-h-[44px] w-full sm:w-auto sm:min-w-[120px]"
               >
-                <option value="all">All Types</option>
-                <option value="standard">Standard</option>
-                <option value="white-label">White Label</option>
+                <option value="all">All Reports</option>
+                <option value="completed">Completed</option>
+                <option value="processing">Processing</option>
+                <option value="failed">Failed</option>
               </select>
-            </div>
 
-            {/* Sort */}
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">Sort by:</span>
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4ECCA3] focus:border-transparent"
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4ECCA3] focus:border-transparent min-h-[44px] w-full sm:w-auto sm:min-w-[120px]"
               >
-                <option value="date">Date</option>
-                <option value="name">Name</option>
-                <option value="type">Type</option>
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="name">Name A-Z</option>
               </select>
             </div>
           </div>
-        </Card>
+        </div>
 
-        {/* Reports List */}
-        <Card>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contract
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Size
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredReports.map((report) => (
-                  <tr key={report.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <FileText className="h-5 w-5 text-gray-400 mr-3" />
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {report.contractName}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            Report ID: {report.id}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getReportTypeBadge(report.reportType)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(report.status)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {report.createdAt.toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {report.fileSize}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleShare(report)}
-                          disabled={report.status !== 'ready'}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleShare(report)}
-                          disabled={report.status !== 'ready'}
-                        >
-                          <Share2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => handleDownload(report)}
-                          disabled={report.status !== 'ready'}
-                        >
-                          <Download className="h-4 w-4 mr-1" />
-                          Download
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(report.id)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredReports.length === 0 && (
-            <div className="text-center py-12">
-              <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No reports found</h3>
-              <p className="text-gray-500 mb-6">
-                {searchTerm || filterType !== 'all' 
-                  ? 'Try adjusting your search or filter criteria.'
-                  : 'Generate your first report by analyzing a contract.'}
-              </p>
-              <Button>
-                <FileText className="h-4 w-4 mr-2" />
-                Analyze Contract
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
+            <div className="flex items-center">
+              <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
+              <p className="text-red-800">{error}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadReports}
+                className="ml-auto"
+              >
+                Retry
               </Button>
             </div>
-          )}
-        </Card>
-
-        {/* Generate New Report */}
-        <Card className="mt-6 p-6">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Generate New Report</h3>
-            <p className="text-gray-600 mb-4">
-              Create a comprehensive analysis report for any of your uploaded contracts
-            </p>
-            <Button>
-              <FileText className="h-4 w-4 mr-2" />
-              Generate Report
-            </Button>
           </div>
-        </Card>
+        )}
+
+        {/* Reports List */}
+        {filteredReports.length === 0 ? (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
+            <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              {searchTerm || filterType !== 'all' ? 'No reports found' : 'No reports yet'}
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {searchTerm || filterType !== 'all' 
+                ? 'Try adjusting your search or filter criteria'
+                : 'Upload and analyze your first contract to get started'
+              }
+            </p>
+            {!searchTerm && filterType === 'all' && (
+              <Link to="/dashboard">
+                <Button className="min-h-[44px]">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Analyze New Contract
+                </Button>
+              </Link>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden lg:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Contract
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Upload Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredReports.map((report) => (
+                      <tr key={report.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-gray-900 truncate max-w-xs">{report.title}</div>
+                            <div className="text-sm text-gray-500 truncate max-w-xs">{report.file_name}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(report.analysis_status)}`}>
+                            {getStatusIcon(report.analysis_status)}
+                            <span className="ml-1 capitalize">{report.analysis_status}</span>
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(report.upload_date).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => navigate(`/contract-analysis/${report.id}`)}
+                              className="text-[#4ECCA3] hover:text-[#3da58a] p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                              title="View Report"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            {report.analysis && (
+                              <button
+                                onClick={() => handleShare(report)}
+                                className="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                title="Share Report"
+                              >
+                                <Share2 className="w-4 h-4" />
+                              </button>
+                            )}
+                            {report.analysis && (
+                              <button
+                                onClick={() => handleDownload(report)}
+                                className="text-green-600 hover:text-green-800 p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                title="Download Report"
+                              >
+                                <Download className="w-4 h-4" />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => setDeleteConfirm(report.id)}
+                              className="text-red-600 hover:text-red-800 p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                              title="Delete Report"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="lg:hidden space-y-4">
+              {filteredReports.map((report) => (
+                <div key={report.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 overflow-hidden">
+                  <div className="flex items-start justify-between mb-3 min-w-0">
+                    <div className="flex-1 min-w-0 pr-2">
+                      <h3 className="text-sm font-medium text-gray-900 truncate">{report.title}</h3>
+                      <p className="text-xs text-gray-500 truncate">{report.file_name}</p>
+                    </div>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(report.analysis_status)} flex-shrink-0`}>
+                      {getStatusIcon(report.analysis_status)}
+                      <span className="ml-1 capitalize">{report.analysis_status}</span>
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center text-xs text-gray-500 mb-4">
+                    <Calendar className="w-3 h-3 mr-1 flex-shrink-0" />
+                    <span className="truncate">{new Date(report.upload_date).toLocaleDateString()}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between min-w-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/contract-analysis/${report.id}`)}
+                      className="min-h-[44px] flex-1 mr-2 min-w-0"
+                    >
+                      <Eye className="w-4 h-4 mr-2 flex-shrink-0" />
+                      <span className="truncate">View</span>
+                    </Button>
+                    
+                    <div className="flex items-center space-x-1 flex-shrink-0">
+                      {report.analysis && (
+                        <>
+                          <button
+                            onClick={() => handleShare(report)}
+                            className="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                            title="Share"
+                          >
+                            <Share2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDownload(report)}
+                            className="text-green-600 hover:text-green-800 p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                            title="Download"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                      <button
+                        onClick={() => setDeleteConfirm(report.id)}
+                        className="text-red-600 hover:text-red-800 p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Generate New Report Section */}
+        <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8 text-center overflow-hidden">
+          <Plus className="w-10 h-10 sm:w-12 sm:h-12 text-[#4ECCA3] mx-auto mb-4" />
+          <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 mb-2">Need to analyze another contract?</h3>
+          <p className="text-sm sm:text-base text-gray-600 mb-6 px-2">Upload a new contract to get instant AI-powered analysis</p>
+          <Link to="/dashboard">
+            <Button className="min-h-[44px] px-4 sm:px-6 w-full sm:w-auto">
+              <Plus className="w-4 h-4 mr-2" />
+              Analyze New Contract
+            </Button>
+          </Link>
+        </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 mx-4 overflow-hidden">
+            <div className="flex items-center mb-4">
+              <AlertCircle className="w-6 h-6 text-red-600 mr-3 flex-shrink-0" />
+              <h3 className="text-lg font-semibold text-gray-900 truncate">Delete Report</h3>
+            </div>
+            <p className="text-gray-600 mb-6 text-sm sm:text-base">
+              Are you sure you want to delete this report? This action cannot be undone.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-end space-y-3 sm:space-y-0 sm:space-x-3">
+              <Button
+                variant="outline"
+                onClick={() => setDeleteConfirm(null)}
+                disabled={isDeleting}
+                className="min-h-[44px] w-full sm:w-auto"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => handleDelete(deleteConfirm)}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700 text-white min-h-[44px] w-full sm:w-auto"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Footer />
     </div>
   )
 }

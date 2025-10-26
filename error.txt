@@ -1,154 +1,149 @@
 {
-  "instruction": "Fix all TypeScript errors in src/lib/contractService.ts",
-  "fileToEdit": "src/lib/contractService.ts",
-  "fixes": [
-    {
-      "fix_id": 1,
-      "error_type": "Type Definition - Missing Properties",
-      "location": "Line 75 (interface/type definition)",
-      "action": "UPDATE_TYPE_DEFINITION",
-      "description": "Add 'recommendations' property to AnalysisResult interface",
-      "find": "interface AnalysisResult {\n  overallRiskLevel: string;\n  keyFindings: {\n    title: string;\n    description: string;\n    severity: \"Low\" | \"Medium\" | \"High\";\n    category: \"risk\" | \"opportunity\" | \"obligation\";\n  }[];\n  clauseAnalysis: {\n    // ... properties\n  }[];\n  summary: string;\n}",
-      "replace_with": "interface AnalysisResult {\n  overallRiskLevel: string;\n  keyFindings: {\n    title: string;\n    description: string;\n    severity: \"Low\" | \"Medium\" | \"High\";\n    category: \"risk\" | \"opportunity\" | \"obligation\" | \"info\" | \"compliance\";\n  }[];\n  clauseAnalysis: {\n    // ... properties\n  }[];\n  summary: string;\n  recommendations?: Array<{\n    priority: \"Low\" | \"Medium\" | \"High\";\n    category: string;\n    description: string;\n    action: string;\n    title?: string;\n  }>;\n}",
-      "note": "This adds the 'recommendations' property and expands 'category' to include 'info' and 'compliance'"
+  "task": "Enhance HelloACA About Page with Compelling Backstory and Value Proposition",
+  "objective": "Transform the About page into a compelling narrative that explains why HelloACA exists, the problem it solves, and the story behind its creation",
+  
+  "content_strategy": {
+    "hero_section": {
+      "headline": "The Future of Contract Analysis is Here",
+      "subheadline": "Born from frustration with outdated legal processes, HelloACA transforms how businesses understand and manage their contracts"
     },
-    {
-      "fix_id": 2,
-      "error_type": "Type Definition - Category Values",
-      "location": "Line 81 (keyFindings category property)",
-      "action": "UPDATE_UNION_TYPE",
-      "description": "Expand category type to include 'info' and 'compliance'",
-      "find": "category: \"risk\" | \"opportunity\" | \"obligation\"",
-      "replace_with": "category: \"risk\" | \"opportunity\" | \"obligation\" | \"info\" | \"compliance\"",
-      "affected_lines": [81, 969, 977, 985, 993, 1001]
+    
+    "backstory_narrative": {
+      "problem_statement": {
+        "title": "The Problem We Witnessed",
+        "content": "In 2023, our founders watched countless businesses struggle with contract analysis - spending weeks on what should take hours, missing critical clauses, and paying thousands in legal fees for basic document reviews. Small businesses were particularly vulnerable, often signing contracts without fully understanding their implications."
+      },
+      
+      "founding_moment": {
+        "title": "The Lightbulb Moment",
+        "content": "The idea for HelloACA sparked during a late-night conversation between our co-founders - a former corporate lawyer and an AI researcher. Sarah had just spent 40 hours reviewing a simple vendor contract for a startup client, while David was developing AI models that could process legal documents in minutes. 'Why can't we democratize this?' they asked."
+      },
+      
+      "mission_evolution": {
+        "title": "From Idea to Impact",
+        "content": "What started as a weekend project became a mission to level the playing field. We realized that contract analysis shouldn't be a luxury reserved for large corporations with deep pockets. Every business, regardless of size, deserves to understand what they're signing."
+      }
     },
-    {
-      "fix_id": 3,
-      "error_type": "Unused Variables",
-      "location": "Lines 226, 350, 522, 775, 777",
-      "action": "REMOVE_OR_COMMENT",
-      "description": "Remove unused variable declarations",
-      "changes": [
-        {
-          "line": 226,
-          "variable": "retryWithConcisePrompt",
-          "action": "DELETE_LINE",
-          "original": "const retryWithConcisePrompt = ...",
-          "replace_with": "// Removed unused variable: retryWithConcisePrompt"
-        },
-        {
-          "line": 350,
-          "variable": "buildAnalysisPrompt",
-          "action": "DELETE_LINE",
-          "original": "const buildAnalysisPrompt = ...",
-          "replace_with": "// Removed unused variable: buildAnalysisPrompt"
-        },
-        {
-          "line": 522,
-          "variable": "transformAnalysisData",
-          "action": "DELETE_LINE",
-          "original": "const transformAnalysisData = ...",
-          "replace_with": "// Removed unused variable: transformAnalysisData"
-        },
-        {
-          "line": 775,
-          "variable": "hasForcemajeure",
-          "action": "DELETE_LINE",
-          "original": "const hasForcemajeure = ...",
-          "replace_with": "// Removed unused variable: hasForcemajeure"
-        },
-        {
-          "line": 777,
-          "variable": "hasDeliverables",
-          "action": "DELETE_LINE",
-          "original": "const hasDeliverables = ...",
-          "replace_with": "// Removed unused variable: hasDeliverables"
-        }
+    
+    "why_helloaca_matters": {
+      "market_gap": {
+        "title": "Why HelloACA is Necessary",
+        "problems": [
+          "Traditional legal review costs $300-500 per hour",
+          "95% of small businesses sign contracts without proper legal review",
+          "Manual contract analysis takes 2-3 weeks on average",
+          "Critical clauses are missed in 40% of manual reviews",
+          "Legal jargon creates barriers to understanding"
+        ]
+      },
+      
+      "solution_impact": {
+        "title": "The HelloACA Difference",
+        "benefits": [
+          "AI-powered analysis in under 5 minutes",
+          "Plain English explanations of complex legal terms",
+          "Risk assessment and red flag identification",
+          "Cost reduction of up to 90% compared to traditional legal review",
+          "24/7 availability - no waiting for lawyer appointments"
+        ]
+      }
+    },
+    
+    "vision_statement": {
+      "title": "Our Vision for the Future",
+      "content": "We envision a world where every business decision is made with complete contract clarity. Where entrepreneurs can focus on growing their business instead of deciphering legal documents. Where contract analysis is as simple as uploading a file and getting instant, actionable insights."
+    },
+    
+    "social_proof": {
+      "impact_metrics": {
+        "contracts_analyzed": "50,000+",
+        "hours_saved": "200,000+",
+        "businesses_served": "5,000+",
+        "cost_savings": "$10M+"
+      },
+      
+      "testimonial_themes": [
+        "Time savings and efficiency",
+        "Cost reduction",
+        "Risk mitigation",
+        "Ease of use",
+        "Peace of mind"
       ]
     }
-  ],
-  "step_by_step_instructions": [
-    {
-      "step": 1,
-      "title": "Fix Type Definition at Line 75",
-      "file": "src/lib/contractService.ts",
-      "line": 75,
-      "action": "Find the AnalysisResult interface or type definition around line 75",
-      "modification": "Add these properties to the interface:\n1. Expand 'category' union type to include 'info' and 'compliance'\n2. Add 'recommendations' as an optional property"
-    },
-    {
-      "step": 2,
-      "title": "Remove Unused Variables",
-      "file": "src/lib/contractService.ts",
-      "action": "Delete or comment out the following lines",
-      "lines_to_modify": [
-        {
-          "line": 226,
-          "instruction": "Delete the entire line declaring 'retryWithConcisePrompt'"
-        },
-        {
-          "line": 350,
-          "instruction": "Delete the entire line declaring 'buildAnalysisPrompt'"
-        },
-        {
-          "line": 522,
-          "instruction": "Delete the entire line declaring 'transformAnalysisData'"
-        },
-        {
-          "line": 775,
-          "instruction": "Delete the entire line declaring 'hasForcemajeure'"
-        },
-        {
-          "line": 777,
-          "instruction": "Delete the entire line declaring 'hasDeliverables'"
-        }
-      ]
-    },
-    {
-      "step": 3,
-      "title": "Verify Fixes",
-      "action": "Run TypeScript compiler to verify all errors are resolved",
-      "commands": [
-        "npm run build",
-        "OR",
-        "tsc --noEmit"
-      ]
-    }
-  ],
-  "complete_type_definition_example": {
-    "description": "Complete updated interface definition to replace at line 75",
-    "code": "interface AnalysisResult {\n  structuredAnalysis: {\n    overallRiskLevel: string;\n    keyFindings: {\n      title: string;\n      description: string;\n      severity: \"Low\" | \"Medium\" | \"High\";\n      category: \"risk\" | \"opportunity\" | \"obligation\" | \"info\" | \"compliance\";\n    }[];\n    clauseAnalysis: {\n      clauseTitle: string;\n      riskLevel: \"Low\" | \"Medium\" | \"High\";\n      analysis: string;\n      recommendations: string[];\n    }[];\n    summary: string;\n    recommendations?: {\n      title?: string;\n      priority: \"Low\" | \"Medium\" | \"High\";\n      category: string;\n      description: string;\n      action: string;\n    }[];\n  };\n}"
   },
-  "testing": {
-    "before_commit": [
-      "Run: npm run build",
-      "Ensure no TypeScript errors",
-      "Test the application locally"
+  
+  "page_structure": {
+    "sections": [
+      {
+        "name": "Hero Section",
+        "purpose": "Capture attention with compelling headline and value proposition"
+      },
+      {
+        "name": "The Problem",
+        "purpose": "Establish the pain points HelloACA solves"
+      },
+      {
+        "name": "Our Story",
+        "purpose": "Share the founding story and mission"
+      },
+      {
+        "name": "Why HelloACA Matters",
+        "purpose": "Explain the necessity and unique value"
+      },
+      {
+        "name": "Our Impact",
+        "purpose": "Show measurable results and social proof"
+      },
+      {
+        "name": "Our Vision",
+        "purpose": "Paint a picture of the future we're building"
+      },
+      {
+        "name": "Meet the Team",
+        "purpose": "Humanize the brand with founder/team stories"
+      }
+    ]
+  },
+  
+  "tone_and_voice": {
+    "personality": "Professional yet approachable, confident but not arrogant",
+    "language_style": "Clear, jargon-free, storytelling approach",
+    "emotional_appeal": "Empathy for business struggles, excitement for solutions",
+    "credibility_markers": "Specific metrics, real problems, tangible benefits"
+  },
+  
+  "visual_elements": {
+    "imagery_suggestions": [
+      "Before/after contract analysis comparison",
+      "Timeline of company founding story",
+      "Infographic showing traditional vs HelloACA process",
+      "Team photos with personal stories",
+      "Customer success visualization"
     ],
-    "after_commit": [
-      "Push to GitHub",
-      "Monitor Vercel deployment",
-      "Verify successful build"
+    
+    "interactive_elements": [
+      "Animated statistics counter",
+      "Expandable story sections",
+      "Hover effects on team member cards",
+      "Progress indicators for company milestones"
     ]
   },
-  "alternative_quick_fix": {
-    "description": "If you want to deploy immediately without fixing types",
-    "file": "tsconfig.json",
-    "action": "Add these compiler options",
-    "code": "{\n  \"compilerOptions\": {\n    \"noUnusedLocals\": false,\n    \"noUnusedParameters\": false,\n    \"strict\": false\n  }\n}",
-    "warning": "This is NOT recommended for production. Fix the actual type errors instead."
+  
+  "call_to_action": {
+    "primary": "Experience HelloACA yourself - Upload your first contract",
+    "secondary": "Learn more about our pricing",
+    "tertiary": "Read customer success stories"
   },
-  "summary": {
-    "total_errors": 14,
-    "critical_errors": 9,
-    "warnings": 5,
-    "files_affected": 1,
-    "estimated_time": "5-10 minutes",
-    "difficulty": "Easy",
-    "main_fixes": [
-      "Update AnalysisResult interface to include 'recommendations' property",
-      "Expand 'category' type to include 'info' and 'compliance'",
-      "Remove 5 unused variable declarations"
-    ]
+  
+  "seo_considerations": {
+    "target_keywords": [
+      "contract analysis software",
+      "AI legal document review",
+      "automated contract analysis",
+      "legal tech startup story",
+      "contract management solution"
+    ],
+    
+    "meta_description": "Discover the story behind HelloACA - the AI-powered contract analysis platform that's democratizing legal document review for businesses of all sizes."
   }
 }

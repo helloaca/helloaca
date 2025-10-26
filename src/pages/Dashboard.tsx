@@ -309,83 +309,83 @@ const Dashboard: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <Header showAuth={true} />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="font-space-grotesk text-3xl font-bold text-black mb-2">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="font-space-grotesk text-2xl sm:text-3xl font-bold text-black mb-2">
             {getTimeBasedGreeting()}, {getDisplayName()}!
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             Here's what's happening with your contracts today.
           </p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6">
               <div className="flex items-center">
-                <FileText className="h-8 w-8 text-primary" />
-                <div className="ml-4">
-                  <p className="text-2xl font-bold">{stats.totalContracts}</p>
-                  <p className="text-sm text-gray-600">Total Contracts</p>
+                <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+                <div className="ml-3 sm:ml-4">
+                  <p className="text-xl sm:text-2xl font-bold">{stats.totalContracts}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Total Contracts</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6">
               <div className="flex items-center">
-                <TrendingUp className="h-8 w-8 text-green-500" />
-                <div className="ml-4">
-                  <p className="text-2xl font-bold">{stats.thisMonth}</p>
-                  <p className="text-sm text-gray-600">This Month</p>
+                <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-green-500" />
+                <div className="ml-3 sm:ml-4">
+                  <p className="text-xl sm:text-2xl font-bold">{stats.thisMonth}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">This Month</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6">
               <div className="flex items-center">
-                <Clock className="h-8 w-8 text-blue-500" />
-                <div className="ml-4">
-                  <p className="text-2xl font-bold">{stats.avgAnalysisTime}</p>
-                  <p className="text-sm text-gray-600">Avg Analysis Time</p>
+                <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500" />
+                <div className="ml-3 sm:ml-4">
+                  <p className="text-xl sm:text-2xl font-bold">{stats.avgAnalysisTime}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Avg Analysis Time</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6">
               <div className="flex items-center">
-                <div className="h-8 w-8 bg-red-100 rounded-full flex items-center justify-center">
-                  <span className="text-red-600 font-bold text-sm">!</span>
+                <div className="h-6 w-6 sm:h-8 sm:w-8 bg-red-100 rounded-full flex items-center justify-center">
+                  <span className="text-red-600 font-bold text-xs sm:text-sm">!</span>
                 </div>
-                <div className="ml-4">
-                  <p className="text-2xl font-bold">{stats.risksSaved}</p>
-                  <p className="text-sm text-gray-600">Risks Identified</p>
+                <div className="ml-3 sm:ml-4">
+                  <p className="text-xl sm:text-2xl font-bold">{stats.risksSaved}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Risks Identified</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Upload Widget */}
           <div className="lg:col-span-1">
             <Card>
-              <CardHeader>
-                <CardTitle>Upload New Contract</CardTitle>
-                <CardDescription>
+              <CardHeader className="pb-4 sm:pb-6">
+                <CardTitle className="text-lg sm:text-xl">Upload New Contract</CardTitle>
+                <CardDescription className="text-sm sm:text-base">
                   Drag and drop your contract file or click to browse
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div 
-                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 cursor-pointer ${
+                  className={`border-2 border-dashed rounded-lg p-6 sm:p-8 text-center transition-all duration-200 cursor-pointer min-h-[120px] sm:min-h-[140px] ${
                     isDragOver 
                       ? 'border-primary bg-primary-50 scale-105' 
                       : uploadStatus === 'error'
@@ -402,14 +402,14 @@ const Dashboard: React.FC = () => {
                   onClick={handleChooseFileClick}
                 >
                   {uploadStatus === 'success' ? (
-                    <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                    <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 text-green-500 mx-auto mb-4" />
                   ) : uploadStatus === 'error' ? (
-                    <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                    <AlertCircle className="h-8 w-8 sm:h-12 sm:w-12 text-red-500 mx-auto mb-4" />
                   ) : (
-                    <Upload className={`h-12 w-12 mx-auto mb-4 ${isDragOver ? 'text-primary' : 'text-gray-400'}`} />
+                    <Upload className={`h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-4 ${isDragOver ? 'text-primary' : 'text-gray-400'}`} />
                   )}
                   
-                  <p className={`text-sm mb-4 ${
+                  <p className={`text-sm mb-2 sm:mb-4 ${
                     uploadStatus === 'error' ? 'text-red-600' :
                     uploadStatus === 'success' ? 'text-green-600' :
                     uploadStatus === 'uploading' ? 'text-blue-600' :
@@ -420,7 +420,7 @@ const Dashboard: React.FC = () => {
                   
                   {uploadStatus === 'uploading' ? (
                     <div className="flex flex-col items-center">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary mb-2" />
+                      <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin text-primary mb-2" />
                       <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
                         <div 
                           className="bg-primary h-2 rounded-full transition-all duration-300" 
@@ -436,7 +436,7 @@ const Dashboard: React.FC = () => {
                         handleChooseFileClick()
                       }}
                       disabled={false}
-                      className={uploadStatus === 'success' ? 'bg-green-600 hover:bg-green-700' : ''}
+                      className={`min-h-[44px] text-sm sm:text-base ${uploadStatus === 'success' ? 'bg-green-600 hover:bg-green-700' : ''}`}
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Choose File
@@ -469,44 +469,44 @@ const Dashboard: React.FC = () => {
           {/* Recent Contracts */}
           <div className="lg:col-span-2">
             <Card>
-              <CardHeader>
-                <CardTitle>Recent Contracts</CardTitle>
-                <CardDescription>
+              <CardHeader className="pb-4 sm:pb-6">
+                <CardTitle className="text-lg sm:text-xl">Recent Contracts</CardTitle>
+                <CardDescription className="text-sm sm:text-base">
                   Your latest contract analyses and their status
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {isLoadingContracts ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
-                      <span className="text-gray-600">Loading contracts...</span>
+                    <div className="flex items-center justify-center py-6 sm:py-8">
+                      <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin text-primary mr-2" />
+                      <span className="text-sm sm:text-base text-gray-600">Loading contracts...</span>
                     </div>
                   ) : contracts.length === 0 ? (
-                    <div className="text-center py-8">
-                      <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600">No contracts uploaded yet</p>
-                      <p className="text-sm text-gray-500">Upload your first contract to get started</p>
+                    <div className="text-center py-6 sm:py-8">
+                      <FileText className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-sm sm:text-base text-gray-600">No contracts uploaded yet</p>
+                      <p className="text-xs sm:text-sm text-gray-500">Upload your first contract to get started</p>
                     </div>
                   ) : (
                     contracts.slice(0, 5).map((contract) => (
-                      <div key={contract.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                        <div className="flex items-center space-x-4">
-                          <div className="p-2 bg-primary-100 rounded-lg">
-                            <FileText className="h-5 w-5 text-primary" />
+                      <div key={contract.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 space-y-3 sm:space-y-0">
+                        <div className="flex items-center space-x-3 sm:space-x-4">
+                          <div className="p-2 bg-primary-100 rounded-lg flex-shrink-0">
+                            <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                           </div>
-                          <div>
-                            <h4 className="font-medium">{contract.title}</h4>
-                            <p className="text-sm text-gray-600">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-medium text-sm sm:text-base truncate">{contract.title}</h4>
+                            <p className="text-xs sm:text-sm text-gray-600">
                               Uploaded on {new Date(contract.created_at).toLocaleDateString()}
                             </p>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-gray-500 mt-1 line-clamp-2">
                               {getContractSummary(contract)}
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-4">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        <div className="flex items-center justify-between sm:justify-end space-x-3 sm:space-x-4">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
                             contract.analysis_status === 'completed' ? 'bg-green-100 text-green-800' :
                             contract.analysis_status === 'processing' ? 'bg-blue-100 text-blue-800' :
                             contract.analysis_status === 'failed' ? 'bg-red-100 text-red-800' :
@@ -519,6 +519,7 @@ const Dashboard: React.FC = () => {
                           <Button 
                             variant="outline" 
                             size="sm"
+                            className="min-h-[40px] text-xs sm:text-sm"
                             onClick={() => handleContractView(contract.id)}
                             disabled={contract.analysis_status !== 'completed'}
                           >
@@ -529,13 +530,8 @@ const Dashboard: React.FC = () => {
                     ))
                   )}
                 </div>
-                <div className="mt-6 text-center">
-                  <Button variant="outline">
-                    View All Contracts
-                  </Button>
-                </div>
-                <div className="mt-6 text-center">
-                  <Button variant="outline">
+                <div className="mt-4 sm:mt-6 text-center">
+                  <Button variant="outline" className="min-h-[44px] text-sm sm:text-base">
                     View All Contracts
                   </Button>
                 </div>

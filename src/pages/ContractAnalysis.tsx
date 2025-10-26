@@ -255,12 +255,19 @@ const ContractAnalysis: React.FC = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-center space-x-4">
-              <Button variant="outline" onClick={handleDownloadReport}>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-md mx-auto">
+              <Button 
+                variant="outline" 
+                onClick={handleDownloadReport}
+                className="w-full sm:w-auto min-h-[44px] px-6 py-3"
+              >
                 <Download className="h-4 w-4 mr-2" />
                 Download Report
               </Button>
-              <Button onClick={handleChatWithAI}>
+              <Button 
+                onClick={handleChatWithAI}
+                className="w-full sm:w-auto min-h-[44px] px-6 py-3"
+              >
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Chat with AI
               </Button>
