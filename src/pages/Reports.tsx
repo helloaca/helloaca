@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Search, Filter, Download, Share2, Trash2, Eye, Plus, FileText, Calendar, Clock, AlertCircle, Loader2 } from 'lucide-react'
+import { ArrowLeft, Search, Download, Share2, Trash2, Eye, Plus, FileText, Calendar, Clock, AlertCircle, Loader2 } from 'lucide-react'
 import Header from '../components/layout/Header'
 import Footer from '../components/layout/Footer'
 import Button from '../components/ui/Button'
