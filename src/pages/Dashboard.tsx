@@ -25,7 +25,7 @@ const Dashboard: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Real contract data
-  const [contracts, setContracts] = useState<Contract[]>([])
+  const [contracts, setContracts] = useState<Array<Contract & { analysis?: any }>>([])
   const [isLoadingContracts, setIsLoadingContracts] = useState(false)
   const [stats, setStats] = useState({
     totalContracts: 0,
@@ -44,7 +44,7 @@ const Dashboard: React.FC = () => {
   const loadUserContracts = async () => {
     try {
       setIsLoadingContracts(true)
-      const userContracts = await ContractService.getUserContracts(user!.id)
+      const userContracts = await ContractService.getUserContractsWithAnalysis(user!.id)
       setContracts(userContracts)
       
       // Calculate stats
@@ -57,11 +57,19 @@ const Dashboard: React.FC = () => {
         return contractDate.getMonth() === thisMonth && contractDate.getFullYear() === thisYear
       })
 
+      // Calculate total risks from all completed contracts
+      let totalRisks = 0
+      userContracts.forEach(contract => {
+        if (contract.analysis?.analysis_data?.structuredAnalysis?.keyFindings) {
+          totalRisks += contract.analysis.analysis_data.structuredAnalysis.keyFindings.length
+        }
+      })
+
       setStats({
         totalContracts: userContracts.length,
         thisMonth: thisMonthContracts.length,
         avgAnalysisTime: '32s',
-        risksSaved: userContracts.filter(c => c.analysis_status === 'completed').length
+        risksSaved: totalRisks
       })
     } catch (error) {
       console.error('Error loading contracts:', error)
@@ -229,6 +237,54 @@ const Dashboard: React.FC = () => {
     }
     
     return 'User'
+  }
+
+  // Helper function to get contract summary
+  const getContractSummary = (contract: Contract & { analysis?: any }): string => {
+    console.log('🔍 Getting summary for contract:', contract.title)
+    console.log('📊 Analysis data structure:', {
+      hasAnalysis: !!contract.analysis,
+      hasAnalysisData: !!contract.analysis?.analysis_data,
+      hasDirectSummary: !!contract.analysis?.analysis_data?.summary,
+      hasStructuredAnalysis: !!contract.analysis?.analysis_data?.structuredAnalysis,
+      hasStructuredSummary: !!contract.analysis?.analysis_data?.structuredAnalysis?.summary
+    })
+    
+    // First check: Look for summary at the root level of analysis_data (correct location)
+    if (contract.analysis?.analysis_data?.summary) {
+      const fullSummary = contract.analysis.analysis_data.summary
+      console.log('✅ Found summary at root level:', fullSummary.substring(0, 100) + '...')
+      // Extract first sentence or first 100 characters
+      const firstSentence = fullSummary.split('.')[0] + '.'
+      return firstSentence.length > 100 ? fullSummary.substring(0, 100) + '...' : firstSentence
+    }
+    
+    // Second check: Look for summary in structuredAnalysis (backward compatibility)
+    if (contract.analysis?.analysis_data?.structuredAnalysis?.summary) {
+      const fullSummary = contract.analysis.analysis_data.structuredAnalysis.summary
+      console.log('✅ Found summary in structuredAnalysis (legacy):', fullSummary.substring(0, 100) + '...')
+      // Extract first sentence or first 100 characters
+      const firstSentence = fullSummary.split('.')[0] + '.'
+      return firstSentence.length > 100 ? fullSummary.substring(0, 100) + '...' : firstSentence
+    }
+    
+    console.log('❌ No summary found in analysis data, using fallback based on title')
+    
+    // Fallback: try to infer from title
+    const title = contract.title.toLowerCase()
+    if (title.includes('service') || title.includes('freelance')) {
+      return 'Service agreement for professional services.'
+    } else if (title.includes('employment') || title.includes('job')) {
+      return 'Employment contract with terms and conditions.'
+    } else if (title.includes('nda') || title.includes('confidential')) {
+      return 'Non-disclosure agreement with confidentiality terms.'
+    } else if (title.includes('lease') || title.includes('rental')) {
+      return 'Lease agreement for property rental.'
+    } else if (title.includes('purchase') || title.includes('sale')) {
+      return 'Purchase agreement for goods or services.'
+    }
+    
+    return 'Contract document with standard terms and conditions.'
   }
 
   // Show loading state while data is being rehydrated or initially loaded
@@ -444,6 +500,9 @@ const Dashboard: React.FC = () => {
                             <p className="text-sm text-gray-600">
                               Uploaded on {new Date(contract.created_at).toLocaleDateString()}
                             </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {getContractSummary(contract)}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center space-x-4">
@@ -469,6 +528,11 @@ const Dashboard: React.FC = () => {
                       </div>
                     ))
                   )}
+                </div>
+                <div className="mt-6 text-center">
+                  <Button variant="outline">
+                    View All Contracts
+                  </Button>
                 </div>
                 <div className="mt-6 text-center">
                   <Button variant="outline">

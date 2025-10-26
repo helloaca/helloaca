@@ -406,6 +406,48 @@ export class ContractService {
     return data
   }
 
+  static async getUserContractsWithAnalysis(userId: string): Promise<Array<Contract & { analysis?: ContractAnalysis }>> {
+    try {
+      const { data: contracts, error: contractsError } = await supabase
+        .from('contracts')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+
+      if (contractsError) {
+        console.error('Error fetching contracts:', contractsError)
+        throw new Error('Failed to fetch contracts')
+      }
+
+      if (!contracts || contracts.length === 0) {
+        return []
+      }
+
+      // Fetch analysis data for all contracts - FIXED: using 'reports' table instead of 'contract_analyses'
+      const contractIds = contracts.map(c => c.id)
+      const { data: analyses, error: analysesError } = await supabase
+        .from('reports')
+        .select('*')
+        .in('contract_id', contractIds)
+
+      if (analysesError) {
+        console.error('Error fetching analyses:', analysesError)
+        // Don't throw error, just return contracts without analysis
+      }
+
+      // Combine contracts with their analysis data
+      const contractsWithAnalysis = contracts.map(contract => ({
+        ...contract,
+        analysis: analyses?.find(analysis => analysis.contract_id === contract.id)
+      }))
+
+      return contractsWithAnalysis
+    } catch (error) {
+      console.error('Error in getUserContractsWithAnalysis:', error)
+      throw error
+    }
+  }
+
   static async getUserContracts(userId: string): Promise<Contract[]> {
     try {
       const { data, error } = await supabase
