@@ -6,6 +6,7 @@ import Footer from '../components/layout/Footer'
 import Button from '../components/ui/Button'
 import { useAuth } from '../contexts/AuthContext'
 import { ContractService, Contract, ContractAnalysis } from '../lib/contractService'
+import { generatePDFReport } from '../lib/pdfGenerator'
 import { toast } from 'sonner'
 
 interface ReportData extends Contract {
@@ -24,6 +25,7 @@ const Reports: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [downloadingReports, setDownloadingReports] = useState<Set<string>>(new Set())
 
   // Load reports on component mount
   useEffect(() => {
@@ -93,36 +95,37 @@ const Reports: React.FC = () => {
         return
       }
 
-      // Create a comprehensive report content
-      const reportContent = {
-        title: report.title,
-        fileName: report.file_name,
-        uploadDate: report.upload_date,
-        analysisDate: report.analysis.created_at,
-        summary: report.analysis.analysis_data?.summary || 'No summary available',
-        keyFindings: report.analysis.analysis_data?.structuredAnalysis?.keyFindings || [],
-        clauseAnalysis: report.analysis.analysis_data?.structuredAnalysis?.clauseAnalysis || [],
-        riskScore: report.analysis.analysis_data?.structuredAnalysis?.riskScore || 'N/A'
-      }
+      // Add report to downloading set
+      setDownloadingReports(prev => new Set(prev).add(report.id))
 
-      // Convert to JSON string with formatting
-      const jsonContent = JSON.stringify(reportContent, null, 2)
-      
-      // Create and download file
-      const blob = new Blob([jsonContent], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${report.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_analysis_report.json`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      // Show loading toast
+      const loadingToast = toast.loading('Generating PDF report...')
 
-      toast.success('Report downloaded successfully')
+      // Generate and download PDF
+      await new Promise(resolve => setTimeout(resolve, 500)) // Small delay for UX
+      generatePDFReport(report)
+
+      // Remove from downloading set
+      setDownloadingReports(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(report.id)
+        return newSet
+      })
+
+      // Dismiss loading toast and show success
+      toast.dismiss(loadingToast)
+      toast.success('PDF report downloaded successfully')
     } catch (error) {
       console.error('Download error:', error)
-      toast.error('Failed to download report')
+      
+      // Remove from downloading set
+      setDownloadingReports(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(report.id)
+        return newSet
+      })
+      
+      toast.error('Failed to generate PDF report')
     }
   }
 
@@ -400,10 +403,15 @@ const Reports: React.FC = () => {
                             {report.analysis && (
                               <button
                                 onClick={() => handleDownload(report)}
-                                className="text-green-600 hover:text-green-800 p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                disabled={downloadingReports.has(report.id)}
+                                className="text-green-600 hover:text-green-800 p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Download Report"
                               >
-                                <Download className="w-4 h-4" />
+                                {downloadingReports.has(report.id) ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Download className="w-4 h-4" />
+                                )}
                               </button>
                             )}
                             <button
@@ -465,10 +473,15 @@ const Reports: React.FC = () => {
                           </button>
                           <button
                             onClick={() => handleDownload(report)}
-                            className="text-green-600 hover:text-green-800 p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                            disabled={downloadingReports.has(report.id)}
+                            className="text-green-600 hover:text-green-800 p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Download"
                           >
-                            <Download className="w-4 h-4" />
+                            {downloadingReports.has(report.id) ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Download className="w-4 h-4" />
+                            )}
                           </button>
                         </>
                       )}
