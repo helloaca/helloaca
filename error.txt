@@ -1,100 +1,154 @@
 {
-  "brandConfig": {
-    "companyName": "Your Company Name",
-    "primaryColor": "#3B82F6",
-    "secondaryColor": "#1E40AF",
-    "backgroundColor": "#F9FAFB",
-    "textColor": "#111827",
-    "mutedTextColor": "#6B7280",
-    "borderColor": "#E5E7EB",
-    "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
-    "logoUrl": "https://your-domain.com/logo.png",
-    "websiteUrl": "https://your-domain.com",
-    "supportEmail": "support@your-domain.com"
-  },
-  "emailTemplates": {
-    "confirmSignup": {
-      "subject": "Confirm your email address",
-      "preheader": "Please verify your email to complete registration",
-      "heading": "Confirm Your Email",
-      "body": "Thank you for signing up. Please confirm your email address to activate your account.",
-      "buttonText": "Confirm Email",
-      "buttonUrl": "{{ .ConfirmationURL }}",
-      "footerText": "If you did not create an account, you can safely ignore this email.",
-      "htmlTemplate": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Confirm Your Email</title></head><body style=\"margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#F9FAFB\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#F9FAFB;padding:40px 20px\"><tr><td align=\"center\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)\"><tr><td style=\"padding:40px 40px 30px;text-align:center;border-bottom:1px solid #E5E7EB\"><img src=\"{{LOGO_URL}}\" alt=\"{{COMPANY_NAME}}\" style=\"height:40px;margin-bottom:20px\"><h1 style=\"margin:0;font-size:24px;font-weight:600;color:#111827\">Confirm Your Email</h1></td></tr><tr><td style=\"padding:40px\"><p style=\"margin:0 0 24px;font-size:16px;line-height:24px;color:#111827\">Thank you for signing up. Please confirm your email address to activate your account.</p><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td align=\"center\" style=\"padding:0 0 24px\"><a href=\"{{ .ConfirmationURL }}\" style=\"display:inline-block;padding:12px 32px;background-color:#3B82F6;color:#ffffff;text-decoration:none;border-radius:6px;font-size:16px;font-weight:500\">Confirm Email</a></td></tr></table><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280\">If the button above doesn't work, copy and paste this link into your browser:</p><p style=\"margin:8px 0 0;font-size:14px;line-height:20px;color:#3B82F6;word-break:break-all\">{{ .ConfirmationURL }}</p></td></tr><tr><td style=\"padding:30px 40px;background-color:#F9FAFB;border-top:1px solid #E5E7EB\"><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280;text-align:center\">If you did not create an account, you can safely ignore this email.</p><p style=\"margin:16px 0 0;font-size:12px;line-height:16px;color:#9CA3AF;text-align:center\">© {{YEAR}} {{COMPANY_NAME}}. All rights reserved.<br><a href=\"{{WEBSITE_URL}}\" style=\"color:#9CA3AF;text-decoration:none\">{{WEBSITE_URL}}</a></p></td></tr></table></td></tr></table></body></html>"
+  "instruction": "Fix all TypeScript errors in src/lib/contractService.ts",
+  "fileToEdit": "src/lib/contractService.ts",
+  "fixes": [
+    {
+      "fix_id": 1,
+      "error_type": "Type Definition - Missing Properties",
+      "location": "Line 75 (interface/type definition)",
+      "action": "UPDATE_TYPE_DEFINITION",
+      "description": "Add 'recommendations' property to AnalysisResult interface",
+      "find": "interface AnalysisResult {\n  overallRiskLevel: string;\n  keyFindings: {\n    title: string;\n    description: string;\n    severity: \"Low\" | \"Medium\" | \"High\";\n    category: \"risk\" | \"opportunity\" | \"obligation\";\n  }[];\n  clauseAnalysis: {\n    // ... properties\n  }[];\n  summary: string;\n}",
+      "replace_with": "interface AnalysisResult {\n  overallRiskLevel: string;\n  keyFindings: {\n    title: string;\n    description: string;\n    severity: \"Low\" | \"Medium\" | \"High\";\n    category: \"risk\" | \"opportunity\" | \"obligation\" | \"info\" | \"compliance\";\n  }[];\n  clauseAnalysis: {\n    // ... properties\n  }[];\n  summary: string;\n  recommendations?: Array<{\n    priority: \"Low\" | \"Medium\" | \"High\";\n    category: string;\n    description: string;\n    action: string;\n    title?: string;\n  }>;\n}",
+      "note": "This adds the 'recommendations' property and expands 'category' to include 'info' and 'compliance'"
     },
-    "inviteUser": {
-      "subject": "You've been invited to join {{ .SiteURL }}",
-      "preheader": "Accept your invitation to get started",
-      "heading": "You're Invited",
-      "body": "You've been invited to join our platform. Click the button below to accept your invitation and set up your account.",
-      "buttonText": "Accept Invitation",
-      "buttonUrl": "{{ .ConfirmationURL }}",
-      "footerText": "This invitation was sent to {{ .Email }}. If you weren't expecting this invitation, you can ignore this email.",
-      "htmlTemplate": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>You're Invited</title></head><body style=\"margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#F9FAFB\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#F9FAFB;padding:40px 20px\"><tr><td align=\"center\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)\"><tr><td style=\"padding:40px 40px 30px;text-align:center;border-bottom:1px solid #E5E7EB\"><img src=\"{{LOGO_URL}}\" alt=\"{{COMPANY_NAME}}\" style=\"height:40px;margin-bottom:20px\"><h1 style=\"margin:0;font-size:24px;font-weight:600;color:#111827\">You're Invited</h1></td></tr><tr><td style=\"padding:40px\"><p style=\"margin:0 0 24px;font-size:16px;line-height:24px;color:#111827\">You've been invited to join our platform. Click the button below to accept your invitation and set up your account.</p><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td align=\"center\" style=\"padding:0 0 24px\"><a href=\"{{ .ConfirmationURL }}\" style=\"display:inline-block;padding:12px 32px;background-color:#3B82F6;color:#ffffff;text-decoration:none;border-radius:6px;font-size:16px;font-weight:500\">Accept Invitation</a></td></tr></table><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280\">If the button above doesn't work, copy and paste this link into your browser:</p><p style=\"margin:8px 0 0;font-size:14px;line-height:20px;color:#3B82F6;word-break:break-all\">{{ .ConfirmationURL }}</p></td></tr><tr><td style=\"padding:30px 40px;background-color:#F9FAFB;border-top:1px solid #E5E7EB\"><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280;text-align:center\">This invitation was sent to {{ .Email }}. If you weren't expecting this invitation, you can ignore this email.</p><p style=\"margin:16px 0 0;font-size:12px;line-height:16px;color:#9CA3AF;text-align:center\">© {{YEAR}} {{COMPANY_NAME}}. All rights reserved.<br><a href=\"{{WEBSITE_URL}}\" style=\"color:#9CA3AF;text-decoration:none\">{{WEBSITE_URL}}</a></p></td></tr></table></td></tr></table></body></html>"
+    {
+      "fix_id": 2,
+      "error_type": "Type Definition - Category Values",
+      "location": "Line 81 (keyFindings category property)",
+      "action": "UPDATE_UNION_TYPE",
+      "description": "Expand category type to include 'info' and 'compliance'",
+      "find": "category: \"risk\" | \"opportunity\" | \"obligation\"",
+      "replace_with": "category: \"risk\" | \"opportunity\" | \"obligation\" | \"info\" | \"compliance\"",
+      "affected_lines": [81, 969, 977, 985, 993, 1001]
     },
-    "magicLink": {
-      "subject": "Your sign-in link",
-      "preheader": "Click to sign in securely",
-      "heading": "Sign In",
-      "body": "Click the button below to sign in to your account. This link will expire in 1 hour.",
-      "buttonText": "Sign In",
-      "buttonUrl": "{{ .ConfirmationURL }}",
-      "footerText": "If you did not request this link, you can safely ignore this email.",
-      "htmlTemplate": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Sign In</title></head><body style=\"margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#F9FAFB\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#F9FAFB;padding:40px 20px\"><tr><td align=\"center\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)\"><tr><td style=\"padding:40px 40px 30px;text-align:center;border-bottom:1px solid #E5E7EB\"><img src=\"{{LOGO_URL}}\" alt=\"{{COMPANY_NAME}}\" style=\"height:40px;margin-bottom:20px\"><h1 style=\"margin:0;font-size:24px;font-weight:600;color:#111827\">Sign In</h1></td></tr><tr><td style=\"padding:40px\"><p style=\"margin:0 0 24px;font-size:16px;line-height:24px;color:#111827\">Click the button below to sign in to your account. This link will expire in 1 hour.</p><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td align=\"center\" style=\"padding:0 0 24px\"><a href=\"{{ .ConfirmationURL }}\" style=\"display:inline-block;padding:12px 32px;background-color:#3B82F6;color:#ffffff;text-decoration:none;border-radius:6px;font-size:16px;font-weight:500\">Sign In</a></td></tr></table><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280\">If the button above doesn't work, copy and paste this link into your browser:</p><p style=\"margin:8px 0 0;font-size:14px;line-height:20px;color:#3B82F6;word-break:break-all\">{{ .ConfirmationURL }}</p></td></tr><tr><td style=\"padding:30px 40px;background-color:#F9FAFB;border-top:1px solid #E5E7EB\"><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280;text-align:center\">If you did not request this link, you can safely ignore this email.</p><p style=\"margin:16px 0 0;font-size:12px;line-height:16px;color:#9CA3AF;text-align:center\">© {{YEAR}} {{COMPANY_NAME}}. All rights reserved.<br><a href=\"{{WEBSITE_URL}}\" style=\"color:#9CA3AF;text-decoration:none\">{{WEBSITE_URL}}</a></p></td></tr></table></td></tr></table></body></html>"
-    },
-    "changeEmailAddress": {
-      "subject": "Confirm your new email address",
-      "preheader": "Verify your email change request",
-      "heading": "Confirm Email Change",
-      "body": "You recently requested to change your email address. Please confirm this change by clicking the button below.",
-      "buttonText": "Confirm New Email",
-      "buttonUrl": "{{ .ConfirmationURL }}",
-      "footerText": "If you did not request this change, please contact support immediately.",
-      "htmlTemplate": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Confirm Email Change</title></head><body style=\"margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#F9FAFB\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#F9FAFB;padding:40px 20px\"><tr><td align=\"center\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)\"><tr><td style=\"padding:40px 40px 30px;text-align:center;border-bottom:1px solid #E5E7EB\"><img src=\"{{LOGO_URL}}\" alt=\"{{COMPANY_NAME}}\" style=\"height:40px;margin-bottom:20px\"><h1 style=\"margin:0;font-size:24px;font-weight:600;color:#111827\">Confirm Email Change</h1></td></tr><tr><td style=\"padding:40px\"><p style=\"margin:0 0 24px;font-size:16px;line-height:24px;color:#111827\">You recently requested to change your email address. Please confirm this change by clicking the button below.</p><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td align=\"center\" style=\"padding:0 0 24px\"><a href=\"{{ .ConfirmationURL }}\" style=\"display:inline-block;padding:12px 32px;background-color:#3B82F6;color:#ffffff;text-decoration:none;border-radius:6px;font-size:16px;font-weight:500\">Confirm New Email</a></td></tr></table><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280\">If the button above doesn't work, copy and paste this link into your browser:</p><p style=\"margin:8px 0 0;font-size:14px;line-height:20px;color:#3B82F6;word-break:break-all\">{{ .ConfirmationURL }}</p></td></tr><tr><td style=\"padding:30px 40px;background-color:#F9FAFB;border-top:1px solid #E5E7EB\"><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280;text-align:center\">If you did not request this change, please contact support immediately at <a href=\"mailto:{{SUPPORT_EMAIL}}\" style=\"color:#3B82F6;text-decoration:none\">{{SUPPORT_EMAIL}}</a></p><p style=\"margin:16px 0 0;font-size:12px;line-height:16px;color:#9CA3AF;text-align:center\">© {{YEAR}} {{COMPANY_NAME}}. All rights reserved.<br><a href=\"{{WEBSITE_URL}}\" style=\"color:#9CA3AF;text-decoration:none\">{{WEBSITE_URL}}</a></p></td></tr></table></td></tr></table></body></html>"
-    },
-    "resetPassword": {
-      "subject": "Reset your password",
-      "preheader": "Click to create a new password",
-      "heading": "Reset Password",
-      "body": "You requested to reset your password. Click the button below to create a new password. This link will expire in 1 hour.",
-      "buttonText": "Reset Password",
-      "buttonUrl": "{{ .ConfirmationURL }}",
-      "footerText": "If you did not request a password reset, please ignore this email or contact support if you have concerns.",
-      "htmlTemplate": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Reset Password</title></head><body style=\"margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#F9FAFB\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#F9FAFB;padding:40px 20px\"><tr><td align=\"center\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)\"><tr><td style=\"padding:40px 40px 30px;text-align:center;border-bottom:1px solid #E5E7EB\"><img src=\"{{LOGO_URL}}\" alt=\"{{COMPANY_NAME}}\" style=\"height:40px;margin-bottom:20px\"><h1 style=\"margin:0;font-size:24px;font-weight:600;color:#111827\">Reset Password</h1></td></tr><tr><td style=\"padding:40px\"><p style=\"margin:0 0 24px;font-size:16px;line-height:24px;color:#111827\">You requested to reset your password. Click the button below to create a new password. This link will expire in 1 hour.</p><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td align=\"center\" style=\"padding:0 0 24px\"><a href=\"{{ .ConfirmationURL }}\" style=\"display:inline-block;padding:12px 32px;background-color:#3B82F6;color:#ffffff;text-decoration:none;border-radius:6px;font-size:16px;font-weight:500\">Reset Password</a></td></tr></table><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280\">If the button above doesn't work, copy and paste this link into your browser:</p><p style=\"margin:8px 0 0;font-size:14px;line-height:20px;color:#3B82F6;word-break:break-all\">{{ .ConfirmationURL }}</p></td></tr><tr><td style=\"padding:30px 40px;background-color:#F9FAFB;border-top:1px solid #E5E7EB\"><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280;text-align:center\">If you did not request a password reset, please ignore this email or contact support if you have concerns.</p><p style=\"margin:16px 0 0;font-size:12px;line-height:16px;color:#9CA3AF;text-align:center\">© {{YEAR}} {{COMPANY_NAME}}. All rights reserved.<br><a href=\"{{WEBSITE_URL}}\" style=\"color:#9CA3AF;text-decoration:none\">{{WEBSITE_URL}}</a></p></td></tr></table></td></tr></table></body></html>"
-    },
-    "reauthentication": {
-      "subject": "Verify your identity",
-      "preheader": "Confirm it's you before continuing",
-      "heading": "Verify Your Identity",
-      "body": "For your security, please verify your identity to continue with this action.",
-      "buttonText": "Verify Identity",
-      "buttonUrl": "{{ .ConfirmationURL }}",
-      "footerText": "If you did not attempt this action, please secure your account immediately.",
-      "htmlTemplate": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Verify Your Identity</title></head><body style=\"margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#F9FAFB\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#F9FAFB;padding:40px 20px\"><tr><td align=\"center\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)\"><tr><td style=\"padding:40px 40px 30px;text-align:center;border-bottom:1px solid #E5E7EB\"><img src=\"{{LOGO_URL}}\" alt=\"{{COMPANY_NAME}}\" style=\"height:40px;margin-bottom:20px\"><h1 style=\"margin:0;font-size:24px;font-weight:600;color:#111827\">Verify Your Identity</h1></td></tr><tr><td style=\"padding:40px\"><p style=\"margin:0 0 24px;font-size:16px;line-height:24px;color:#111827\">For your security, please verify your identity to continue with this action.</p><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td align=\"center\" style=\"padding:0 0 24px\"><a href=\"{{ .ConfirmationURL }}\" style=\"display:inline-block;padding:12px 32px;background-color:#3B82F6;color:#ffffff;text-decoration:none;border-radius:6px;font-size:16px;font-weight:500\">Verify Identity</a></td></tr></table><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280\">If the button above doesn't work, copy and paste this link into your browser:</p><p style=\"margin:8px 0 0;font-size:14px;line-height:20px;color:#3B82F6;word-break:break-all\">{{ .ConfirmationURL }}</p></td></tr><tr><td style=\"padding:30px 40px;background-color:#F9FAFB;border-top:1px solid #E5E7EB\"><p style=\"margin:0;font-size:14px;line-height:20px;color:#6B7280;text-align:center\">If you did not attempt this action, please secure your account immediately at <a href=\"{{WEBSITE_URL}}\" style=\"color:#3B82F6;text-decoration:none\">{{WEBSITE_URL}}</a></p><p style=\"margin:16px 0 0;font-size:12px;line-height:16px;color:#9CA3AF;text-align:center\">© {{YEAR}} {{COMPANY_NAME}}. All rights reserved.<br><a href=\"{{WEBSITE_URL}}\" style=\"color:#9CA3AF;text-decoration:none\">{{WEBSITE_URL}}</a></p></td></tr></table></td></tr></table></body></html>"
+    {
+      "fix_id": 3,
+      "error_type": "Unused Variables",
+      "location": "Lines 226, 350, 522, 775, 777",
+      "action": "REMOVE_OR_COMMENT",
+      "description": "Remove unused variable declarations",
+      "changes": [
+        {
+          "line": 226,
+          "variable": "retryWithConcisePrompt",
+          "action": "DELETE_LINE",
+          "original": "const retryWithConcisePrompt = ...",
+          "replace_with": "// Removed unused variable: retryWithConcisePrompt"
+        },
+        {
+          "line": 350,
+          "variable": "buildAnalysisPrompt",
+          "action": "DELETE_LINE",
+          "original": "const buildAnalysisPrompt = ...",
+          "replace_with": "// Removed unused variable: buildAnalysisPrompt"
+        },
+        {
+          "line": 522,
+          "variable": "transformAnalysisData",
+          "action": "DELETE_LINE",
+          "original": "const transformAnalysisData = ...",
+          "replace_with": "// Removed unused variable: transformAnalysisData"
+        },
+        {
+          "line": 775,
+          "variable": "hasForcemajeure",
+          "action": "DELETE_LINE",
+          "original": "const hasForcemajeure = ...",
+          "replace_with": "// Removed unused variable: hasForcemajeure"
+        },
+        {
+          "line": 777,
+          "variable": "hasDeliverables",
+          "action": "DELETE_LINE",
+          "original": "const hasDeliverables = ...",
+          "replace_with": "// Removed unused variable: hasDeliverables"
+        }
+      ]
     }
+  ],
+  "step_by_step_instructions": [
+    {
+      "step": 1,
+      "title": "Fix Type Definition at Line 75",
+      "file": "src/lib/contractService.ts",
+      "line": 75,
+      "action": "Find the AnalysisResult interface or type definition around line 75",
+      "modification": "Add these properties to the interface:\n1. Expand 'category' union type to include 'info' and 'compliance'\n2. Add 'recommendations' as an optional property"
+    },
+    {
+      "step": 2,
+      "title": "Remove Unused Variables",
+      "file": "src/lib/contractService.ts",
+      "action": "Delete or comment out the following lines",
+      "lines_to_modify": [
+        {
+          "line": 226,
+          "instruction": "Delete the entire line declaring 'retryWithConcisePrompt'"
+        },
+        {
+          "line": 350,
+          "instruction": "Delete the entire line declaring 'buildAnalysisPrompt'"
+        },
+        {
+          "line": 522,
+          "instruction": "Delete the entire line declaring 'transformAnalysisData'"
+        },
+        {
+          "line": 775,
+          "instruction": "Delete the entire line declaring 'hasForcemajeure'"
+        },
+        {
+          "line": 777,
+          "instruction": "Delete the entire line declaring 'hasDeliverables'"
+        }
+      ]
+    },
+    {
+      "step": 3,
+      "title": "Verify Fixes",
+      "action": "Run TypeScript compiler to verify all errors are resolved",
+      "commands": [
+        "npm run build",
+        "OR",
+        "tsc --noEmit"
+      ]
+    }
+  ],
+  "complete_type_definition_example": {
+    "description": "Complete updated interface definition to replace at line 75",
+    "code": "interface AnalysisResult {\n  structuredAnalysis: {\n    overallRiskLevel: string;\n    keyFindings: {\n      title: string;\n      description: string;\n      severity: \"Low\" | \"Medium\" | \"High\";\n      category: \"risk\" | \"opportunity\" | \"obligation\" | \"info\" | \"compliance\";\n    }[];\n    clauseAnalysis: {\n      clauseTitle: string;\n      riskLevel: \"Low\" | \"Medium\" | \"High\";\n      analysis: string;\n      recommendations: string[];\n    }[];\n    summary: string;\n    recommendations?: {\n      title?: string;\n      priority: \"Low\" | \"Medium\" | \"High\";\n      category: string;\n      description: string;\n      action: string;\n    }[];\n  };\n}"
   },
-  "instructions": {
-    "setup": [
-      "1. Update brandConfig with your company details and brand colors",
-      "2. Replace placeholder values: {{LOGO_URL}}, {{COMPANY_NAME}}, {{WEBSITE_URL}}, {{SUPPORT_EMAIL}}, {{YEAR}}",
-      "3. Keep Supabase variables intact: {{ .ConfirmationURL }}, {{ .Email }}, {{ .SiteURL }}",
-      "4. Go to Supabase Dashboard > Authentication > Email Templates",
-      "5. For each template type, paste the corresponding htmlTemplate",
-      "6. Test each template before deploying to production"
+  "testing": {
+    "before_commit": [
+      "Run: npm run build",
+      "Ensure no TypeScript errors",
+      "Test the application locally"
     ],
-    "customization": [
-      "Adjust colors in the style attributes to match your brand",
-      "Modify font-family to match your website typography",
-      "Change border-radius values for sharper or rounder corners",
-      "Update padding/spacing values for tighter or looser layouts",
-      "Add your logo URL and ensure it's publicly accessible"
-    ],
-    "notes": [
-      "All templates use inline CSS for maximum email client compatibility",
-      "Templates are responsive and work on mobile devices",
-      "Design is intentionally minimal and formal",
-      "Supabase template variables ({{ .ConfirmationURL }}, etc.) will be replaced automatically"
+    "after_commit": [
+      "Push to GitHub",
+      "Monitor Vercel deployment",
+      "Verify successful build"
+    ]
+  },
+  "alternative_quick_fix": {
+    "description": "If you want to deploy immediately without fixing types",
+    "file": "tsconfig.json",
+    "action": "Add these compiler options",
+    "code": "{\n  \"compilerOptions\": {\n    \"noUnusedLocals\": false,\n    \"noUnusedParameters\": false,\n    \"strict\": false\n  }\n}",
+    "warning": "This is NOT recommended for production. Fix the actual type errors instead."
+  },
+  "summary": {
+    "total_errors": 14,
+    "critical_errors": 9,
+    "warnings": 5,
+    "files_affected": 1,
+    "estimated_time": "5-10 minutes",
+    "difficulty": "Easy",
+    "main_fixes": [
+      "Update AnalysisResult interface to include 'recommendations' property",
+      "Expand 'category' type to include 'info' and 'compliance'",
+      "Remove 5 unused variable declarations"
     ]
   }
 }

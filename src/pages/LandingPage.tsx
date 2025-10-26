@@ -214,7 +214,7 @@ const LandingPage: React.FC = () => {
                   variant="outline" 
                   className="w-full"
                   onClick={() => {
-                    trackPricing.planSelect('free')
+                    trackPricing.selectPlan('free')
                     navigate('/register')
                   }}
                 >
@@ -257,7 +257,7 @@ const LandingPage: React.FC = () => {
                 <Button 
                   className="w-full"
                   onClick={() => {
-                    trackPricing.planSelect('pro')
+                    trackPricing.selectPlan('pro')
                     navigate('/register')
                   }}
                 >
@@ -296,7 +296,7 @@ const LandingPage: React.FC = () => {
                   variant="outline" 
                   className="w-full"
                   onClick={() => {
-                    trackPricing.planSelect('business')
+                    trackPricing.selectPlan('business')
                     navigate('/register')
                   }}
                 >
