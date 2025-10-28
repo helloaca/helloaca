@@ -5,7 +5,7 @@
 [![Vite](https://img.shields.io/badge/Vite-5.0.8-646CFF.svg)](https://vitejs.dev/)
 [![Supabase](https://img.shields.io/badge/Supabase-Backend-green.svg)](https://supabase.com/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.3.6-38B2AC.svg)](https://tailwindcss.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](#license)
 
 > **AI-powered contract analysis platform that helps small law firms, real estate agents, and business owners detect contract risks, clauses, and obligations within 30 seconds.**
 
@@ -247,7 +247,23 @@ We welcome contributions! Please follow these guidelines:
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+**Copyright © 2025. All rights reserved.**
+
+This software is proprietary and confidential. This code is made available for viewing and reference purposes only.
+
+**You may NOT:**
+- Use this code in your own projects
+- Copy, modify, or distribute this code
+- Use this code for commercial purposes
+- Create derivative works based on this code
+- Reverse engineer or decompile this software
+- Share this code with third parties
+
+**Written permission must be obtained from the copyright holder for any use.**
+
+For licensing inquiries, contact: [afrotechboss@yahoo.com](mailto:afrotechboss@yahoo.com)
+
+See the [LICENSE](LICENSE) file for complete terms and conditions.
 
 ## 🆘 Support
 
