@@ -25,7 +25,7 @@ const LandingPage: React.FC = () => {
             contract analysis that detects risks, clauses, and obligations instantly.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="text-base sm:text-lg px-8 py-4 min-h-[48px]">
+            <Button size="lg" className="text-base sm:text-lg px-8 py-4 min-h-[48px]" onClick={() => navigate('/register')}>
               Try for Free
             </Button>
             <Button variant="secondary" size="lg" className="text-base sm:text-lg px-8 py-4 min-h-[48px]">
