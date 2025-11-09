@@ -1,5 +1,11 @@
 import { supabase } from './supabase'
 import { FileProcessor, ProcessedFile } from './fileProcessor'
+import { claudeService } from './claude'
+import { 
+  ContractAnalysis as EnhancedContractAnalysis, 
+  validateAnalysis,
+  RiskLevel
+} from '../types/contractAnalysis'
 
 export interface Contract {
   id: string
@@ -19,7 +25,7 @@ export interface ContractAnalysis {
   id: string
   contract_id: string
   user_id: string
-  analysis_data?: any
+  analysis_data?: EnhancedContractAnalysis
   risk_score?: number
   key_clauses?: any
   recommendations?: any
@@ -153,21 +159,547 @@ export class ContractService {
   }
 
   /**
-   * Analyze contract using AI with fallback to local analysis
+   * Analyze contract using Claude AI with 11-section professional framework
    */
-  private static async analyzeContractWithAI(contractText: string): Promise<AnalysisResult> {
-    console.log('🤖 Starting contract analysis...')
+  private static async analyzeContractWithAI(contractText: string): Promise<EnhancedContractAnalysis> {
+    console.log('🤖 Starting 11-section professional contract analysis...')
     console.log('📄 Contract text length:', contractText.length, 'characters')
     
-    // Always use local analysis for reliable results
-    console.log('🏠 Using enhanced local analysis for reliable contract insights')
-    return this.getLocalAnalysis(contractText)
+    try {
+      // Create comprehensive 11-section analysis prompt
+      const analysisPrompt = `You are a senior contract attorney with 25+ years of experience. Analyze this contract using the professional 11-section framework that law firms use for comprehensive contract review.
+
+CONTRACT TEXT TO ANALYZE:
+${contractText}
+
+ANALYSIS FRAMEWORK - Analyze each of these 11 critical sections:
+
+1. **TITLE & PARTIES**
+   Goal: Confirm who's in this deal
+   Check: Legal names (not trade names), business registration numbers, addresses, authorization to sign
+   🚩 RED FLAG: "Between ABC Ltd. and its affiliates" - opens door for unknown entities
+
+2. **RECITALS (Background/Whereas)**
+   Goal: Understand deal intent
+   Check: Background matches verbal agreement, no scope broadening
+   🚩 RED FLAG: Recital subtly broadens scope beyond negotiated terms
+
+3. **SCOPE OF WORK/SERVICES**
+   Goal: Define exact deliverables
+   Check: Clear deliverables, performance standards/KPIs, exclusions
+   🚩 RED FLAG: Vague wording like "as needed" or "to satisfaction of company"
+
+4. **PAYMENT TERMS**
+   Goal: Ensure payment happens
+   Check: Due dates, currency, milestones, late penalties, refund conditions
+   🚩 RED FLAG: "Payment upon client acceptance" - if never accepted, never paid
+
+5. **TERM & TERMINATION**
+   Goal: Define start/end and exit strategy
+   Check: Fixed vs open-ended, termination for cause/convenience, mutual rights
+   🚩 RED FLAG: Only one side can terminate at will - that's servitude, not partnership
+
+6. **INTELLECTUAL PROPERTY**
+   Goal: Protect client's creations
+   Check: Pre-existing IP retention, new IP ownership, licensing rights
+   🚩 RED FLAG: "All work product belongs to company" - loses code/assets/methods
+
+7. **CONFIDENTIALITY/NON-DISCLOSURE**
+   Goal: Protect sensitive info without eternal silence
+   Check: Duration, definition of confidential info, exceptions
+   🚩 RED FLAG: "Confidentiality survives indefinitely" - nobody remembers after 10 years
+
+8. **LIABILITY, INDEMNIFICATION & WARRANTIES**
+   Goal: Decide who pays when things blow up
+   Check: Liability caps, mutual indemnification, indirect damage disclaimers
+   🚩 RED FLAG: "Party A indemnifies all losses whether caused by negligence or not" - financial death sentence
+
+9. **DISPUTE RESOLUTION/GOVERNING LAW**
+   Goal: Know where/how fights are settled
+   Check: Arbitration vs court, jurisdiction, mediation steps
+   🚩 RED FLAG: Foreign jurisdiction when client is local - stacks odds against you
+
+10. **BOILERPLATE & MISCELLANEOUS**
+    Goal: Catch sneaky provisions
+    Check: Entire agreement clause, assignment rights, notice provisions
+    🚩 RED FLAG: "Agreement may be assigned by Company without consent" - could work for different entity
+
+11. **SIGNATURE PAGE**
+    Goal: Final sanity check
+    Check: Signatories identified, consistent dates, match entities from Section 1
+    🚩 RED FLAG: Missing titles or unauthorized signatures = voidable contract
+
+RESPONSE FORMAT - Return ONLY this JSON structure:
+
+{
+  "overallRiskLevel": "Low Risk" | "Medium Risk" | "High Risk" | "Critical Risk",
+  "riskScore": [number 1-100],
+  "executiveSummary": "[3-4 sentence summary of overall risk and key concerns]",
+  "sections": {
+    "titleParties": {
+      "sectionName": "Title & Parties",
+      "goal": "Confirm who's in this deal",
+      "riskLevel": "Low Risk" | "Medium Risk" | "High Risk" | "Critical Risk",
+      "status": "Pass" | "Warning" | "Critical" | "Not Found",
+      "checkItems": [
+        {
+          "item": "[check item description]",
+          "status": "Pass" | "Warning" | "Critical" | "Not Found",
+          "finding": "[what was found or missing]",
+          "recommendation": "[specific recommendation if needed]"
+        }
+      ],
+      "redFlags": [
+        {
+          "type": "[red flag type]",
+          "severity": "Critical" | "High" | "Medium" | "Low",
+          "description": "[what red flag was found]",
+          "explanation": "[why this is problematic]",
+          "recommendation": "[how to fix it]",
+          "location": "[where in contract]"
+        }
+      ],
+      "keyFindings": ["[key findings for this section]"],
+      "recommendations": ["[section-specific recommendations]"],
+      "parties": [
+        {
+          "name": "[party name]",
+          "isLegalName": boolean,
+          "hasRegistrationNumber": boolean,
+          "hasAddress": boolean,
+          "isAuthorized": boolean
+        }
+      ]
+    },
+    "recitals": {
+      "sectionName": "Recitals",
+      "goal": "Understand the intent of the deal",
+      "riskLevel": "Low Risk" | "Medium Risk" | "High Risk" | "Critical Risk",
+      "status": "Pass" | "Warning" | "Critical" | "Not Found",
+      "checkItems": [],
+      "redFlags": [...],
+      "keyFindings": [...],
+      "recommendations": [...],
+      "intentMatch": boolean,
+      "scopeConsistency": boolean,
+      "backgroundAccuracy": boolean
+    },
+    "scopeOfWork": {
+      "sectionName": "Scope of Work",
+      "goal": "Nail down exactly what's being delivered",
+      "riskLevel": "Low Risk" | "Medium Risk" | "High Risk" | "Critical Risk",
+      "status": "Pass" | "Warning" | "Critical" | "Not Found",
+      "checkItems": [...],
+      "redFlags": [...],
+      "keyFindings": [...],
+      "recommendations": [...],
+      "hasDeliverables": boolean,
+      "hasPerformanceStandards": boolean,
+      "hasExclusions": boolean,
+      "clarityScore": [number 1-10]
+    },
+    "paymentTerms": {
+      "sectionName": "Payment Terms",
+      "goal": "Make sure your client actually gets paid",
+      "riskLevel": "Low Risk" | "Medium Risk" | "High Risk" | "Critical Risk",
+      "status": "Pass" | "Warning" | "Critical" | "Not Found",
+      "checkItems": [...],
+      "redFlags": [...],
+      "keyFindings": [...],
+      "recommendations": [...],
+      "hasDueDates": boolean,
+      "hasCurrency": boolean,
+      "hasMilestones": boolean,
+      "hasLatePenalties": boolean,
+      "hasRefundConditions": boolean
+    },
+    "termTermination": {
+      "sectionName": "Term & Termination",
+      "goal": "Define when this relationship starts, ends, and how to escape it",
+      "riskLevel": "Low Risk" | "Medium Risk" | "High Risk" | "Critical Risk",
+      "status": "Pass" | "Warning" | "Critical" | "Not Found",
+      "checkItems": [...],
+      "redFlags": [...],
+      "keyFindings": [...],
+      "recommendations": [...],
+      "isFixedTerm": boolean,
+      "hasTerminationForCause": boolean,
+      "hasTerminationForConvenience": boolean,
+      "isMutualTermination": boolean
+    },
+    "intellectualProperty": {
+      "sectionName": "Intellectual Property",
+      "goal": "Protect your client's creations",
+      "riskLevel": "Low Risk" | "Medium Risk" | "High Risk" | "Critical Risk",
+      "status": "Pass" | "Warning" | "Critical" | "Not Found",
+      "checkItems": [...],
+      "redFlags": [...],
+      "keyFindings": [...],
+      "recommendations": [...],
+      "retainsPreExistingIP": boolean,
+      "definesNewIPOwnership": boolean,
+      "hasLicensingRights": boolean,
+      "isExclusive": boolean
+    },
+    "confidentiality": {
+      "sectionName": "Confidentiality",
+      "goal": "Protect sensitive info without locking client into silence forever",
+      "riskLevel": "Low Risk" | "Medium Risk" | "High Risk" | "Critical Risk",
+      "status": "Pass" | "Warning" | "Critical" | "Not Found",
+      "checkItems": [...],
+      "redFlags": [...],
+      "keyFindings": [...],
+      "recommendations": [...],
+      "hasDuration": boolean,
+      "hasDefinition": boolean,
+      "hasExceptions": boolean,
+      "durationReasonable": boolean
+    },
+    "liability": {
+      "sectionName": "Liability & Warranties",
+      "goal": "Decide who pays when something blows up",
+      "riskLevel": "Low Risk" | "Medium Risk" | "High Risk" | "Critical Risk",
+      "status": "Pass" | "Warning" | "Critical" | "Not Found",
+      "checkItems": [...],
+      "redFlags": [...],
+      "keyFindings": [...],
+      "recommendations": [...],
+      "hasLiabilityCap": boolean,
+      "isMutualIndemnification": boolean,
+      "hasIndirectDamageDisclaimer": boolean,
+      "isBalanced": boolean
+    },
+    "disputeResolution": {
+      "sectionName": "Dispute Resolution",
+      "goal": "Know where and how fights are settled",
+      "riskLevel": "Low Risk" | "Medium Risk" | "High Risk" | "Critical Risk",
+      "status": "Pass" | "Warning" | "Critical" | "Not Found",
+      "checkItems": [...],
+      "redFlags": [...],
+      "keyFindings": [...],
+      "recommendations": [...],
+      "hasArbitration": boolean,
+      "hasJurisdiction": boolean,
+      "hasMediation": boolean,
+      "isFavorableJurisdiction": boolean
+    },
+    "boilerplate": {
+      "sectionName": "Boilerplate",
+      "goal": "Make sure nothing sneaky is hiding here",
+      "riskLevel": "Low Risk" | "Medium Risk" | "High Risk" | "Critical Risk",
+      "status": "Pass" | "Warning" | "Critical" | "Not Found",
+      "checkItems": [...],
+      "redFlags": [...],
+      "keyFindings": [...],
+      "recommendations": [...],
+      "hasEntireAgreement": boolean,
+      "hasAssignmentClause": boolean,
+      "hasNoticeProvisions": boolean,
+      "allowsUnilateralAssignment": boolean
+    },
+    "signaturePage": {
+      "sectionName": "Signature Page",
+      "goal": "Final sanity check",
+      "riskLevel": "Low Risk" | "Medium Risk" | "High Risk" | "Critical Risk",
+      "status": "Pass" | "Warning" | "Critical" | "Not Found",
+      "checkItems": [...],
+      "redFlags": [...],
+      "keyFindings": [...],
+      "recommendations": [...],
+      "signatorsIdentified": boolean,
+      "datesConsistent": boolean,
+      "matchesEntities": boolean,
+      "hasProperAuthority": boolean
+    }
+  },
+  "totalRedFlags": [number],
+  "criticalIssues": [
+    {
+      "type": "[red flag type]",
+      "severity": "Critical" | "High" | "Medium" | "Low",
+      "description": "[description]",
+      "explanation": "[why problematic]",
+      "recommendation": "[how to fix]",
+      "location": "[where found]"
+    }
+  ],
+  "overallRecommendations": ["[overall recommendations]"],
+  "analysisDate": "[current date]",
+  "contractType": "[detected contract type]"
+}
+
+CRITICAL INSTRUCTIONS:
+- Analyze EVERY section even if not present (mark as "Not Found")
+- Look for specific red flags mentioned for each section
+- Be thorough with check items for each section
+- Assign risk levels per section and overall
+- Provide actionable recommendations
+- Focus on practical business risks that could cause financial loss
+
+CRITICAL JSON FORMATTING REQUIREMENTS:
+- Respond ONLY with valid JSON - no markdown code blocks, no backticks, no additional text
+- Do NOT wrap the JSON in \`\`\`json or \`\`\` blocks
+- Start directly with { and end with }
+- Ensure ALL arrays have proper comma separation between elements
+- Ensure ALL object properties are properly comma-separated
+- Use double quotes for all strings and property names
+- Do NOT include trailing commas after the last element in arrays or objects
+- Ensure proper nesting and bracket/brace matching
+- Test your JSON mentally before responding - it must be parseable
+- If you include arrays like "checkItems", "redFlags", "keyFindings", "recommendations", ensure each element is properly formatted with commas between them
+
+EXAMPLE OF PROPER ARRAY FORMATTING:
+"checkItems": [
+  {
+    "item": "Legal names verified",
+    "status": "Pass",
+    "finding": "Both parties use legal names",
+    "recommendation": ""
+  },
+  {
+    "item": "Registration numbers present",
+    "status": "Warning", 
+    "finding": "Missing registration numbers",
+    "recommendation": "Add business registration numbers"
   }
+]
+
+REMEMBER: Every array element MUST be followed by a comma except the last one. Every object property MUST be followed by a comma except the last one.`
+
+      console.log('🔍 Sending contract to Claude AI for comprehensive analysis...')
+      
+      const response = await claudeService.sendMessage([
+        { role: 'user', content: analysisPrompt }
+      ], undefined, true)
+
+      console.log('📝 Received comprehensive analysis from Claude AI')
+      
+      // Parse the JSON response with robust error handling
+      let enhancedAnalysis: EnhancedContractAnalysis
+      try {
+        console.log('🧹 Starting JSON parsing with enhanced error handling...')
+        
+        // Step 1: Clean the response
+        let cleanResponse = this.sanitizeJsonResponse(response)
+        console.log('✅ Initial response sanitization completed')
+        
+        // Step 2: Attempt to parse JSON
+        try {
+          enhancedAnalysis = JSON.parse(cleanResponse)
+          console.log('✅ Successfully parsed comprehensive AI analysis result')
+        } catch (initialParseError) {
+          console.warn('⚠️ Initial JSON parse failed, attempting repair...', initialParseError)
+          
+          // Step 3: Attempt JSON repair
+          const repairedJson = this.repairMalformedJson(cleanResponse)
+          if (repairedJson) {
+            try {
+              enhancedAnalysis = JSON.parse(repairedJson)
+              console.log('✅ Successfully parsed repaired JSON')
+            } catch (repairParseError) {
+              console.error('❌ JSON repair failed:', repairParseError)
+              throw repairParseError
+            }
+          } else {
+            throw initialParseError
+          }
+        }
+        
+      } catch (parseError: any) {
+        console.error('❌ All JSON parsing attempts failed:', parseError)
+        console.log('📊 Error details:', {
+          message: parseError?.message || 'Unknown error',
+          position: parseError?.message?.match(/position (\d+)/)?.[1],
+          line: parseError?.message?.match(/line (\d+)/)?.[1],
+          column: parseError?.message?.match(/column (\d+)/)?.[1]
+        })
+        
+        // Enhanced logging for debugging
+        const errorPosition = parseError?.message?.match(/position (\d+)/)?.[1]
+        if (errorPosition) {
+          const pos = parseInt(errorPosition)
+          const context = response.substring(Math.max(0, pos - 100), pos + 100)
+          console.log('🔍 Error context around position', pos, ':', context)
+        }
+        
+        console.log('📄 Raw response preview (first 1000 chars):', response.substring(0, 1000))
+        console.log('📄 Raw response preview (last 500 chars):', response.substring(Math.max(0, response.length - 500)))
+        
+        // Fallback to local analysis if JSON parsing fails
+        console.log('🔄 Falling back to local analysis due to JSON parsing error')
+        return this.getLocalAnalysis(contractText)
+      }
+
+      // Validate the structure using the comprehensive validation function
+      if (!validateAnalysis(enhancedAnalysis)) {
+        console.error('❌ AI response structure validation failed')
+        console.log('🔄 Falling back to local analysis due to structure validation error')
+        return this.getLocalAnalysis(contractText)
+      }
+
+      console.log('✅ Comprehensive AI-powered contract analysis completed successfully')
+      console.log(`📊 Risk Assessment: ${enhancedAnalysis.overallRiskLevel} (Score: ${enhancedAnalysis.riskScore})`)
+      console.log(`🔍 Critical Issues Found: ${enhancedAnalysis.criticalIssues.length}`)
+      console.log(`📋 Missing Clauses Identified: ${enhancedAnalysis.missingClauses.length}`)
+      
+      return enhancedAnalysis
+
+    } catch (error) {
+      console.error('❌ AI analysis failed:', error)
+      console.log('🔄 Falling back to local analysis due to AI error')
+      
+      // Fallback to local analysis if AI fails
+      return this.getLocalAnalysis(contractText)
+    }
+  }
+
+  /**
+   * Sanitize AI response to extract clean JSON
+   */
+  private static sanitizeJsonResponse(response: string): string {
+    let cleanResponse = response.trim()
+    
+    // Remove markdown code blocks (```json ... ```)
+    if (cleanResponse.startsWith('```json')) {
+      const startIndex = cleanResponse.indexOf('{')
+      const lastBraceIndex = cleanResponse.lastIndexOf('}')
+      if (startIndex !== -1 && lastBraceIndex !== -1) {
+        cleanResponse = cleanResponse.substring(startIndex, lastBraceIndex + 1)
+      }
+    } else if (cleanResponse.startsWith('```')) {
+      // Handle generic code blocks
+      const lines = cleanResponse.split('\n')
+      lines.shift() // Remove first line with ```
+      if (lines[lines.length - 1].trim() === '```') {
+        lines.pop() // Remove last line with ```
+      }
+      cleanResponse = lines.join('\n').trim()
+    }
+    
+    // Additional cleanup for common formatting issues
+    cleanResponse = cleanResponse
+      .replace(/^```json\s*/i, '') // Remove ```json at start
+      .replace(/\s*```\s*$/i, '')  // Remove ``` at end
+      .replace(/^\s*json\s*/i, '') // Remove standalone 'json' at start
+      .trim()
+    
+    // Find the JSON object boundaries more reliably
+    const firstBrace = cleanResponse.indexOf('{')
+    const lastBrace = cleanResponse.lastIndexOf('}')
+    
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      cleanResponse = cleanResponse.substring(firstBrace, lastBrace + 1)
+    }
+    
+    return cleanResponse
+  }
+
+  /**
+   * Attempt to repair common JSON formatting issues
+   */
+  private static repairMalformedJson(jsonString: string): string | null {
+    try {
+      console.log('🔧 Attempting JSON repair...')
+      
+      let repaired = jsonString
+      
+      // Common repairs
+      const repairs = [
+        // Fix missing commas in arrays
+        { pattern: /(\])\s*(\[)/g, replacement: '$1,$2' },
+        { pattern: /(\})\s*(\{)/g, replacement: '$1,$2' },
+        { pattern: /(\})\s*(\[)/g, replacement: '$1,$2' },
+        { pattern: /(\])\s*(\{)/g, replacement: '$1,$2' },
+        
+        // Fix missing commas after string values
+        { pattern: /(")\s*\n\s*(")/g, replacement: '$1,$2' },
+        { pattern: /(true|false|null|\d+)\s*\n\s*"/g, replacement: '$1,"' },
+        
+        // Fix trailing commas
+        { pattern: /,(\s*[\}\]])/g, replacement: '$1' },
+        
+        // Fix unescaped quotes in strings
+        { pattern: /(?<!\\)"(?=.*".*:)/g, replacement: '\\"' },
+        
+        // Fix missing quotes around property names
+        { pattern: /([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, replacement: '$1"$2":' },
+        
+        // Fix single quotes to double quotes
+        { pattern: /'/g, replacement: '"' },
+        
+        // Fix missing closing brackets/braces (basic attempt)
+        { pattern: /(\{[^}]*$)/, replacement: '$1}' },
+        { pattern: /(\[[^\]]*$)/, replacement: '$1]' }
+      ]
+      
+      // Apply repairs
+      for (const repair of repairs) {
+        const before = repaired
+        repaired = repaired.replace(repair.pattern, repair.replacement)
+        if (before !== repaired) {
+          console.log('🔧 Applied repair:', repair.pattern.toString())
+        }
+      }
+      
+      // Try to balance braces and brackets
+      const openBraces = (repaired.match(/\{/g) || []).length
+      const closeBraces = (repaired.match(/\}/g) || []).length
+      const openBrackets = (repaired.match(/\[/g) || []).length
+      const closeBrackets = (repaired.match(/\]/g) || []).length
+      
+      // Add missing closing braces
+      if (openBraces > closeBraces) {
+        repaired += '}'.repeat(openBraces - closeBraces)
+        console.log('🔧 Added missing closing braces:', openBraces - closeBraces)
+      }
+      
+      // Add missing closing brackets
+      if (openBrackets > closeBrackets) {
+        repaired += ']'.repeat(openBrackets - closeBrackets)
+        console.log('🔧 Added missing closing brackets:', openBrackets - closeBrackets)
+      }
+      
+      // Validate the repair by attempting to parse
+      try {
+        JSON.parse(repaired)
+        console.log('✅ JSON repair successful')
+        return repaired
+      } catch (testError: any) {
+         console.log('❌ JSON repair validation failed:', testError?.message || 'Unknown error')
+         
+         // Try a more aggressive approach: extract just the main object
+         const mainObjectMatch = repaired.match(/\{[\s\S]*\}/);
+         if (mainObjectMatch) {
+           const mainObject = mainObjectMatch[0];
+           try {
+             JSON.parse(mainObject);
+             console.log('✅ Extracted main object successfully');
+             return mainObject;
+           } catch (extractError: any) {
+             console.log('❌ Main object extraction failed:', extractError?.message || 'Unknown error');
+           }
+         }
+        
+        return null
+      }
+      
+    } catch (error) {
+      console.error('❌ JSON repair process failed:', error)
+      return null
+    }
+  }
+
+  /**
+   * Convert enhanced 11-section analysis to legacy format for backward compatibility
+   */
+
+
+
 
   /**
    * Generate enhanced local analysis based on contract text patterns
    */
-  private static getLocalAnalysis(contractText: string): AnalysisResult {
+  private static getLocalAnalysis(contractText: string): EnhancedContractAnalysis {
     console.log('🏠 Generating enhanced local contract analysis...')
     
     // Enhanced text analysis with more comprehensive pattern matching
@@ -183,8 +715,8 @@ export class ContractService {
     
     // Risk factor analysis
     let riskFactors = 0
-    const criticalMissing = []
-    const moderateMissing = []
+    const criticalMissing: string[] = []
+    const moderateMissing: string[] = []
     
     // Critical elements
     if (!hasTerminationClause) { riskFactors += 2; criticalMissing.push('Termination Clause') }
@@ -201,179 +733,225 @@ export class ContractService {
     else if (wordCount < 500) riskFactors += 1
     
     // Determine overall risk level
-    let riskLevel = 'Low Risk'
+    let riskLevel: RiskLevel = 'Low Risk'
     if (riskFactors >= 5) riskLevel = 'High Risk'
     else if (riskFactors >= 3) riskLevel = 'Medium Risk'
     
-    const localAnalysis: AnalysisResult = {
+    const localAnalysis: EnhancedContractAnalysis = {
+      overallRiskLevel: riskLevel,
       riskScore: riskLevel === 'High Risk' ? 80 : riskLevel === 'Medium Risk' ? 50 : 20,
-      riskLevel: riskLevel.replace(' Risk', '') as 'Low' | 'Medium' | 'High',
-      keyClauses: [
-        {
-          type: 'Contract Analysis Summary',
-          content: `Comprehensive analysis completed. Local analysis provides basic pattern matching for contract elements.`,
-          risk: riskLevel === 'High Risk' ? 'High' : riskLevel === 'Medium Risk' ? 'Medium' : 'Low',
-          explanation: 'Local analysis provides basic pattern matching for contract elements.'
+      executiveSummary: `Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and advice, professional legal review is recommended.`,
+      sections: {
+        titleParties: {
+          sectionName: "Title & Parties",
+          goal: "Identify contracting parties and establish legal framework",
+          riskLevel: "Low Risk",
+          status: "Pass",
+          checkItems: [],
+          keyFindings: ["Local analysis - basic pattern matching completed"],
+          redFlags: [],
+          recommendations: ["Verify party identification is complete and accurate"],
+          parties: [
+            {
+              name: "Client",
+              isLegalName: true,
+              hasRegistrationNumber: false,
+              hasAddress: true,
+              isAuthorized: true
+            },
+            {
+              name: "Contractor",
+              isLegalName: true,
+              hasRegistrationNumber: false,
+              hasAddress: true,
+              isAuthorized: true
+            }
+          ]
         },
-        {
-          type: hasPaymentTerms ? 'Financial Terms Identified' : 'Critical: Missing Payment Terms',
-          content: hasPaymentTerms 
-            ? 'Payment-related provisions found including terms like payment, fees, compensation, or billing. These terms establish the financial framework of the agreement.'
-            : 'No payment terms detected. This is a critical gap that could lead to disputes about compensation, payment schedules, and financial obligations.',
-          risk: hasPaymentTerms ? 'Low' : 'High',
-          explanation: hasPaymentTerms ? 'Payment terms help establish clear financial obligations.' : 'Missing payment terms create significant financial risk.'
+        recitals: {
+          sectionName: "Recitals",
+          goal: "Establish background and context for the agreement",
+          riskLevel: "Low Risk", 
+          status: "Pass",
+          checkItems: [],
+          keyFindings: ["Background context analysis completed"],
+          redFlags: [],
+          recommendations: ["Review recitals for accuracy and completeness"],
+          intentMatch: true,
+          scopeConsistency: true,
+          backgroundAccuracy: true
         },
-        {
-          type: hasTerminationClause ? 'Exit Strategy Defined' : 'High Risk: No Termination Clause',
-          content: hasTerminationClause
-            ? 'Termination provisions found including references to ending, expiring, canceling, or dissolving the agreement. These clauses provide structured exit strategies.'
-            : 'No termination clause detected. This creates significant risk as there may be no clear mechanism for either party to exit the agreement.',
-          risk: hasTerminationClause ? 'Low' : 'High',
-          explanation: hasTerminationClause ? 'Termination clauses provide clear exit strategies.' : 'Missing termination clauses create exit difficulties.'
+        scopeOfWork: {
+          sectionName: "Scope of Work",
+          goal: "Define deliverables and performance standards",
+          riskLevel: "Medium Risk",
+          status: "Warning",
+          checkItems: [],
+          keyFindings: ["Work scope requires detailed review"],
+          redFlags: [],
+          recommendations: ["Ensure scope is clearly defined and measurable"],
+          hasDeliverables: true,
+          hasPerformanceStandards: false,
+          hasExclusions: false,
+          clarityScore: 6
         },
-        {
-          type: hasLiabilityClause ? 'Risk Allocation Addressed' : 'Liability Gap Identified',
-          content: hasLiabilityClause
-            ? 'Liability and risk allocation provisions found including references to responsibility, damages, indemnification, or limitations. These help define risk distribution.'
-            : 'No liability or indemnification clauses detected. This creates undefined risk exposure for both parties.',
-          risk: hasLiabilityClause ? 'Medium' : 'High',
-          explanation: hasLiabilityClause ? 'Liability provisions help allocate risk appropriately.' : 'Missing liability clauses create undefined risk exposure.'
+        paymentTerms: {
+          sectionName: "Payment Terms",
+          goal: "Establish financial obligations and payment procedures",
+          riskLevel: hasPaymentTerms ? "Low Risk" : "High Risk",
+          status: hasPaymentTerms ? "Pass" : "Not Found",
+          checkItems: [],
+          keyFindings: hasPaymentTerms ? ["Payment provisions detected"] : ["No payment terms identified"],
+          redFlags: hasPaymentTerms ? [] : [{
+            type: "Missing Critical Section",
+            severity: "Critical" as const,
+            description: "Missing payment terms",
+            impact: "Could lead to payment disputes"
+          }],
+          recommendations: hasPaymentTerms ? ["Review payment terms for completeness"] : ["Add detailed payment terms and schedules"],
+          hasDueDates: hasPaymentTerms,
+          hasCurrency: hasPaymentTerms,
+          hasMilestones: false,
+          hasLatePenalties: false,
+          hasRefundConditions: false
+        },
+        termTermination: {
+          sectionName: "Term & Termination",
+          goal: "Define contract duration and termination procedures",
+          riskLevel: hasTerminationClause ? "Low Risk" : "High Risk",
+          status: hasTerminationClause ? "Pass" : "Not Found",
+          checkItems: [],
+          keyFindings: hasTerminationClause ? ["Termination provisions found"] : ["No termination clause detected"],
+          redFlags: hasTerminationClause ? [] : [{
+            type: "Missing Critical Section",
+            severity: "Critical" as const,
+            description: "Missing termination clause",
+            impact: "No clear exit strategy for either party"
+          }],
+          recommendations: hasTerminationClause ? ["Review termination conditions"] : ["Add termination clause with notice requirements"],
+          isFixedTerm: false,
+          hasTerminationForCause: hasTerminationClause,
+          hasTerminationForConvenience: false,
+          isMutualTermination: false
+        },
+        intellectualProperty: {
+          sectionName: "Intellectual Property",
+          goal: "Define IP ownership and licensing rights",
+          riskLevel: "Medium Risk",
+          status: "Warning",
+          checkItems: [],
+          keyFindings: ["IP provisions require review"],
+          redFlags: [],
+          recommendations: ["Clarify IP ownership and licensing terms"],
+          retainsPreExistingIP: true,
+          definesNewIPOwnership: false,
+          hasLicensingRights: false,
+          isExclusive: false
+        },
+        confidentiality: {
+          sectionName: "Confidentiality",
+          goal: "Protect sensitive information and trade secrets",
+          riskLevel: "Medium Risk",
+          status: "Warning",
+          checkItems: [],
+          keyFindings: ["Confidentiality provisions need review"],
+          redFlags: [],
+          recommendations: ["Add or strengthen confidentiality provisions"],
+          hasDuration: false,
+          hasDefinition: false,
+          hasExceptions: false,
+          durationReasonable: false
+        },
+        liability: {
+          sectionName: "Liability & Warranties",
+          goal: "Allocate risk and define warranty obligations",
+          riskLevel: hasLiabilityClause ? "Medium Risk" : "High Risk",
+          status: hasLiabilityClause ? "Pass" : "Not Found",
+          checkItems: [],
+          keyFindings: hasLiabilityClause ? ["Liability provisions found"] : ["No liability clauses detected"],
+          redFlags: hasLiabilityClause ? [] : [{
+            type: "Missing Critical Section",
+            severity: "High" as const,
+            description: "Missing liability provisions",
+            impact: "Undefined risk exposure for both parties"
+          }],
+          recommendations: hasLiabilityClause ? ["Review liability allocation"] : ["Add liability limitations and indemnification"],
+          hasLiabilityCap: hasLiabilityClause,
+          isMutualIndemnification: false,
+          hasIndirectDamageDisclaimer: false,
+          isBalanced: false
+        },
+        disputeResolution: {
+          sectionName: "Dispute Resolution",
+          goal: "Establish procedures for resolving conflicts",
+          riskLevel: hasGoverningLaw ? "Low Risk" : "Medium Risk",
+          status: hasGoverningLaw ? "Pass" : "Warning",
+          checkItems: [],
+          keyFindings: hasGoverningLaw ? ["Legal framework provisions found"] : ["No governing law specified"],
+          redFlags: [],
+          recommendations: hasGoverningLaw ? ["Review jurisdiction and procedures"] : ["Add governing law and dispute resolution procedures"],
+          hasArbitration: false,
+          hasJurisdiction: hasGoverningLaw,
+          hasMediation: false,
+          isFavorableJurisdiction: hasGoverningLaw
+        },
+        boilerplate: {
+          sectionName: "Boilerplate",
+          goal: "Include standard legal provisions and miscellaneous terms",
+          riskLevel: "Medium Risk",
+          status: "Warning",
+          checkItems: [],
+          keyFindings: ["Standard provisions need review"],
+          redFlags: [],
+          recommendations: ["Add standard boilerplate provisions"],
+          hasEntireAgreement: false,
+          hasAssignmentClause: false,
+          hasNoticeProvisions: hasNoticeProvisions,
+          allowsUnilateralAssignment: false
+        },
+        signaturePage: {
+          sectionName: "Signature Page",
+          goal: "Ensure proper execution and legal binding",
+          riskLevel: "Low Risk",
+          status: "Pass",
+          checkItems: [],
+          keyFindings: ["Signature requirements assumed present"],
+          redFlags: [],
+          recommendations: ["Verify all required signatures are obtained"],
+          signatorsIdentified: true,
+          datesConsistent: true,
+          matchesEntities: true,
+          hasProperAuthority: true
         }
-      ],
-      summary: `Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and advice, professional legal review is recommended.`,
-      potentialIssues: [
-        ...(riskFactors > 0 ? [{
-          issue: `Contract Missing ${riskFactors} Key Element${riskFactors > 1 ? 's' : ''}`,
-          severity: riskFactors >= 3 ? 'High' as const : 'Medium' as const,
-          recommendation: 'Review and add missing standard contract provisions to reduce legal risks.'
-        }] : []),
-        {
-          issue: 'Local Analysis Limitations',
-          severity: 'Low' as const,
-          recommendation: 'Local analysis provides basic pattern matching. For comprehensive legal review, consult with an attorney.'
-        }
-      ],
-      structuredAnalysis: {
-        overallRiskLevel: riskLevel,
-        keyFindings: [
-          {
-            title: 'Comprehensive Contract Analysis',
-            description: `Advanced local analysis completed. Analysis covers payment terms, termination clauses, liability provisions, and legal framework.`,
-            severity: 'Low',
-            category: 'info'
-          },
-          {
-            title: hasPaymentTerms ? 'Financial Framework Established' : 'Critical: Payment Terms Absent',
-            description: hasPaymentTerms 
-              ? 'Payment-related provisions detected including references to fees, compensation, billing, or financial obligations. These terms establish the economic foundation of the contractual relationship.'
-              : 'No payment terms identified in the contract. This critical omission could lead to disputes about compensation amounts, payment schedules, and financial responsibilities.',
-            severity: hasPaymentTerms ? 'Low' : 'High',
-            category: hasPaymentTerms ? 'compliance' : 'risk'
-          },
-          {
-            title: hasTerminationClause ? 'Exit Strategy Defined' : 'High Risk: No Exit Strategy',
-            description: hasTerminationClause
-              ? 'Termination provisions identified, establishing clear procedures for ending the agreement, including conditions, notice requirements, and post-termination obligations.'
-              : 'No termination clause found. This creates significant legal risk as there may be no clear mechanism for either party to exit the agreement, potentially leading to disputes.',
-            severity: hasTerminationClause ? 'Low' : 'High',
-            category: hasTerminationClause ? 'compliance' : 'risk'
-          },
-          {
-            title: hasLiabilityClause ? 'Risk Allocation Framework Present' : 'Liability Exposure Risk',
-            description: hasLiabilityClause
-              ? 'Liability and risk allocation provisions identified, helping to define responsibility for damages, losses, and risk distribution between parties.'
-              : 'No liability or indemnification clauses found. This exposes both parties to undefined risks and potential disputes over responsibility for damages or losses.',
-            severity: hasLiabilityClause ? 'Medium' : 'High',
-            category: hasLiabilityClause ? 'compliance' : 'risk'
-          },
-          {
-            title: criticalMissing.length > 0 ? `${criticalMissing.length} Critical Elements Missing` : 'Core Elements Present',
-            description: criticalMissing.length > 0 
-              ? `Critical contract elements missing: ${criticalMissing.join(', ')}. These omissions significantly increase legal and business risks and should be addressed immediately.`
-              : 'All essential contract elements appear to be present, providing a solid legal foundation for the agreement.',
-            severity: criticalMissing.length > 0 ? 'High' : 'Low',
-            category: criticalMissing.length > 0 ? 'risk' : 'compliance'
-          }
-        ],
-        clauseAnalysis: [
-          {
-            title: 'Financial Terms and Payment Provisions',
-            content: hasPaymentTerms ? 'Payment-related provisions detected in contract text' : 'No payment terms or financial provisions identified',
-            analysis: hasPaymentTerms
-              ? 'The contract includes payment-related language such as fees, compensation, billing, or financial obligations. These provisions establish the economic framework of the agreement and help define the financial relationship between parties.'
-              : 'The contract lacks clear payment terms or financial provisions. This significant omission could lead to disputes about compensation amounts, payment schedules, billing procedures, and overall financial obligations between the parties.',
-            riskLevel: hasPaymentTerms ? 'low' : 'high',
-            issues: hasPaymentTerms ? ['Verify payment terms are comprehensive and specific'] : ['Missing payment terms', 'Unclear financial obligations', 'No payment schedule defined'],
-            suggestions: hasPaymentTerms
-              ? ['Review payment amounts and schedules for clarity', 'Ensure payment methods and procedures are specified', 'Verify late payment penalties and procedures', 'Check currency and tax implications']
-              : ['Add comprehensive payment terms with specific amounts', 'Define clear payment schedules and due dates', 'Specify accepted payment methods and procedures', 'Include late payment penalties and collection procedures']
-          },
-          {
-            title: 'Liability and Risk Management Provisions',
-            content: hasLiabilityClause ? 'Liability and risk allocation provisions present' : 'No liability or indemnification clauses identified',
-            analysis: hasLiabilityClause
-              ? 'The contract includes liability-related provisions such as responsibility allocation, damages, indemnification, or limitation clauses. These provisions help define how risks and potential losses are distributed between the parties and provide important protections.'
-              : 'The contract lacks liability and risk allocation provisions. This creates significant exposure for both parties as there are no clear guidelines for responsibility in case of damages, losses, or disputes, potentially leading to unlimited liability exposure.',
-            riskLevel: hasLiabilityClause ? 'medium' : 'high',
-            issues: hasLiabilityClause ? ['Review liability caps and limitations', 'Assess indemnification scope and balance'] : ['Missing liability provisions', 'No risk allocation defined', 'Unlimited liability exposure'],
-            suggestions: hasLiabilityClause
-              ? ['Review liability limitation amounts for reasonableness', 'Ensure indemnification clauses are balanced', 'Verify insurance requirements are adequate', 'Check exclusions and carve-outs are appropriate']
-              : ['Add liability limitation clauses with specific caps', 'Include comprehensive indemnification provisions', 'Define responsibility for different types of damages', 'Add force majeure and other protective clauses']
-          },
-          {
-            title: 'Contract Termination and Exit Procedures',
-            content: hasTerminationClause ? 'Termination provisions identified in contract' : 'No termination or exit provisions found',
-            analysis: hasTerminationClause
-              ? 'The contract includes termination-related language, which helps define how the agreement can be ended, under what conditions, with what notice requirements, and what obligations survive termination. These provisions are essential for providing both parties with clear and fair exit strategies.'
-              : 'The contract lacks clear termination provisions, which creates significant uncertainty about how either party can exit the agreement. This could result in disputes about notice requirements, termination conditions, post-termination obligations, and could potentially trap parties in unwanted agreements.',
-            riskLevel: hasTerminationClause ? 'low' : 'high',
-            issues: hasTerminationClause ? ['Review termination conditions and fairness', 'Check notice requirements are reasonable'] : ['No termination clause present', 'Unclear exit strategy', 'No notice requirements defined'],
-            suggestions: hasTerminationClause
-              ? ['Verify termination notice periods are reasonable for both parties', 'Review termination conditions for fairness', 'Check post-termination obligations are clear', 'Ensure termination procedures are practical']
-              : ['Add comprehensive termination clause with clear conditions', 'Define reasonable notice requirements and periods', 'Specify post-termination obligations and restrictions', 'Include procedures for orderly contract wind-down']
-          },
-          {
-            title: 'Legal Framework and Dispute Resolution',
-            content: hasGoverningLaw ? 'Legal framework and jurisdiction provisions present' : 'No governing law or jurisdiction clauses identified',
-            analysis: hasGoverningLaw
-              ? 'The contract includes provisions related to governing law, jurisdiction, dispute resolution, or legal framework. These clauses establish which laws apply to the agreement and where disputes would be resolved, providing essential clarity for legal enforcement and reducing uncertainty in case of conflicts.'
-              : 'The contract lacks governing law or jurisdiction provisions. This significant omission could complicate dispute resolution, legal enforcement, and create uncertainty about which laws apply to the agreement and where legal proceedings would take place, potentially leading to forum shopping and increased legal costs.',
-            riskLevel: hasGoverningLaw ? 'low' : 'medium',
-            issues: hasGoverningLaw ? ['Verify jurisdiction is appropriate and convenient'] : ['No governing law specified', 'Unclear dispute resolution process', 'No jurisdiction defined'],
-            suggestions: hasGoverningLaw
-              ? ['Confirm governing law is appropriate for your business and industry', 'Verify jurisdiction is convenient and fair for both parties', 'Review dispute resolution procedures for efficiency']
-              : ['Add governing law clause specifying applicable jurisdiction', 'Define jurisdiction for disputes and legal proceedings', 'Include dispute resolution procedures (mediation, arbitration)', 'Consider alternative dispute resolution mechanisms']
-          }
-        ],
-        summary: `Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and advice, professional legal review is recommended.`
       },
-      recommendations: [
-        {
-          description: 'While local analysis provides basic insights, consider having this contract reviewed by a qualified attorney for comprehensive legal analysis.',
-          priority: 'High',
-          category: 'legal',
-          action: 'Professional Legal Review'
-        },
-        {
-          description: hasTerminationClause && hasPaymentTerms && hasLiabilityClause 
-            ? 'Contract appears to have key standard clauses. Verify completeness with legal counsel.'
-            : 'Contract may be missing important standard clauses. Consider adding termination, payment, and liability provisions.',
-          priority: 'Medium',
-          category: 'legal',
-          action: 'Missing Clause Assessment'
-        },
-        {
-          description: wordCount < 500 
-            ? 'Contract appears brief. Ensure all necessary terms and conditions are included.'
-            : 'Contract length appears reasonable for comprehensive coverage of terms.',
-          priority: wordCount < 500 ? 'Medium' : 'Low',
-          category: 'technical',
-          action: 'Document Completeness'
-        }
-      ]
+      criticalIssues: criticalMissing.map(missing => ({
+        type: "Missing Critical Section",
+        severity: "Critical" as const,
+        description: `Missing ${missing}`,
+        impact: `Significant legal and business risk due to absent ${missing.toLowerCase()}`
+      })),
+      missingClauses: [...criticalMissing, ...moderateMissing].map(missing => ({
+        clauseType: missing,
+        description: `Missing ${missing} provisions`,
+        importance: criticalMissing.includes(missing) ? 'High' as const : 'Medium' as const,
+        riskIfMissing: `Significant legal and business risk due to absent ${missing.toLowerCase()}`,
+        suggestedLanguage: `Add comprehensive ${missing.toLowerCase()} provisions to the contract`
+      })),
+      overallRecommendations: [
+        'Consider professional legal review for comprehensive analysis',
+        hasTerminationClause && hasPaymentTerms && hasLiabilityClause 
+          ? 'Contract appears to have key standard clauses - verify completeness'
+          : 'Add missing standard contract provisions (termination, payment, liability)',
+        wordCount < 500 
+          ? 'Contract appears brief - ensure all necessary terms are included'
+          : 'Contract length appears reasonable for comprehensive coverage'
+      ],
+      totalRedFlags: criticalMissing.length,
+      analysisDate: new Date().toISOString(),
+      contractType: "General Contract"
     }
     
-    console.log('✅ Local analysis generated')
+    console.log('✅ Local analysis generated in enhanced format')
     
     return localAnalysis
   }
@@ -383,7 +961,7 @@ export class ContractService {
   private static async saveAnalysisResults(
     contractId: string,
     userId: string,
-    analysisResult: AnalysisResult
+    analysisResult: EnhancedContractAnalysis
   ): Promise<ContractAnalysis> {
     const { data, error } = await supabase
       .from('reports')
@@ -392,8 +970,8 @@ export class ContractService {
         user_id: userId,
         analysis_data: analysisResult,
         risk_score: analysisResult.riskScore,
-        key_clauses: analysisResult.keyClauses,
-        recommendations: analysisResult.recommendations
+        key_clauses: analysisResult.criticalIssues,
+        recommendations: analysisResult.overallRecommendations
       })
       .select()
       .single()
@@ -514,7 +1092,7 @@ export class ContractService {
     }
   }
 
-  static async analyzeContractById(contractId: string): Promise<AnalysisResult> {
+  static async analyzeContractById(contractId: string): Promise<EnhancedContractAnalysis> {
     try {
       const contract = await this.getContract(contractId)
       

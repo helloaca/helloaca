@@ -1,149 +1,352 @@
+contentScript.js:2 Uncaught 
+ Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+ 📄 PDF.js worker configured with local file: http://localhost:5174/pdf.worker.min.js
+ 📄 PDF.js API version: 5.4.296
+ 📄 Worker source: http://localhost:5174/pdf.worker.min.js
+ 🔄 Initializing authentication...
+ 🔄 Initializing authentication...
+ ❌ No active session
+ 🔄 Auth state changed: INITIAL_SESSION undefined
+ 🔄 Auth state changed: SIGNED_IN ozoemenachidile@gmail.com
+ 🔄 Handling auth state change for user: ozoemenachidile@gmail.com
+ 🔄 Fetching fresh profile data
+ ✅ Profile loaded successfully
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔄 Processing file: FREELANCE SERVICE AGREEMENT 2.pdf Type: application/pdf Size: 73037
+ 📄 Processing as PDF...
+ 📄 Starting PDF processing for file: FREELANCE SERVICE AGREEMENT 2.pdf Size: 73037 Type: application/pdf
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 📄 ArrayBuffer created, size: 73037
+ 📄 PDF loaded successfully, pages: 3
+ 📄 Processing page 1/3
+ 📄 Page 1 has 56 text items
+ 📄 Page 1 extracted 1482 characters
+ 📄 Processing page 2/3
+ 📄 Page 2 has 59 text items
+ 📄 Page 2 extracted 1390 characters
+ 📄 Processing page 3/3
+ 📄 Page 3 has 29 text items
+ 📄 Page 3 extracted 697 characters
+ 📄 PDF processing complete. Total text length: 3571
+ 📄 Total characters extracted: 3569
+ 📄 First 200 characters: FREELANCE SERVICE AGREEMENT Effective Date: November 1, 2025 Between: Digital Innovations Corp ("Client") And: [Freelancer Name] ("Contractor") 1. SCOPE OF WORK The Contractor agrees to provide web de
+ 📄 Last 200 characters: ________ Title: _____________________________ Date: _____________________________ CONTRACTOR: Signature: ________________________ Name: ____________________________ Date: _____________________________
+ ✅ File processed successfully: Object
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+ 📊 Analysis data structure: Object
+ ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+ 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+contractService.ts:164 🤖 Starting 11-section professional contract analysis...
+contractService.ts:165 📄 Contract text length: 3571 characters
+contractService.ts:440 🔍 Sending contract to Claude AI for comprehensive analysis...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+contractService.ts:446 📝 Received comprehensive analysis from Claude AI
+contractService.ts:454 ❌ Failed to parse AI response as JSON: SyntaxError: Unexpected token '`', "```json
 {
-  "task": "Enhance HelloACA About Page with Compelling Backstory and Value Proposition",
-  "objective": "Transform the About page into a compelling narrative that explains why HelloACA exists, the problem it solves, and the story behind its creation",
-  
-  "content_strategy": {
-    "hero_section": {
-      "headline": "The Future of Contract Analysis is Here",
-      "subheadline": "Born from frustration with outdated legal processes, HelloACA transforms how businesses understand and manage their contracts"
-    },
-    
-    "backstory_narrative": {
-      "problem_statement": {
-        "title": "The Problem We Witnessed",
-        "content": "In 2023, our founders watched countless businesses struggle with contract analysis - spending weeks on what should take hours, missing critical clauses, and paying thousands in legal fees for basic document reviews. Small businesses were particularly vulnerable, often signing contracts without fully understanding their implications."
-      },
-      
-      "founding_moment": {
-        "title": "The Lightbulb Moment",
-        "content": "The idea for HelloACA sparked during a late-night conversation between our co-founders - a former corporate lawyer and an AI researcher. Sarah had just spent 40 hours reviewing a simple vendor contract for a startup client, while David was developing AI models that could process legal documents in minutes. 'Why can't we democratize this?' they asked."
-      },
-      
-      "mission_evolution": {
-        "title": "From Idea to Impact",
-        "content": "What started as a weekend project became a mission to level the playing field. We realized that contract analysis shouldn't be a luxury reserved for large corporations with deep pockets. Every business, regardless of size, deserves to understand what they're signing."
-      }
-    },
-    
-    "why_helloaca_matters": {
-      "market_gap": {
-        "title": "Why HelloACA is Necessary",
-        "problems": [
-          "Traditional legal review costs $300-500 per hour",
-          "95% of small businesses sign contracts without proper legal review",
-          "Manual contract analysis takes 2-3 weeks on average",
-          "Critical clauses are missed in 40% of manual reviews",
-          "Legal jargon creates barriers to understanding"
-        ]
-      },
-      
-      "solution_impact": {
-        "title": "The HelloACA Difference",
-        "benefits": [
-          "AI-powered analysis in under 5 minutes",
-          "Plain English explanations of complex legal terms",
-          "Risk assessment and red flag identification",
-          "Cost reduction of up to 90% compared to traditional legal review",
-          "24/7 availability - no waiting for lawyer appointments"
-        ]
-      }
-    },
-    
-    "vision_statement": {
-      "title": "Our Vision for the Future",
-      "content": "We envision a world where every business decision is made with complete contract clarity. Where entrepreneurs can focus on growing their business instead of deciphering legal documents. Where contract analysis is as simple as uploading a file and getting instant, actionable insights."
-    },
-    
-    "social_proof": {
-      "impact_metrics": {
-        "contracts_analyzed": "50,000+",
-        "hours_saved": "200,000+",
-        "businesses_served": "5,000+",
-        "cost_savings": "$10M+"
-      },
-      
-      "testimonial_themes": [
-        "Time savings and efficiency",
-        "Cost reduction",
-        "Risk mitigation",
-        "Ease of use",
-        "Peace of mind"
-      ]
-    }
-  },
-  
-  "page_structure": {
-    "sections": [
-      {
-        "name": "Hero Section",
-        "purpose": "Capture attention with compelling headline and value proposition"
-      },
-      {
-        "name": "The Problem",
-        "purpose": "Establish the pain points HelloACA solves"
-      },
-      {
-        "name": "Our Story",
-        "purpose": "Share the founding story and mission"
-      },
-      {
-        "name": "Why HelloACA Matters",
-        "purpose": "Explain the necessity and unique value"
-      },
-      {
-        "name": "Our Impact",
-        "purpose": "Show measurable results and social proof"
-      },
-      {
-        "name": "Our Vision",
-        "purpose": "Paint a picture of the future we're building"
-      },
-      {
-        "name": "Meet the Team",
-        "purpose": "Humanize the brand with founder/team stories"
-      }
-    ]
-  },
-  
-  "tone_and_voice": {
-    "personality": "Professional yet approachable, confident but not arrogant",
-    "language_style": "Clear, jargon-free, storytelling approach",
-    "emotional_appeal": "Empathy for business struggles, excitement for solutions",
-    "credibility_markers": "Specific metrics, real problems, tangible benefits"
-  },
-  
-  "visual_elements": {
-    "imagery_suggestions": [
-      "Before/after contract analysis comparison",
-      "Timeline of company founding story",
-      "Infographic showing traditional vs HelloACA process",
-      "Team photos with personal stories",
-      "Customer success visualization"
-    ],
-    
-    "interactive_elements": [
-      "Animated statistics counter",
-      "Expandable story sections",
-      "Hover effects on team member cards",
-      "Progress indicators for company milestones"
-    ]
-  },
-  
-  "call_to_action": {
-    "primary": "Experience HelloACA yourself - Upload your first contract",
-    "secondary": "Learn more about our pricing",
-    "tertiary": "Read customer success stories"
-  },
-  
-  "seo_considerations": {
-    "target_keywords": [
-      "contract analysis software",
-      "AI legal document review",
-      "automated contract analysis",
-      "legal tech startup story",
-      "contract management solution"
-    ],
-    
-    "meta_description": "Discover the story behind HelloACA - the AI-powered contract analysis platform that's democratizing legal document review for businesses of all sizes."
-  }
-}
+"... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at ContractService.analyzeContractWithAI (contractService.ts:451:33)
+    at async ContractService.uploadAndAnalyzeContract (contractService.ts:134:30)
+    at async handleFileSelect (Dashboard.tsx:136:22)
+analyzeContractWithAI @ contractService.ts:454
+contractService.ts:455 Raw response preview: ```json
+{
+  "overallRiskLevel": "High Risk",
+  "riskScore": 72,
+  "executiveSummary": "This freelance agreement contains several critical deficiencies that expose the Contractor to significant risk. Major concerns include: (1) no formal termination provisions allowing Client to abandon project without consequence, (2) vague payment milestone 'as determined by Client' creates payment uncertainty, (3) indefinite timeline with no completion deadline, and (4) missing liability caps and indemnificati
+contractService.ts:458 🔄 Falling back to local analysis due to JSON parsing error
+contractService.ts:551 🏠 Generating enhanced local contract analysis...
+contractService.ts:756 ✅ Local analysis generated
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: NON-DISCLOSURE AGREEMENT (NDA) (1)
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
+Dashboard.tsx:244 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+Dashboard.tsx:245 📊 Analysis data structure: Object
+Dashboard.tsx:256 ✅ Found summary at root level: Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and a...
