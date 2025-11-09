@@ -85,28 +85,35 @@ export const generatePDFReport = (report: ReportData): void => {
 
   doc.setFontSize(11)
   doc.setFont('helvetica', 'normal')
-  const summary = report.analysis.analysis_data?.summary || 'No summary available'
+  const summary = report.analysis.analysis_data?.executiveSummary || 'No summary available'
   yPosition = addWrappedText(summary, margin, yPosition, contentWidth, 11)
   yPosition += 20
 
   // Risk Score Section
-  if (report.analysis.analysis_data?.structuredAnalysis?.riskScore) {
+  const riskScoreVal = report.analysis.analysis_data?.riskScore
+  if (typeof riskScoreVal === 'number') {
     yPosition = checkNewPage(30)
     doc.setFontSize(16)
     doc.setFont('helvetica', 'bold')
     yPosition = addWrappedText('Risk Assessment', margin, yPosition, contentWidth, 16)
     yPosition += 10
 
-    const riskScore = report.analysis.analysis_data.structuredAnalysis.riskScore
     doc.setFontSize(14)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(220, 53, 69) // Red color for risk
-    yPosition = addWrappedText(`Risk Score: ${riskScore}`, margin, yPosition, contentWidth, 14)
+    yPosition = addWrappedText(`Risk Score: ${riskScoreVal}`, margin, yPosition, contentWidth, 14)
     yPosition += 20
   }
 
-  // Key Findings Section
-  if (report.analysis.analysis_data?.structuredAnalysis?.keyFindings?.length) {
+  // Key Findings Section (aggregated from sections)
+  const sectionsObj = report.analysis.analysis_data?.sections
+  const aggregatedFindings = sectionsObj 
+    ? Object.values(sectionsObj).flatMap((section: any) => 
+        (section.keyFindings || []).map((desc: string) => ({ sectionName: section.sectionName, description: desc }))
+      )
+    : []
+
+  if (aggregatedFindings.length) {
     yPosition = checkNewPage(40)
     doc.setTextColor(0, 0, 0)
     doc.setFontSize(16)
@@ -114,49 +121,50 @@ export const generatePDFReport = (report: ReportData): void => {
     yPosition = addWrappedText('Key Findings', margin, yPosition, contentWidth, 16)
     yPosition += 10
 
-    report.analysis.analysis_data.structuredAnalysis.keyFindings.forEach((finding: { title?: string; description?: string; content?: string }, index: number) => {
+    aggregatedFindings.forEach((finding: { sectionName?: string; description?: string }, index: number) => {
       yPosition = checkNewPage(25)
       doc.setFontSize(12)
       doc.setFont('helvetica', 'bold')
-      yPosition = addWrappedText(`${index + 1}. ${finding.title || 'Finding'}`, margin, yPosition, contentWidth, 12)
+      yPosition = addWrappedText(`${index + 1}. ${finding.sectionName || 'Finding'}`, margin, yPosition, contentWidth, 12)
       yPosition += 5
 
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(11)
-      yPosition = addWrappedText(finding.description || finding.content || 'No description available', margin + 10, yPosition, contentWidth - 10, 11)
+      yPosition = addWrappedText(finding.description || 'No description available', margin + 10, yPosition, contentWidth - 10, 11)
       yPosition += 10
     })
   }
 
-  // Clause Analysis Section
-  if (report.analysis.analysis_data?.structuredAnalysis?.clauseAnalysis?.length) {
+  // Critical Issues Section
+  const criticalIssues = report.analysis.analysis_data?.criticalIssues || []
+  if (criticalIssues.length) {
     yPosition = checkNewPage(40)
     doc.setFontSize(16)
     doc.setFont('helvetica', 'bold')
-    yPosition = addWrappedText('Clause Analysis', margin, yPosition, contentWidth, 16)
+    yPosition = addWrappedText('Critical Issues', margin, yPosition, contentWidth, 16)
     yPosition += 10
 
-    report.analysis.analysis_data.structuredAnalysis.clauseAnalysis.forEach((clause: { title?: string; content?: string; analysis?: string; riskLevel?: string }, index: number) => {
+    criticalIssues.forEach((issue: any, index: number) => {
       yPosition = checkNewPage(30)
       doc.setFontSize(12)
       doc.setFont('helvetica', 'bold')
-      yPosition = addWrappedText(`${clause.title || `Clause ${index + 1}`}`, margin, yPosition, contentWidth, 12)
+      yPosition = addWrappedText(`${index + 1}. ${issue.type || 'Issue'}`, margin, yPosition, contentWidth, 12)
       yPosition += 5
 
-      if (clause.riskLevel) {
+      if (issue.severity) {
         doc.setFontSize(10)
         doc.setFont('helvetica', 'normal')
-        const riskColor = clause.riskLevel.toLowerCase() === 'high' ? [220, 53, 69] : 
-                         clause.riskLevel.toLowerCase() === 'medium' ? [255, 193, 7] : [40, 167, 69]
+        const sev = String(issue.severity).toLowerCase()
+        const riskColor = sev === 'critical' ? [220, 53, 69] : sev === 'high' ? [255, 193, 7] : [40, 167, 69]
         doc.setTextColor(riskColor[0], riskColor[1], riskColor[2])
-        yPosition = addWrappedText(`Risk Level: ${clause.riskLevel}`, margin + 10, yPosition, contentWidth - 10, 10)
+        yPosition = addWrappedText(`Severity: ${issue.severity}`, margin + 10, yPosition, contentWidth - 10, 10)
         yPosition += 3
       }
 
       doc.setTextColor(0, 0, 0)
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(11)
-      yPosition = addWrappedText(clause.analysis || clause.content || 'No analysis available', margin + 10, yPosition, contentWidth - 10, 11)
+      yPosition = addWrappedText(issue.description || issue.impact || 'No details available', margin + 10, yPosition, contentWidth - 10, 11)
       yPosition += 10
     })
   }

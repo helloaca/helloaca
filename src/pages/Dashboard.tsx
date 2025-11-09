@@ -60,8 +60,10 @@ const Dashboard: React.FC = () => {
       // Calculate total risks from all completed contracts
       let totalRisks = 0
       userContracts.forEach(contract => {
-        if (contract.analysis?.analysis_data?.structuredAnalysis?.keyFindings) {
-          totalRisks += contract.analysis.analysis_data.structuredAnalysis.keyFindings.length
+        const sections = contract.analysis?.analysis_data?.sections
+        if (sections) {
+          const count = Object.values(sections).reduce((acc: number, section: any) => acc + (section.keyFindings?.length || 0), 0)
+          totalRisks += count
         }
       })
 
