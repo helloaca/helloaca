@@ -86,7 +86,9 @@ const Pricing: React.FC = () => {
       const handler = PaystackPop.setup({
         key: publicKey,
         email: user.email,
-        ...(planCode ? { plan: planCode } : { amount: 30000, currency: 'NGN' }),
+        ...(planCode ? { plan: planCode } : { amount: 30000 }),
+        reference: `PRO-${Date.now()}`,
+        channels: ['card'],
         metadata: { plan: 'pro' },
         callback: async (response: any) => {
           try {
@@ -119,9 +121,9 @@ const Pricing: React.FC = () => {
         }
       })
       handler.openIframe()
-    } catch {
+    } catch (err) {
       setIsLoading(false)
-      toast.error('Payment initialization failed')
+      toast.error(err instanceof Error ? err.message : 'Payment initialization failed')
     }
   }, [user, navigate, loadPaystackScript])
 
