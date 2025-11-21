@@ -285,10 +285,33 @@ Please provide a helpful response based on the contract and our conversation.`
       await saveMessageToDatabase(aiResponse)
     } catch (error) {
       console.error('Error getting Claude response:', error)
+      
+      // Enhanced error logging for debugging
+      let errorMessage = 'I apologize, but I encountered an error while processing your request. Please try again.'
+      
+      if (error instanceof Error) {
+        console.error('Error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        })
+        
+        // Provide more specific error messages based on error type
+        if (error.message.includes('API key')) {
+          errorMessage = 'AI service authentication error. Please contact support.'
+        } else if (error.message.includes('model')) {
+          errorMessage = 'AI model configuration error. Please contact support.'
+        } else if (error.message.includes('rate limit')) {
+          errorMessage = 'Rate limit exceeded. Please try again in a few moments.'
+        } else if (error.message.includes('network')) {
+          errorMessage = 'Network error. Please check your connection and try again.'
+        }
+      }
+      
       const errorResponse: Message = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: 'I apologize, but I encountered an error while processing your request. Please try again.',
+        content: errorMessage,
         timestamp: new Date()
       }
       setMessages(prev => [...prev, errorResponse])
@@ -545,20 +568,33 @@ Please provide a helpful response based on the contract and our conversation.`
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
-                            h1: ({node, ...props}) => <h1 className="text-2xl font-bold mb-4" {...props} />,
-                            h2: ({node, ...props}) => <h2 className="text-xl font-bold mb-3" {...props} />,
-                            h3: ({node, ...props}) => <h3 className="text-lg font-semibold mb-2" {...props} />,
-                            p: ({node, ...props}) => <p className="mb-3 leading-relaxed" {...props} />,
-                            ul: ({node, ...props}) => <ul className="list-disc ml-6 mb-3 space-y-1" {...props} />,
-                            ol: ({node, ...props}) => <ol className="list-decimal ml-6 mb-3 space-y-1" {...props} />,
-                            strong: ({node, ...props}) => <strong className="font-semibold" {...props} />,
+                            h1: ({node, ...props}) => <h1 className="text-2xl font-bold mb-4 text-gray-900" {...props} />,
+                            h2: ({node, ...props}) => <h2 className="text-xl font-bold mb-3 text-gray-900" {...props} />,
+                            h3: ({node, ...props}) => <h3 className="text-lg font-semibold mb-2 text-gray-900" {...props} />,
+                            h4: ({node, ...props}) => <h4 className="text-base font-semibold mb-2 text-gray-900" {...props} />,
+                            h5: ({node, ...props}) => <h5 className="text-sm font-semibold mb-1 text-gray-900" {...props} />,
+                            h6: ({node, ...props}) => <h6 className="text-xs font-semibold mb-1 text-gray-900" {...props} />,
+                            p: ({node, ...props}) => <p className="mb-3 leading-relaxed text-gray-800" {...props} />,
+                            ul: ({node, ...props}) => <ul className="list-disc ml-6 mb-3 space-y-1 text-gray-800" {...props} />,
+                            ol: ({node, ...props}) => <ol className="list-decimal ml-6 mb-3 space-y-1 text-gray-800" {...props} />,
+                            li: ({node, ...props}) => <li className="mb-1 text-gray-800" {...props} />,
+                            strong: ({node, ...props}) => <strong className="font-bold text-gray-900" {...props} />,
+                            em: ({node, ...props}) => <em className="italic text-gray-800" {...props} />,
+                            blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-gray-300 pl-4 my-3 italic text-gray-700 bg-gray-50 py-2" {...props} />,
+                            a: ({node, href, ...props}) => <a href={href} className="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer" {...props} />,
                             code: ({node, inline, ...props}: any) =>
                               inline ? (
-                                <code className="bg-gray-200 px-1.5 py-0.5 rounded text-sm" {...props} />
+                                <code className="bg-gray-200 px-1.5 py-0.5 rounded text-sm font-mono text-gray-800" {...props} />
                               ) : (
-                                <code className="block bg-gray-200 p-3 rounded my-2" {...props} />
+                                <code className="block bg-gray-100 p-3 rounded my-2 font-mono text-sm text-gray-800 border border-gray-200" {...props} />
                               ),
-                            hr: ({node, ...props}) => <hr className="my-4" {...props} />
+                            pre: ({node, ...props}) => <pre className="bg-gray-100 p-3 rounded my-2 overflow-x-auto border border-gray-200" {...props} />,
+                            table: ({node, ...props}) => <table className="min-w-full divide-y divide-gray-200 my-3 border border-gray-200" {...props} />,
+                            thead: ({node, ...props}) => <thead className="bg-gray-50" {...props} />,
+                            tbody: ({node, ...props}) => <tbody className="bg-white divide-y divide-gray-200" {...props} />,
+                            th: ({node, ...props}) => <th className="px-4 py-2 text-left text-sm font-medium text-gray-900" {...props} />,
+                            td: ({node, ...props}) => <td className="px-4 py-2 text-sm text-gray-800" {...props} />,
+                            hr: ({node, ...props}) => <hr className="my-4 border-gray-300" {...props} />
                           }}
                         >
                           {message.content}

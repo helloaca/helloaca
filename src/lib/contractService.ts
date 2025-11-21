@@ -2,9 +2,9 @@ import { supabase } from './supabase'
 import { FileProcessor, ProcessedFile } from './fileProcessor'
 import { claudeService } from './claude'
 import { 
-  ContractAnalysis as EnhancedContractAnalysis, 
-  validateAnalysis,
-  RiskLevel
+  EnhancedContractAnalysis, 
+  validateEnhancedAnalysis,
+  LegacyAnalysisData
 } from '../types/contractAnalysis'
 
 export interface Contract {
@@ -25,7 +25,7 @@ export interface ContractAnalysis {
   id: string
   contract_id: string
   user_id: string
-  analysis_data?: EnhancedContractAnalysis
+  analysis_data?: EnhancedContractAnalysis & LegacyAnalysisData
   risk_score?: number
   key_clauses?: any
   recommendations?: any
@@ -166,76 +166,178 @@ export class ContractService {
     console.log('📄 Contract text length:', contractText.length, 'characters')
     
     try {
-      // Create comprehensive 11-section analysis prompt
-      const analysisPrompt = `You are a senior contract attorney with 25+ years of experience. Analyze this contract using the professional 11-section framework that law firms use for comprehensive contract review.
+      // Create comprehensive enhanced analysis prompt
+      const analysisPrompt = `You are a senior contract attorney with 25+ years of experience. Analyze this contract comprehensively and provide enhanced analysis with executive summary, detailed risk assessment, clause analysis, legal insights, and actionable recommendations.
 
 CONTRACT TEXT TO ANALYZE:
 ${contractText}
 
-ANALYSIS FRAMEWORK - Analyze each of these 11 critical sections:
+PROVIDE COMPREHENSIVE CONTRACT ANALYSIS WITH ENHANCED STRUCTURE:
 
-1. **TITLE & PARTIES**
-   Goal: Confirm who's in this deal
-   Check: Legal names (not trade names), business registration numbers, addresses, authorization to sign
-   🚩 RED FLAG: "Between ABC Ltd. and its affiliates" - opens door for unknown entities
+1. **EXECUTIVE SUMMARY**
+   - Overall risk assessment (1-100 score)
+   - Key findings summary (3-4 sentences)
+   - Critical issues identified
+   - Contract type classification
+   - Business impact assessment
 
-2. **RECITALS (Background/Whereas)**
-   Goal: Understand deal intent
-   Check: Background matches verbal agreement, no scope broadening
-   🚩 RED FLAG: Recital subtly broadens scope beyond negotiated terms
+2. **DETAILED RISK ASSESSMENT**
+   - Overall risk level (Low/Medium/High/Critical)
+   - Risk score (1-100)
+   - Risk distribution by category
+   - Critical vs moderate risks
+   - Risk mitigation priorities
+   - Time-sensitive issues
 
-3. **SCOPE OF WORK/SERVICES**
-   Goal: Define exact deliverables
-   Check: Clear deliverables, performance standards/KPIs, exclusions
-   🚩 RED FLAG: Vague wording like "as needed" or "to satisfaction of company"
+3. **COMPREHENSIVE CLAUSE ANALYSIS**
+   Analyze across these 11 critical sections:
+   
+   A. **TITLE & PARTIES**
+      Goal: Confirm legal identities and authority
+      Check: Legal names, registration numbers, addresses, authorized signatories
+      🚩 RED FLAG: Missing business registration or unauthorized signatures
+   
+   B. **RECITALS (Background/Whereas)**
+      Goal: Understand deal intent and context
+      Check: Background matches verbal agreement, no scope broadening
+      🚩 RED FLAG: Intent mismatch with contract terms
+   
+   C. **SCOPE OF WORK/SERVICES**
+      Goal: Define exact deliverables and standards
+      Check: Clear deliverables, performance standards/KPIs, exclusions, acceptance criteria
+      🚩 RED FLAG: Vague wording like "as needed" or "to satisfaction of company"
+   
+   D. **PAYMENT TERMS**
+      Goal: Ensure payment happens
+      Check: Due dates, currency, milestones, late penalties, refund conditions, invoicing
+      🚩 RED FLAG: "Payment upon client acceptance" - if never accepted, never paid
+   
+   E. **TERM & TERMINATION**
+      Goal: Define start/end and exit strategy
+      Check: Fixed vs open-ended, termination for cause/convenience, mutual rights, notice periods
+      🚩 RED FLAG: Only one side can terminate at will - that's servitude, not partnership
+   
+   F. **INTELLECTUAL PROPERTY**
+      Goal: Protect client's creations
+      Check: Pre-existing IP retention, new IP ownership, licensing rights, exclusivity
+      🚩 RED FLAG: "All work product belongs to company" - loses pre-existing assets
+   
+   G. **CONFIDENTIALITY/NON-DISCLOSURE**
+      Goal: Protect sensitive info without eternal silence
+      Check: Duration, definition of confidential info, exceptions, reasonable scope
+      🚩 RED FLAG: "Confidentiality survives indefinitely" - eternal silence
+   
+   H. **LIABILITY, INDEMNIFICATION & WARRANTIES**
+      Goal: Decide who pays when things blow up
+      Check: Liability caps, mutual indemnification, indirect damage disclaimers, warranty scope
+      🚩 RED FLAG: One-sided indemnification for all losses regardless of fault
+   
+   I. **DISPUTE RESOLUTION/GOVERNING LAW**
+      Goal: Know where/how fights are settled
+      Check: Arbitration vs court, jurisdiction, mediation steps, venue
+      🚩 RED FLAG: Foreign jurisdiction when client is local - stacks odds against you
+   
+   J. **BOILERPLATE & MISCELLANEOUS**
+      Goal: Catch sneaky provisions
+      Check: Entire agreement clause, assignment rights, notice provisions, amendments
+      🚩 RED FLAG: Unilateral assignment without consent
+   
+   K. **SIGNATURE PAGE**
+      Goal: Final sanity check
+      Check: Signatories identified, consistent dates, match entities from Section 1, proper authority
+      🚩 RED FLAG: Missing titles or unauthorized signatures = voidable contract
 
-4. **PAYMENT TERMS**
-   Goal: Ensure payment happens
-   Check: Due dates, currency, milestones, late penalties, refund conditions
-   🚩 RED FLAG: "Payment upon client acceptance" - if never accepted, never paid
+4. **LEGAL INSIGHTS & RECOMMENDATIONS**
+   - Jurisdiction-specific legal considerations
+   - Role-based advice (client vs contractor perspectives)
+   - Contextual recommendations based on contract type
+   - Time-sensitive action items
+   - Priority-based recommendation categories
 
-5. **TERM & TERMINATION**
-   Goal: Define start/end and exit strategy
-   Check: Fixed vs open-ended, termination for cause/convenience, mutual rights
-   🚩 RED FLAG: Only one side can terminate at will - that's servitude, not partnership
+5. **ACTIONABLE RECOMMENDATIONS**
+   - Immediate actions required
+   - Medium-term improvements
+   - Long-term strategic considerations
+   - Risk mitigation strategies
+   - Negotiation priorities
 
-6. **INTELLECTUAL PROPERTY**
-   Goal: Protect client's creations
-   Check: Pre-existing IP retention, new IP ownership, licensing rights
-   🚩 RED FLAG: "All work product belongs to company" - loses code/assets/methods
+6. **MISSING CLAUSES IDENTIFICATION**
+   - Critical missing provisions
+   - Recommended additional clauses
+   - Standard industry practices
+   - Risk exposure from omissions
 
-7. **CONFIDENTIALITY/NON-DISCLOSURE**
-   Goal: Protect sensitive info without eternal silence
-   Check: Duration, definition of confidential info, exceptions
-   🚩 RED FLAG: "Confidentiality survives indefinitely" - nobody remembers after 10 years
-
-8. **LIABILITY, INDEMNIFICATION & WARRANTIES**
-   Goal: Decide who pays when things blow up
-   Check: Liability caps, mutual indemnification, indirect damage disclaimers
-   🚩 RED FLAG: "Party A indemnifies all losses whether caused by negligence or not" - financial death sentence
-
-9. **DISPUTE RESOLUTION/GOVERNING LAW**
-   Goal: Know where/how fights are settled
-   Check: Arbitration vs court, jurisdiction, mediation steps
-   🚩 RED FLAG: Foreign jurisdiction when client is local - stacks odds against you
-
-10. **BOILERPLATE & MISCELLANEOUS**
-    Goal: Catch sneaky provisions
-    Check: Entire agreement clause, assignment rights, notice provisions
-    🚩 RED FLAG: "Agreement may be assigned by Company without consent" - could work for different entity
-
-11. **SIGNATURE PAGE**
-    Goal: Final sanity check
-    Check: Signatories identified, consistent dates, match entities from Section 1
-    🚩 RED FLAG: Missing titles or unauthorized signatures = voidable contract
-
-RESPONSE FORMAT - Return ONLY this JSON structure:
+RESPONSE FORMAT - Return ONLY this enhanced JSON structure:
 
 {
-  "overallRiskLevel": "Low Risk" | "Medium Risk" | "High Risk" | "Critical Risk",
-  "riskScore": [number 1-100],
-  "executiveSummary": "[3-4 sentence summary of overall risk and key concerns]",
-  "sections": {
+  "metadata": {
+    "contractId": "[unique identifier]",
+    "analysisId": "[analysis identifier]",
+    "userId": "[user identifier]",
+    "userRole": "client" | "contractor" | "legal_counsel",
+    "analysisDate": "[ISO 8601 timestamp]",
+    "contractType": "[contract type]",
+    "wordCount": [number],
+    "version": "1.0"
+  },
+  "executive_summary": {
+    "overall_risk_level": "Low Risk" | "Medium Risk" | "High Risk" | "Critical Risk",
+    "risk_score": [number 1-100],
+    "summary": "[3-4 sentence summary of overall risk and key concerns]",
+    "key_findings": ["[key finding 1]", "[key finding 2]", "[key finding 3]"],
+    "immediate_actions": ["[action 1]", "[action 2]"],
+    "contract_overview": {
+      "parties": [
+        {
+          "name": "[party name]",
+          "type": "[party type]",
+          "role": "[party role]"
+        }
+      ],
+      "contract_value": "[estimated value]",
+      "duration": "[contract duration]",
+      "key_purpose": "[primary purpose]"
+    }
+  },
+  "risk_assessment": {
+    "overall_risk_score": [number 1-100],
+    "risk_level": "Low Risk" | "Medium Risk" | "High Risk" | "Critical Risk",
+    "risk_categories": {
+      "financial": {
+        "score": [number 1-100],
+        "level": "Low" | "Medium" | "High" | "Critical",
+        "description": "[financial risk description]"
+      },
+      "legal": {
+        "score": [number 1-100],
+        "level": "Low" | "Medium" | "High" | "Critical",
+        "description": "[legal risk description]"
+      },
+      "operational": {
+        "score": [number 1-100],
+        "level": "Low" | "Medium" | "High" | "Critical",
+        "description": "[operational risk description]"
+      },
+      "strategic": {
+        "score": [number 1-100],
+        "level": "Low" | "Medium" | "High" | "Critical",
+        "description": "[strategic risk description]"
+      }
+    },
+    "critical_risks": [
+      {
+        "category": "[risk category]",
+        "description": "[risk description]",
+        "impact": "Low" | "Medium" | "High" | "Critical",
+        "probability": "Low" | "Medium" | "High",
+        "mitigation": "[mitigation strategy]"
+      }
+    ],
+    "risk_trends": "[risk trend analysis]",
+    "mitigation_summary": "[overall mitigation recommendations]"
+  },
+  "clause_analysis": {
+    "sections": {
     "titleParties": {
       "sectionName": "Title & Parties",
       "goal": "Confirm who's in this deal",
@@ -385,47 +487,124 @@ RESPONSE FORMAT - Return ONLY this JSON structure:
     },
     "boilerplate": {
       "sectionName": "Boilerplate",
-      "goal": "Make sure nothing sneaky is hiding here",
-      "riskLevel": "Low Risk" | "Medium Risk" | "High Risk" | "Critical Risk",
-      "status": "Pass" | "Warning" | "Critical" | "Not Found",
-      "checkItems": [...],
-      "redFlags": [...],
-      "keyFindings": [...],
-      "recommendations": [...],
-      "hasEntireAgreement": boolean,
-      "hasAssignmentClause": boolean,
-      "hasNoticeProvisions": boolean,
-      "allowsUnilateralAssignment": boolean
+      "goal": "Include standard legal provisions and miscellaneous terms",
+      "riskLevel": "Medium Risk",
+      "status": "Warning",
+      "checkItems": [],
+      "keyFindings": ["Standard provisions need review"],
+      "redFlags": [],
+      "recommendations": ["Add standard boilerplate provisions"],
+      "hasEntireAgreement": false,
+      "hasAssignmentClause": false,
+      "hasNoticeProvisions": hasNoticeProvisions,
+      "allowsUnilateralAssignment": false
     },
     "signaturePage": {
       "sectionName": "Signature Page",
-      "goal": "Final sanity check",
-      "riskLevel": "Low Risk" | "Medium Risk" | "High Risk" | "Critical Risk",
-      "status": "Pass" | "Warning" | "Critical" | "Not Found",
-      "checkItems": [...],
-      "redFlags": [...],
-      "keyFindings": [...],
-      "recommendations": [...],
-      "signatorsIdentified": boolean,
-      "datesConsistent": boolean,
-      "matchesEntities": boolean,
-      "hasProperAuthority": boolean
+      "goal": "Ensure proper execution and legal binding",
+      "riskLevel": "Low Risk",
+      "status": "Pass",
+      "checkItems": [],
+      "keyFindings": ["Signature requirements assumed present"],
+      "redFlags": [],
+      "recommendations": ["Verify all required signatures are obtained"],
+      "signatorsIdentified": true,
+      "datesConsistent": true,
+      "matchesEntities": true,
+      "hasProperAuthority": true
     }
   },
-  "totalRedFlags": [number],
-  "criticalIssues": [
-    {
-      "type": "[red flag type]",
-      "severity": "Critical" | "High" | "Medium" | "Low",
-      "description": "[description]",
-      "explanation": "[why problematic]",
-      "recommendation": "[how to fix]",
-      "location": "[where found]"
-    }
-  ],
-  "overallRecommendations": ["[overall recommendations]"],
-  "analysisDate": "[current date]",
-  "contractType": "[detected contract type]"
+  "legal_insights": {
+    "jurisdiction_advice": [
+      {
+        "jurisdiction": "[jurisdiction name]",
+        "applicable_laws": ["[law 1]", "[law 2]"],
+        "compliance_requirements": ["[requirement 1]", "[requirement 2]"],
+        "risk_factors": ["[risk 1]", "[risk 2]"],
+        "recommendations": ["[recommendation 1]", "[recommendation 2]"]
+      }
+    ],
+    "role_specific_advice": [
+      {
+        "role": "client" | "contractor" | "legal_counsel",
+        "perspective": "[role perspective description]",
+        "key_concerns": ["[concern 1]", "[concern 2]"],
+        "advantages": ["[advantage 1]", "[advantage 2]"],
+        "risks": ["[risk 1]", "[risk 2]"],
+        "negotiation_points": ["[point 1]", "[point 2]"]
+      }
+    ],
+    "contextual_recommendations": [
+      {
+        "category": "immediate" | "medium_term" | "strategic",
+        "priority": "critical" | "high" | "medium" | "low",
+        "title": "[recommendation title]",
+        "description": "[detailed description]",
+        "justification": "[why this matters]",
+        "implementation": "[how to implement]",
+        "time_sensitivity": "urgent" | "soon" | "flexible"
+      }
+    ]
+  },
+  "recommendations": {
+    "action_items": [
+      {
+        "id": "[unique identifier]",
+        "title": "[action title]",
+        "description": "[detailed description]",
+        "priority": "critical" | "high" | "medium" | "low",
+        "category": "legal" | "financial" | "operational" | "strategic",
+        "status": "pending" | "in_progress" | "completed",
+        "due_date": "[ISO 8601 date]",
+        "assigned_to": "[responsible party]",
+        "estimated_effort": "[effort estimate]",
+        "potential_impact": "[impact description]",
+        "dependencies": ["[dependency 1]", "[dependency 2]"]
+      }
+    ],
+    "negotiation_priorities": [
+      {
+        "clause": "[clause name]",
+        "priority": "critical" | "high" | "medium" | "low",
+        "current_issue": "[current problem]",
+        "proposed_solution": "[suggested change]",
+        "fallback_position": "[alternative solution]",
+        "deal_breaker": boolean
+      }
+    ],
+    "missing_clauses": [
+      {
+        "clause_type": "[clause type]",
+        "importance": "critical" | "high" | "medium" | "low",
+        "standard_practice": boolean,
+        "risk_exposure": "[risk description]",
+        "recommended_language": "[suggested clause text]",
+        "industry_context": "[industry specific context]"
+      }
+    ]
+  },
+  "export_data": {
+    "chart_data": [
+      {
+        "chart_type": "risk_distribution" as const,
+        "title": "Risk Distribution Analysis",
+        "data": [
+          { category: "Financial", score: hasPaymentTerms ? 30 : 80 },
+          { category: "Legal", score: !hasGoverningLaw ? 70 : 40 },
+          { category: "Operational", score: !hasTerminationClause ? 85 : 35 },
+          { category: "Strategic", score: !hasLiabilityClause ? 75 : 45 }
+        ],
+        description: "Risk scores by category based on clause presence"
+      }
+    ],
+    "annotations": [
+      {
+        "section": 'Payment Terms',
+        "comment": hasPaymentTerms ? 'Standard payment provisions identified' : 'Missing payment terms - critical gap',
+        position: { start: 0, end: 100 }
+      }
+    ]
+  }
 }
 
 CRITICAL INSTRUCTIONS:
@@ -527,20 +706,21 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
         
         // Fallback to local analysis if JSON parsing fails
         console.log('🔄 Falling back to local analysis due to JSON parsing error')
-        return this.getLocalAnalysis(contractText)
+        return this.generateLocalAnalysis(contractText)
       }
 
       // Validate the structure using the comprehensive validation function
-      if (!validateAnalysis(enhancedAnalysis)) {
+      if (!validateEnhancedAnalysis(enhancedAnalysis)) {
         console.error('❌ AI response structure validation failed')
         console.log('🔄 Falling back to local analysis due to structure validation error')
-        return this.getLocalAnalysis(contractText)
+        return this.generateLocalAnalysis(contractText)
       }
 
       console.log('✅ Comprehensive AI-powered contract analysis completed successfully')
-      console.log(`📊 Risk Assessment: ${enhancedAnalysis.overallRiskLevel} (Score: ${enhancedAnalysis.riskScore})`)
-      console.log(`🔍 Critical Issues Found: ${enhancedAnalysis.criticalIssues.length}`)
-      console.log(`📋 Missing Clauses Identified: ${enhancedAnalysis.missingClauses.length}`)
+      console.log(`📊 Risk Assessment Score: ${enhancedAnalysis.risk_assessment?.overall_score ?? 0} (Key risk score: ${enhancedAnalysis.executive_summary?.key_metrics?.risk_score ?? 0})`)
+      console.log(`🔍 Critical Clauses Found: ${enhancedAnalysis.clause_analysis?.critical_clauses?.length ?? 0}`)
+      console.log(`📋 Action Items Identified: ${enhancedAnalysis.legal_insights?.action_items?.length ?? 0}`)
+      console.log(`📋 Missing Clauses Identified: ${enhancedAnalysis.clause_analysis?.missing_clauses?.length ?? 0}`)
       
       return enhancedAnalysis
 
@@ -549,7 +729,7 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
       console.log('🔄 Falling back to local analysis due to AI error')
       
       // Fallback to local analysis if AI fails
-      return this.getLocalAnalysis(contractText)
+      return this.generateLocalAnalysis(contractText)
     }
   }
 
@@ -699,279 +879,223 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
   /**
    * Generate enhanced local analysis based on contract text patterns
    */
-  private static getLocalAnalysis(contractText: string): EnhancedContractAnalysis {
-    console.log('🏠 Generating enhanced local contract analysis...')
-    
-    // Enhanced text analysis with more comprehensive pattern matching
-    const wordCount = contractText.split(/\s+/).length
-    
-    // Contract element detection
+  private static generateLocalAnalysis(contractText: string): EnhancedContractAnalysis {
+    // Basic text metrics
+    const wordCount = (contractText || '').trim().split(/\s+/).filter(Boolean).length
+
+    // Clause presence detection
     const hasTerminationClause = /terminat(e|ion)|end|expire|cancel|dissolution/i.test(contractText)
-    const hasPaymentTerms = /payment|fee|cost|price|amount|compensation|salary|wage|invoice|billing/i.test(contractText)
-    const hasLiabilityClause = /liability|liable|responsible|damages|indemnif|limitation|disclaim/i.test(contractText)
-    const hasGoverningLaw = /governing law|jurisdiction|court|legal|dispute resolution|arbitration/i.test(contractText)
-    const hasWarranties = /warrant|guarantee|represent|assure|promise/i.test(contractText)
-    const hasNoticeProvisions = /notice|notify|inform|written|email|address/i.test(contractText)
-    
-    // Risk factor analysis
-    let riskFactors = 0
-    const criticalMissing: string[] = []
-    const moderateMissing: string[] = []
-    
-    // Critical elements
-    if (!hasTerminationClause) { riskFactors += 2; criticalMissing.push('Termination Clause') }
-    if (!hasPaymentTerms) { riskFactors += 2; criticalMissing.push('Payment Terms') }
-    if (!hasLiabilityClause) { riskFactors += 2; criticalMissing.push('Liability Provisions') }
-    
-    // Moderate elements
-    if (!hasGoverningLaw) { riskFactors += 1; moderateMissing.push('Governing Law') }
-    if (!hasNoticeProvisions) { riskFactors += 1; moderateMissing.push('Notice Provisions') }
-    if (!hasWarranties) { riskFactors += 1; moderateMissing.push('Warranties') }
-    
-    // Document quality factors
-    if (wordCount < 300) riskFactors += 2
-    else if (wordCount < 500) riskFactors += 1
-    
-    // Determine overall risk level
-    let riskLevel: RiskLevel = 'Low Risk'
-    if (riskFactors >= 5) riskLevel = 'High Risk'
-    else if (riskFactors >= 3) riskLevel = 'Medium Risk'
-    
-    const localAnalysis: EnhancedContractAnalysis = {
-      overallRiskLevel: riskLevel,
-      riskScore: riskLevel === 'High Risk' ? 80 : riskLevel === 'Medium Risk' ? 50 : 20,
-      executiveSummary: `Comprehensive local contract analysis completed successfully. For comprehensive legal analysis and advice, professional legal review is recommended.`,
-      sections: {
-        titleParties: {
-          sectionName: "Title & Parties",
-          goal: "Identify contracting parties and establish legal framework",
-          riskLevel: "Low Risk",
-          status: "Pass",
-          checkItems: [],
-          keyFindings: ["Local analysis - basic pattern matching completed"],
-          redFlags: [],
-          recommendations: ["Verify party identification is complete and accurate"],
+    const hasPaymentTerms = /payment|fee|cost|price|amount|compensation|invoice|billing/i.test(contractText)
+    const hasLiabilityClause = /liability|liable|damages|indemnif|limitation|disclaim/i.test(contractText)
+    const hasGoverningLaw = /governing law|jurisdiction|court|dispute resolution|arbitration/i.test(contractText)
+    const hasWarranties = /warrant(y|ies)|guarantee|represent/i.test(contractText)
+    const hasNoticeProvisions = /notice|notify|written|email|address/i.test(contractText)
+
+    // Simple risk scoring
+    let score = 20
+    let riskDistribution = { critical: 0, high: 0, medium: 0, low: 0, safe: 0 }
+    const missing: string[] = []
+
+    if (!hasPaymentTerms) { score += 30; riskDistribution.high += 1; missing.push('Payment Terms') }
+    if (!hasTerminationClause) { score += 25; riskDistribution.high += 1; missing.push('Termination') }
+    if (!hasLiabilityClause) { score += 25; riskDistribution.high += 1; missing.push('Liability') }
+    if (!hasGoverningLaw) { score += 15; riskDistribution.medium += 1; missing.push('Governing Law') }
+    if (!hasNoticeProvisions) { score += 10; riskDistribution.medium += 1; missing.push('Notice') }
+    if (!hasWarranties) { score += 10; riskDistribution.medium += 1; missing.push('Warranties') }
+
+    const overallScore = Math.min(100, score)
+
+    // Map to SafetyRating and Complexity
+    const safetyRating: 'Safe' | 'Moderate' | 'Risky' | 'Dangerous' = overallScore < 40 ? 'Safe' : overallScore < 60 ? 'Moderate' : overallScore < 80 ? 'Risky' : 'Dangerous'
+    const complexityLevel: 'Simple' | 'Standard' | 'Complex' = wordCount < 500 ? 'Simple' : wordCount < 1500 ? 'Standard' : 'Complex'
+
+    const now = new Date().toISOString()
+
+    const riskLabel = overallScore < 40 ? 'low' : overallScore < 70 ? 'medium' : overallScore < 90 ? 'high' : 'critical'
+
+    const analysis: EnhancedContractAnalysis = {
+      metadata: {
+        analysisId: `analysis-${Date.now()}`,
+        contractId: `local-${Date.now()}`,
+        userId: 'local',
+        analysisDate: now,
+        contractType: 'Service Agreement',
+        pageCount: 1,
+        wordCount,
+        processingTime: 0.2
+      },
+      executive_summary: {
+        contract_overview: {
+          type: 'Service Agreement',
           parties: [
-            {
-              name: "Client",
-              isLegalName: true,
-              hasRegistrationNumber: false,
-              hasAddress: true,
-              isAuthorized: true
-            },
-            {
-              name: "Contractor",
-              isLegalName: true,
-              hasRegistrationNumber: false,
-              hasAddress: true,
-              isAuthorized: true
-            }
-          ]
+            { name: 'Client', type: 'Company', role: 'Client', legal_status: 'Verified' },
+            { name: 'Service Provider', type: 'Company', role: 'Service Provider', legal_status: 'Verified' }
+          ],
+          effective_date: now.split('T')[0],
+          contract_term: 'Not specified',
+          jurisdiction: hasGoverningLaw ? 'Specified' : 'Unspecified',
+          governing_law: hasGoverningLaw ? 'Present' : 'Missing',
+          total_value: hasPaymentTerms ? 'Specified' : undefined,
+          purpose_summary: 'Automatically generated local analysis summary'
         },
-        recitals: {
-          sectionName: "Recitals",
-          goal: "Establish background and context for the agreement",
-          riskLevel: "Low Risk", 
-          status: "Pass",
-          checkItems: [],
-          keyFindings: ["Background context analysis completed"],
-          redFlags: [],
-          recommendations: ["Review recitals for accuracy and completeness"],
-          intentMatch: true,
-          scopeConsistency: true,
-          backgroundAccuracy: true
+        // UI-friendly optional fields used by ExecutiveSummary component
+        overall_risk_level: riskLabel,
+        risk_score: overallScore,
+        summary: missing.length
+          ? `Detected potential gaps: ${missing.join(', ')}. Review and add standard provisions to reduce risk.`
+          : 'Key protections present with no major gaps detected.',
+        key_findings: [
+          hasPaymentTerms ? 'Payment terms specified.' : 'Payment terms missing.',
+          hasTerminationClause ? 'Termination provisions present.' : 'Termination clause missing.',
+          hasLiabilityClause ? 'Liability and indemnity addressed.' : 'Liability/indemnity missing or limited.'
+        ],
+        immediate_actions: missing.length
+          ? missing.map(m => `Add ${m} clause with standard protections.`)
+          : ['Verify fairness of terms and confirm governing law.'],
+        key_metrics: {
+          risk_score: overallScore,
+          safety_rating: safetyRating,
+          complexity_level: complexityLevel,
+          estimated_review_time: complexityLevel === 'Simple' ? '10-20 minutes' : complexityLevel === 'Standard' ? '20-40 minutes' : '40-90 minutes'
         },
-        scopeOfWork: {
-          sectionName: "Scope of Work",
-          goal: "Define deliverables and performance standards",
-          riskLevel: "Medium Risk",
-          status: "Warning",
-          checkItems: [],
-          keyFindings: ["Work scope requires detailed review"],
-          redFlags: [],
-          recommendations: ["Ensure scope is clearly defined and measurable"],
-          hasDeliverables: true,
-          hasPerformanceStandards: false,
-          hasExclusions: false,
-          clarityScore: 6
-        },
-        paymentTerms: {
-          sectionName: "Payment Terms",
-          goal: "Establish financial obligations and payment procedures",
-          riskLevel: hasPaymentTerms ? "Low Risk" : "High Risk",
-          status: hasPaymentTerms ? "Pass" : "Not Found",
-          checkItems: [],
-          keyFindings: hasPaymentTerms ? ["Payment provisions detected"] : ["No payment terms identified"],
-          redFlags: hasPaymentTerms ? [] : [{
-            type: "Missing Critical Section",
-            severity: "Critical" as const,
-            description: "Missing payment terms",
-            impact: "Could lead to payment disputes"
-          }],
-          recommendations: hasPaymentTerms ? ["Review payment terms for completeness"] : ["Add detailed payment terms and schedules"],
-          hasDueDates: hasPaymentTerms,
-          hasCurrency: hasPaymentTerms,
-          hasMilestones: false,
-          hasLatePenalties: false,
-          hasRefundConditions: false
-        },
-        termTermination: {
-          sectionName: "Term & Termination",
-          goal: "Define contract duration and termination procedures",
-          riskLevel: hasTerminationClause ? "Low Risk" : "High Risk",
-          status: hasTerminationClause ? "Pass" : "Not Found",
-          checkItems: [],
-          keyFindings: hasTerminationClause ? ["Termination provisions found"] : ["No termination clause detected"],
-          redFlags: hasTerminationClause ? [] : [{
-            type: "Missing Critical Section",
-            severity: "Critical" as const,
-            description: "Missing termination clause",
-            impact: "No clear exit strategy for either party"
-          }],
-          recommendations: hasTerminationClause ? ["Review termination conditions"] : ["Add termination clause with notice requirements"],
-          isFixedTerm: false,
-          hasTerminationForCause: hasTerminationClause,
-          hasTerminationForConvenience: false,
-          isMutualTermination: false
-        },
-        intellectualProperty: {
-          sectionName: "Intellectual Property",
-          goal: "Define IP ownership and licensing rights",
-          riskLevel: "Medium Risk",
-          status: "Warning",
-          checkItems: [],
-          keyFindings: ["IP provisions require review"],
-          redFlags: [],
-          recommendations: ["Clarify IP ownership and licensing terms"],
-          retainsPreExistingIP: true,
-          definesNewIPOwnership: false,
-          hasLicensingRights: false,
-          isExclusive: false
-        },
-        confidentiality: {
-          sectionName: "Confidentiality",
-          goal: "Protect sensitive information and trade secrets",
-          riskLevel: "Medium Risk",
-          status: "Warning",
-          checkItems: [],
-          keyFindings: ["Confidentiality provisions need review"],
-          redFlags: [],
-          recommendations: ["Add or strengthen confidentiality provisions"],
-          hasDuration: false,
-          hasDefinition: false,
-          hasExceptions: false,
-          durationReasonable: false
-        },
-        liability: {
-          sectionName: "Liability & Warranties",
-          goal: "Allocate risk and define warranty obligations",
-          riskLevel: hasLiabilityClause ? "Medium Risk" : "High Risk",
-          status: hasLiabilityClause ? "Pass" : "Not Found",
-          checkItems: [],
-          keyFindings: hasLiabilityClause ? ["Liability provisions found"] : ["No liability clauses detected"],
-          redFlags: hasLiabilityClause ? [] : [{
-            type: "Missing Critical Section",
-            severity: "High" as const,
-            description: "Missing liability provisions",
-            impact: "Undefined risk exposure for both parties"
-          }],
-          recommendations: hasLiabilityClause ? ["Review liability allocation"] : ["Add liability limitations and indemnification"],
-          hasLiabilityCap: hasLiabilityClause,
-          isMutualIndemnification: false,
-          hasIndirectDamageDisclaimer: false,
-          isBalanced: false
-        },
-        disputeResolution: {
-          sectionName: "Dispute Resolution",
-          goal: "Establish procedures for resolving conflicts",
-          riskLevel: hasGoverningLaw ? "Low Risk" : "Medium Risk",
-          status: hasGoverningLaw ? "Pass" : "Warning",
-          checkItems: [],
-          keyFindings: hasGoverningLaw ? ["Legal framework provisions found"] : ["No governing law specified"],
-          redFlags: [],
-          recommendations: hasGoverningLaw ? ["Review jurisdiction and procedures"] : ["Add governing law and dispute resolution procedures"],
-          hasArbitration: false,
-          hasJurisdiction: hasGoverningLaw,
-          hasMediation: false,
-          isFavorableJurisdiction: hasGoverningLaw
-        },
-        boilerplate: {
-          sectionName: "Boilerplate",
-          goal: "Include standard legal provisions and miscellaneous terms",
-          riskLevel: "Medium Risk",
-          status: "Warning",
-          checkItems: [],
-          keyFindings: ["Standard provisions need review"],
-          redFlags: [],
-          recommendations: ["Add standard boilerplate provisions"],
-          hasEntireAgreement: false,
-          hasAssignmentClause: false,
-          hasNoticeProvisions: hasNoticeProvisions,
-          allowsUnilateralAssignment: false
-        },
-        signaturePage: {
-          sectionName: "Signature Page",
-          goal: "Ensure proper execution and legal binding",
-          riskLevel: "Low Risk",
-          status: "Pass",
-          checkItems: [],
-          keyFindings: ["Signature requirements assumed present"],
-          redFlags: [],
-          recommendations: ["Verify all required signatures are obtained"],
-          signatorsIdentified: true,
-          datesConsistent: true,
-          matchesEntities: true,
-          hasProperAuthority: true
+        quick_insights: {
+          biggest_risk: missing[0] || 'None detected',
+          strongest_protection: hasLiabilityClause ? 'Liability provisions present' : 'Limited protections',
+          most_important_clause: 'Payment Terms',
+          negotiation_priority: missing.length ? 'Add missing critical clauses' : 'Verify fairness of terms'
         }
       },
-      criticalIssues: criticalMissing.map(missing => ({
-        type: "Missing Critical Section",
-        severity: "Critical" as const,
-        description: `Missing ${missing}`,
-        impact: `Significant legal and business risk due to absent ${missing.toLowerCase()}`
-      })),
-      missingClauses: [...criticalMissing, ...moderateMissing].map(missing => ({
-        clauseType: missing,
-        description: `Missing ${missing} provisions`,
-        importance: criticalMissing.includes(missing) ? 'High' as const : 'Medium' as const,
-        riskIfMissing: `Significant legal and business risk due to absent ${missing.toLowerCase()}`,
-        suggestedLanguage: `Add comprehensive ${missing.toLowerCase()} provisions to the contract`
-      })),
-      overallRecommendations: [
-        'Consider professional legal review for comprehensive analysis',
-        hasTerminationClause && hasPaymentTerms && hasLiabilityClause 
-          ? 'Contract appears to have key standard clauses - verify completeness'
-          : 'Add missing standard contract provisions (termination, payment, liability)',
-        wordCount < 500 
-          ? 'Contract appears brief - ensure all necessary terms are included'
-          : 'Contract length appears reasonable for comprehensive coverage'
-      ],
-      totalRedFlags: criticalMissing.length,
-      analysisDate: new Date().toISOString(),
-      contractType: "General Contract"
+      risk_assessment: {
+        overall_score: overallScore,
+        risk_level: riskLabel,
+        // Legacy/UI alias for older components
+        overall_risk_score: overallScore,
+        risk_distribution: riskDistribution,
+        category_breakdown: [
+          { category: 'Financial', score: hasPaymentTerms ? 30 : 80, risk_level: hasPaymentTerms ? 'Low' : 'High', clause_count: 1, key_issues: hasPaymentTerms ? [] : ['Missing payment terms'], recommendations: hasPaymentTerms ? [] : ['Add detailed payment provisions'] },
+          { category: 'Legal', score: hasGoverningLaw ? 40 : 70, risk_level: hasGoverningLaw ? 'Medium' : 'High', clause_count: 1, key_issues: hasGoverningLaw ? [] : ['No governing law'], recommendations: hasGoverningLaw ? [] : ['Specify governing law and venue'] },
+          { category: 'Operational', score: hasTerminationClause ? 35 : 85, risk_level: hasTerminationClause ? 'Low' : 'High', clause_count: 1, key_issues: hasTerminationClause ? [] : ['No termination clause'], recommendations: hasTerminationClause ? [] : ['Add termination with notice'] }
+        ],
+        // Provide legacy alias to match UI expectations
+        risk_categories: [
+          { category: 'Financial', score: hasPaymentTerms ? 30 : 80, risk_level: hasPaymentTerms ? 'Low' : 'High', clause_count: 1, key_issues: hasPaymentTerms ? [] : ['Missing payment terms'], recommendations: hasPaymentTerms ? [] : ['Add detailed payment provisions'] },
+          { category: 'Legal', score: hasGoverningLaw ? 40 : 70, risk_level: hasGoverningLaw ? 'Medium' : 'High', clause_count: 1, key_issues: hasGoverningLaw ? [] : ['No governing law'], recommendations: hasGoverningLaw ? [] : ['Specify governing law and venue'] },
+          { category: 'Operational', score: hasTerminationClause ? 35 : 85, risk_level: hasTerminationClause ? 'Low' : 'High', clause_count: 1, key_issues: hasTerminationClause ? [] : ['No termination clause'], recommendations: hasTerminationClause ? [] : ['Add termination with notice'] }
+        ],
+        trend_analysis: {
+          vs_industry_average: -5,
+          vs_similar_contracts: -10,
+          risk_trajectory: overallScore < 60 ? 'Improving' : overallScore < 80 ? 'Stable' : 'Declining'
+        }
+      },
+      clause_analysis: {
+        total_clauses: 10,
+        analyzed_clauses: 6,
+        clauses_by_section: [
+          {
+            section_name: 'Payment Terms',
+            section_type: 'Financial',
+            clauses: [],
+            section_risk_score: hasPaymentTerms ? 30 : 75,
+            summary: hasPaymentTerms ? 'Payment terms found.' : 'Missing payment terms.'
+          },
+          {
+            section_name: 'Term & Termination',
+            section_type: 'Operational',
+            clauses: [],
+            section_risk_score: hasTerminationClause ? 35 : 85,
+            summary: hasTerminationClause ? 'Termination provisions present.' : 'Missing termination.'
+          }
+        ],
+        critical_clauses: missing.filter(m => ['Payment Terms','Termination','Liability'].includes(m)).map((m, i) => ({
+          clause_id: `crit-${i}`,
+          clause_type: m,
+          risk_level: 'Critical',
+          issues: [`Missing ${m}`],
+          immediate_actions: [`Add ${m} provisions`],
+          escalation_required: false,
+          legal_review_recommended: true
+        })),
+        missing_clauses: missing.map(m => ({
+          clauseType: m,
+          description: `Missing ${m} clause`,
+          importance: 'High',
+          riskIfMissing: `Exposure due to absent ${m.toLowerCase()}`,
+          suggestedLanguage: `Include standard ${m.toLowerCase()} provisions`
+        }))
+      },
+      legal_insights: {
+        contextual_recommendations: [
+          {
+            id: 'rec-1',
+            category: 'Risk Mitigation',
+            priority: 'High',
+            title: 'Add missing critical clauses',
+            description: 'Include payment, termination, and liability provisions.',
+            implementation_steps: ['Draft clauses', 'Negotiate terms', 'Update contract'],
+            estimated_impact: 'Reduce high-risk exposure',
+            time_sensitivity: 'Immediate',
+            user_role_context: 'Small Business'
+          }
+        ],
+        jurisdiction_specific: [
+          {
+            jurisdiction: 'General',
+            specific_considerations: ['Venue selection', 'Arbitration vs court'],
+            legal_requirements: ['Specify governing law'],
+            compliance_notes: ['Ensure enforceability']
+          }
+        ],
+        role_based_advice: [
+          {
+            role: 'Small Business',
+            specific_guidance: ['Clarify scope and deliverables'],
+            common_pitfalls: ['Ambiguous payment triggers'],
+            negotiation_tips: ['Cap liability', 'Mutual indemnification']
+          }
+        ],
+        action_items: [
+          {
+            id: 'ai-1',
+            title: 'Draft Payment Terms',
+            description: 'Add clear payment schedule and late fee policy.',
+            priority: 'High',
+            status: 'Pending',
+            due_date: new Date(Date.now() + 7*24*60*60*1000).toISOString()
+          }
+        ]
+      },
+      export_data: {
+        pdf_template: 'default-pdf',
+        word_template: 'default-docx',
+        annotations: [],
+        charts_data: [
+          { chart_type: 'risk_distribution', data: Object.entries(riskDistribution), configuration: {} }
+        ]
+      }
     }
-    
-    console.log('✅ Local analysis generated in enhanced format')
-    
-    return localAnalysis
+
+    return analysis
   }
-
-
 
   private static async saveAnalysisResults(
     contractId: string,
     userId: string,
     analysisResult: EnhancedContractAnalysis
   ): Promise<ContractAnalysis> {
+    const legacy = toLegacyAnalysis(analysisResult)
     const { data, error } = await supabase
       .from('reports')
       .insert({
         contract_id: contractId,
         user_id: userId,
-        analysis_data: analysisResult,
-        risk_score: analysisResult.riskScore,
-        key_clauses: analysisResult.criticalIssues,
-        recommendations: analysisResult.overallRecommendations
+        analysis_data: { ...analysisResult, ...legacy },
+        risk_score: analysisResult.executive_summary.key_metrics.risk_score,
+        key_clauses: analysisResult.clause_analysis.missing_clauses.map(clause => clause.clauseType),
+        recommendations: [
+          ...analysisResult.legal_insights.action_items.map(item => item.description),
+          ...analysisResult.legal_insights.contextual_recommendations.map(rec => rec.description)
+        ]
       })
       .select()
       .single()
@@ -1013,11 +1137,17 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
         // Don't throw error, just return contracts without analysis
       }
 
-      // Combine contracts with their analysis data
-      const contractsWithAnalysis = contracts.map(contract => ({
-        ...contract,
-        analysis: analyses?.find(analysis => analysis.contract_id === contract.id)
-      }))
+      // Combine contracts with their analysis data and merge legacy fields if needed
+      const contractsWithAnalysis = contracts.map(contract => {
+        const analysis = analyses?.find(a => a.contract_id === contract.id)
+        if (analysis?.analysis_data && validateEnhancedAnalysis(analysis.analysis_data)) {
+          analysis.analysis_data = { 
+            ...analysis.analysis_data, 
+            ...toLegacyAnalysis(analysis.analysis_data as EnhancedContractAnalysis)
+          }
+        }
+        return { ...contract, analysis }
+      })
 
       return contractsWithAnalysis
     } catch (error) {
@@ -1056,10 +1186,127 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
 
       if (error) {
         if (error.code === 'PGRST116') {
+          // Fallback: attempt to build analysis from contract record if reports entry missing
+          const contract = await this.getContract(contractId)
+          if (contract) {
+            // Prefer any existing analysis_json if present; otherwise generate local analysis
+            let enhanced: EnhancedContractAnalysis | null = null
+            try {
+              if ((contract as any).analysis_json) {
+                const aj = (contract as any).analysis_json
+                // Minimal mapping into EnhancedContractAnalysis
+                const now = new Date().toISOString()
+                enhanced = {
+                  metadata: {
+                    analysisId: `fallback-${contract.id}`,
+                    contractId: contract.id,
+                    userId: contract.user_id,
+                    analysisDate: now,
+                    contractType: 'Unknown',
+                    pageCount: 1,
+                    wordCount: (contract.extracted_text || '').split(/\s+/).filter(Boolean).length,
+                    processingTime: 0
+                  },
+                  executive_summary: {
+                    contract_overview: {
+                      type: 'Unknown',
+                      parties: [],
+                      effective_date: now.split('T')[0],
+                      contract_term: 'Unknown',
+                      jurisdiction: 'Unknown',
+                      governing_law: 'Unknown',
+                      purpose_summary: aj.summary || aj.structuredAnalysis?.summary || 'No summary available'
+                    },
+                    overall_risk_level: (aj.riskLevel || aj.structuredAnalysis?.overallRiskLevel || 'medium')?.toString().toLowerCase(),
+                    risk_score: aj.riskScore ?? 0,
+                    summary: aj.summary || aj.structuredAnalysis?.summary || 'No summary available',
+                    key_findings: aj.structuredAnalysis?.keyFindings?.map((f: any) => f.title || f.description) || [],
+                    immediate_actions: aj.recommendations?.map((r: any) => r.description) || [],
+                    key_metrics: {
+                      risk_score: aj.riskScore ?? 0,
+                      safety_rating: 'Moderate',
+                      complexity_level: 'Standard',
+                      estimated_review_time: '20-40 minutes'
+                    },
+                    quick_insights: {
+                      biggest_risk: (aj.potentialIssues?.[0]?.issue) || 'Not available',
+                      strongest_protection: 'Not available',
+                      most_important_clause: 'Not available',
+                      negotiation_priority: 'Review recommendations'
+                    }
+                  },
+                  risk_assessment: {
+                    overall_score: aj.riskScore ?? 0,
+                    risk_distribution: { critical: 0, high: 0, medium: 0, low: 0, safe: 0 },
+                    category_breakdown: [],
+                    trend_analysis: { vs_industry_average: 0, vs_similar_contracts: 0, risk_trajectory: 'Stable' }
+                  },
+                  clause_analysis: {
+                    total_clauses: 0,
+                    analyzed_clauses: 0,
+                    clauses_by_section: [],
+                    critical_clauses: [],
+                    missing_clauses: (aj.potentialIssues || []).map((pi: any) => ({
+                      clauseType: pi.issue,
+                      description: pi.recommendation || 'Potential issue',
+                      importance: 'Medium',
+                      riskIfMissing: 'Unknown',
+                      suggestedLanguage: 'N/A'
+                    }))
+                  },
+                  legal_insights: {
+                    contextual_recommendations: (aj.recommendations || []).map((r: any, idx: number) => ({
+                      id: `rec-${idx}`,
+                      category: r.category || 'Risk Mitigation',
+                      priority: (r.priority || 'Medium'),
+                      title: r.action || 'Recommendation',
+                      description: r.description || 'Review clause',
+                      implementation_steps: [],
+                      estimated_impact: 'Moderate',
+                      time_sensitivity: 'Short-term',
+                      user_role_context: 'Small Business'
+                    })),
+                    jurisdiction_specific: [],
+                    role_based_advice: [],
+                    action_items: []
+                  },
+                  export_data: { pdf_template: 'default-pdf', word_template: 'default-docx', annotations: [], charts_data: [] }
+                }
+              } else if (contract.extracted_text) {
+                enhanced = this.generateLocalAnalysis(contract.extracted_text)
+              }
+            } catch {}
+
+            if (enhanced) {
+              const legacy = toLegacyAnalysis(enhanced)
+              return {
+                id: `fallback-${contract.id}`,
+                contract_id: contract.id,
+                user_id: contract.user_id,
+                analysis_data: { ...enhanced, ...legacy },
+                risk_score: enhanced.executive_summary.key_metrics.risk_score,
+                key_clauses: enhanced.clause_analysis.missing_clauses.map(c => c.clauseType),
+                recommendations: [
+                  ...enhanced.legal_insights.action_items.map(i => i.description),
+                  ...enhanced.legal_insights.contextual_recommendations.map(r => r.description)
+                ],
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }
+            }
+          }
           return null
         }
         console.error('Failed to fetch contract analysis:', error)
         throw error
+      }
+
+      // Merge legacy fields for compatibility
+      if (data?.analysis_data && validateEnhancedAnalysis(data.analysis_data)) {
+        data.analysis_data = { 
+          ...data.analysis_data, 
+          ...toLegacyAnalysis(data.analysis_data as EnhancedContractAnalysis)
+        }
       }
 
       return data
@@ -1212,5 +1459,110 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
       console.error('Failed to clear chat history:', error)
       throw error
     }
+  }
+
+  static async downloadAnalysisReport(contractId: string): Promise<void> {
+    try {
+      const contract = await this.getContract(contractId)
+      const analysis = await this.getContractAnalysis(contractId)
+
+      if (!contract || !analysis) {
+        throw new Error('Contract or analysis not found')
+      }
+
+      // Create a comprehensive report
+      const reportData = {
+        contractTitle: contract.title,
+        analysisDate: analysis.created_at,
+        riskScore: analysis.risk_score,
+        analysisData: analysis.analysis_data,
+        exportDate: new Date().toISOString()
+      }
+
+      // Convert to JSON and create downloadable file
+      const reportJson = JSON.stringify(reportData, null, 2)
+      const blob = new Blob([reportJson], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      
+      // Create download link
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `contract-analysis-${contract.title.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      // Cleanup
+      URL.revokeObjectURL(url)
+      
+      console.log('✅ Analysis report downloaded successfully')
+    } catch (error) {
+      console.error('Failed to download analysis report:', error)
+      throw error
+    }
+  }
+}
+
+// Legacy adapter: map EnhancedContractAnalysis to legacy analysis_data shape used by UI
+function toLegacyAnalysis(analysis: EnhancedContractAnalysis): LegacyAnalysisData {
+  const overall_risk_level = (() => {
+    const score = analysis.risk_assessment?.overall_score ?? analysis.executive_summary.key_metrics.risk_score
+    const safety = analysis.executive_summary.key_metrics.safety_rating
+    if (safety === 'Dangerous' || score >= 80) return 'Critical'
+    if (safety === 'Risky' || score >= 60) return 'High'
+    if (safety === 'Moderate' || score >= 40) return 'Medium'
+    return 'Low'
+  })()
+
+  const criticalIssues = (analysis.clause_analysis?.critical_clauses || []).map(cc => ({
+    category: cc.clause_type,
+    description: cc.issues[0] || 'Critical issue detected',
+    severity: 'Critical' as const,
+    impact: 'High',
+    recommendation: cc.immediate_actions[0] || 'Immediate action required'
+  }))
+
+  const missingClauses = (analysis.clause_analysis?.missing_clauses || []).map(mc => ({
+    clauseType: mc.clauseType,
+    description: mc.description,
+    importance: mc.importance,
+    riskIfMissing: mc.riskIfMissing,
+    suggestedLanguage: mc.suggestedLanguage
+  }))
+
+  const overallRecommendations = [
+    ...(analysis.legal_insights?.contextual_recommendations || []).map(r => r.description),
+    ...(analysis.legal_insights?.action_items || []).map(a => a.description)
+  ]
+
+  const sections = (analysis.clause_analysis?.clauses_by_section || []).reduce((acc: any, section) => {
+    acc[section.section_name] = {
+      keyFindings: section.summary ? [section.summary] : [],
+      recommendations: section.clauses.flatMap(c => {
+        const recs = c.recommendations || []
+        return recs.map((r: any) => typeof r === 'string' ? r : r.description)
+      }),
+      redFlags: section.clauses
+        .filter(c => c.risk_level === 'High' || c.risk_level === 'Critical')
+        .map(c => {
+          const firstRec = (c.recommendations || [])[0] as any
+          const recText = typeof firstRec === 'string' ? firstRec : firstRec?.description
+          return ({ type: section.section_type, description: c.ai_summary, severity: c.risk_level === 'Critical' ? 'Critical' : 'High', impact: 'High', recommendation: recText || 'Review clause' })
+        }),
+    }
+    return acc
+  }, {})
+
+  const chart_data = analysis.export_data?.charts_data || []
+
+  return {
+    overall_risk_level,
+    riskScore: analysis.executive_summary.key_metrics.risk_score,
+    executiveSummary: analysis.executive_summary.contract_overview?.purpose_summary,
+    criticalIssues,
+    missingClauses,
+    overallRecommendations,
+    sections,
+    chart_data
   }
 }

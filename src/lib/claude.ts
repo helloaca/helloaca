@@ -19,52 +19,94 @@ export interface ClaudeMessage {
 export const claudeService = {
   async sendMessage(messages: ClaudeMessage[], contractContext?: string, forceJsonResponse?: boolean): Promise<string> {
     try {
+      console.log('🤖 Claude API Request - Messages:', messages.length, 'Context:', !!contractContext)
+      
       // Prepare system message with contract context if available and strict no-emoji policy
       const baseSystemMessage = contractContext 
         ? `You are an AI assistant specialized in contract analysis. You have access to the following contract content: ${contractContext}. Please provide helpful, accurate responses about the contract terms, obligations, and any questions the user might have.`
         : 'You are an AI assistant specialized in contract analysis. Please provide helpful responses about contract-related questions.'
       
-      // Add strict no-emoji policy to system message
+      // Add strict no-emoji policy to system message with rich formatting allowed
       const systemMessage = `${baseSystemMessage}
 
 IMPORTANT COMMUNICATION POLICY:
 - You must not use emojis in your responses under any circumstances
+- You are encouraged to use rich text formatting including: **bold**, *italic*, \`code\`, > quotes, [links](url), lists, and headers
+- Use markdown formatting to enhance readability and emphasize key points
+- Structure your responses with clear sections using headers (##, ###)
+- Use bullet points and numbered lists for clarity
 - If a user requests emojis, politely explain that you maintain a formal communication style without emojis to ensure professional standards
-- Keep all responses professional and emoji-free
+- Keep all responses professional, well-formatted, and emoji-free
 - Maintain a formal, business-appropriate tone at all times`
 
-      const requestOptions: any = {
-        model: 'claude-sonnet-4-5',
-        max_tokens: 2000, // Increased for contract analysis
-        system: systemMessage,
-        messages: messages,
-        temperature: 0.2 // Lower temperature for more consistent JSON output
+      // Try multiple model names to find the correct one
+      const models = [
+        'claude-3-sonnet-20240229',
+        'claude-3-sonnet-20241022',
+        'claude-3-haiku-20240307',
+        'claude-3-opus-20240229'
+      ]
+      
+      let lastError: any = null
+      
+      for (const model of models) {
+        try {
+          console.log(`🔄 Trying model: ${model}`)
+          
+          const requestOptions: any = {
+            model: model,
+            max_tokens: 4000, // Reduced to avoid token limit issues
+            system: systemMessage,
+            messages: messages,
+            temperature: 0.1
+          }
+
+          // Add response_format for JSON-only responses when requested
+          if (forceJsonResponse) {
+            // Note: Anthropic Claude doesn't support response_format like OpenAI
+            // But we can enforce JSON through system prompts
+            requestOptions.system = systemMessage + '\n\nCRITICAL: You must respond ONLY with valid JSON. Do not include any text outside the JSON object. Your response must start with { and end with } with no additional text, markdown formatting, or code blocks.'
+          }
+
+          const response = await anthropic.messages.create(requestOptions)
+
+          // Extract the text content from Claude's response
+          const textContent = response.content.find(content => content.type === 'text')
+          console.log(`✅ Successfully used model: ${model}`)
+          return textContent?.text || 'I apologize, but I was unable to generate a response.'
+          
+        } catch (modelError: any) {
+          console.log(`❌ Model ${model} failed:`, modelError.message)
+          lastError = modelError
+          continue // Try next model
+        }
       }
-
-      // Add response_format for JSON-only responses when requested
-      if (forceJsonResponse) {
-        // Note: Anthropic Claude doesn't support response_format like OpenAI
-        // But we can enforce JSON through system prompts
-        requestOptions.system = systemMessage + '\n\nIMPORTANT: You must respond ONLY with valid JSON. Do not include any text outside the JSON object.'
-      }
-
-      const response = await anthropic.messages.create(requestOptions)
-
-      // Extract the text content from Claude's response
-      const textContent = response.content.find(content => content.type === 'text')
-      return textContent?.text || 'I apologize, but I was unable to generate a response.'
+      
+      // If all models failed, throw the last error with detailed information
+      console.error('❌ All Claude models failed')
+      throw lastError
+      
     } catch (error: any) {
       console.error('Claude API Error:', error)
+      console.error('Error details:', {
+        status: error.status,
+        statusText: error.statusText,
+        message: error.message,
+        error: error.error,
+        headers: error.headers
+      })
       
       // Better error handling for model deprecation and other API issues
       if (error.status === 404 && error.message?.includes('model')) {
-        throw new Error('AI model is outdated. Please contact support to update the system.')
+        throw new Error('AI model is not available. All attempted models failed. Please contact support to update the system.')
       } else if (error.status === 401) {
-        throw new Error('Authentication failed. Please check your API key configuration.')
+        throw new Error('Claude API authentication failed. Please check your API key configuration.')
       } else if (error.status === 429) {
-        throw new Error('Rate limit exceeded. Please try again in a few moments.')
+        throw new Error('Claude API rate limit exceeded. Please try again in a few moments.')
       } else if (error.status >= 500) {
         throw new Error('Claude API is temporarily unavailable. Please try again later.')
+      } else if (error.message) {
+        throw new Error(`Claude API error: ${error.message}`)
       }
       
       throw new Error('Failed to get response from Claude API')

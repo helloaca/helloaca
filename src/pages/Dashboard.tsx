@@ -10,9 +10,10 @@ import { ContractService, Contract } from '@/lib/contractService'
 import { FileProcessor } from '@/lib/fileProcessor'
 import { toast } from 'sonner'
 import { trackContracts } from '@/lib/analytics'
+import ContractHistoryModal from '@/components/ContractHistoryModal'
 
 const Dashboard: React.FC = () => {
-  const { user, profile, loading: authLoading, isRehydrating } = useAuth()
+  const { user, profile, loading: authLoading } = useAuth()
   const navigate = useNavigate()
 
   // File upload state
@@ -34,17 +35,56 @@ const Dashboard: React.FC = () => {
     risksSaved: 0
   })
 
+  // Contract history modal state
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
+
   // Load user contracts on component mount or when user changes
   useEffect(() => {
-    if (user?.id && !isRehydrating) {
+    if (user?.id && !authLoading) {
       loadUserContracts()
     }
-  }, [user?.id, isRehydrating])
+  }, [user?.id, authLoading])
 
-  const loadUserContracts = async () => {
+  const loadUserContracts = async (retryCount = 0) => {
+    const maxRetries = 2
+    const baseDelay = 1000 // 1 second base delay
+    
     try {
       setIsLoadingContracts(true)
-      const userContracts = await ContractService.getUserContractsWithAnalysis(user!.id)
+      
+      console.log(`Starting contract load for user: ${user?.id} (retry: ${retryCount})`)
+      
+      // Add timeout protection for contract loading - increased to 30 seconds
+      const loadTimeout = setTimeout(() => {
+        console.warn(`Contract loading timeout after 30s on retry ${retryCount} - proceeding without contracts`)
+        toast.error('Contract loading is taking longer than expected. Retrying...')
+      }, 30000) // 30 second timeout - more reasonable for database operations
+      
+      console.log('Loading contracts for user:', user?.id)
+      
+      // Try to load contracts with better error handling
+      let userContracts: Array<Contract & { analysis?: any }> = []
+      
+      try {
+        userContracts = await ContractService.getUserContractsWithAnalysis(user!.id)
+        console.log('Successfully loaded contracts:', userContracts.length)
+      } catch (serviceError) {
+        console.error('ContractService error:', serviceError)
+        
+        // Fallback: try loading just the basic contracts without analysis
+        try {
+          console.log('Falling back to basic contract loading...')
+          const basicContracts = await ContractService.getUserContracts(user!.id)
+          userContracts = basicContracts.map(contract => ({ ...contract, analysis: undefined }))
+          console.log('Loaded basic contracts:', userContracts.length)
+        } catch (fallbackError) {
+          console.error('Fallback loading also failed:', fallbackError)
+          throw fallbackError // Re-throw to be caught by outer catch
+        }
+      }
+      
+      clearTimeout(loadTimeout)
+      
       setContracts(userContracts)
       
       // Calculate stats
@@ -73,11 +113,40 @@ const Dashboard: React.FC = () => {
         avgAnalysisTime: '32s',
         risksSaved: totalRisks
       })
+      
+      console.log('Contract loading completed successfully')
     } catch (error) {
       console.error('Error loading contracts:', error)
-      toast.error('Failed to load contracts. Please try refreshing the page.')
+      
+      // Retry logic with exponential backoff
+      if (retryCount < maxRetries) {
+        const delay = baseDelay * Math.pow(2, retryCount) // Exponential backoff
+        console.log(`Retrying contract loading in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`)
+        
+        toast.error(`Failed to load contracts. Retrying in ${delay/1000}s...`)
+        
+        setTimeout(() => {
+          loadUserContracts(retryCount + 1)
+        }, delay)
+        
+        return // Don't proceed to error state yet
+      }
+      
+      // Final failure after all retries
+      console.error('Contract loading failed after all retries')
+      toast.error('Failed to load contracts after multiple attempts. Please refresh the page.')
+      
+      // Don't leave contracts empty on error - show empty state
+      setContracts([])
+      setStats({
+        totalContracts: 0,
+        thisMonth: 0,
+        avgAnalysisTime: '32s',
+        risksSaved: 0
+      })
     } finally {
       setIsLoadingContracts(false)
+      console.log('Contract loading process completed')
     }
   }
 
@@ -86,7 +155,7 @@ const Dashboard: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header showAuth={true} />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
               <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
@@ -95,13 +164,25 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
         <Footer />
-      </div>
-    )
-  }
+      
+      {/* Contract History Modal */}
+      <ContractHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        contracts={contracts}
+        onContractsUpdate={loadUserContracts}
+        userId={user?.id || ''}
+      />
+    </div>
+  )
+}
 
-  // Show auth check if no user
-  if (!user) {
-    navigate('/login')
+  // Handle case when user is not available (but auth loading is complete)
+  if (!user && !authLoading) {
+    // Use a small delay to prevent immediate redirect issues
+    setTimeout(() => {
+      navigate('/login')
+    }, 100)
     return null
   }
 
@@ -289,29 +370,39 @@ const Dashboard: React.FC = () => {
     return 'Contract document with standard terms and conditions.'
   }
 
-  // Show loading state while data is being rehydrated or initially loaded
-  if (isLoadingContracts || isRehydrating || !user) {
+  // Show loading state only when absolutely necessary
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header showAuth={true} />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
               <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
               <p className="text-gray-600">Loading your dashboard...</p>
             </div>
           </div>
-        </div>
-        <Footer />
       </div>
-    )
-  }
+
+      <Footer />
+      
+      {/* Contract History Modal */}
+      <ContractHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        contracts={contracts}
+        onContractsUpdate={loadUserContracts}
+        userId={user?.id || ''}
+      />
+    </div>
+  )
+}
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header showAuth={true} />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 py-6 sm:py-8">
         {/* Welcome Section */}
         <div className="mb-6 sm:mb-8">
           <h1 className="font-space-grotesk text-2xl sm:text-3xl font-bold text-black mb-2">
@@ -480,15 +571,31 @@ const Dashboard: React.FC = () => {
               <CardContent>
                 <div className="space-y-3 sm:space-y-4">
                   {isLoadingContracts ? (
-                    <div className="flex items-center justify-center py-6 sm:py-8">
-                      <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin text-primary mr-2" />
-                      <span className="text-sm sm:text-base text-gray-600">Loading contracts...</span>
+                    <div className="flex flex-col items-center justify-center py-6 sm:py-8">
+                      <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin text-primary mb-3" />
+                      <span className="text-sm sm:text-base text-gray-600 mb-4">Loading contracts...</span>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => loadUserContracts()}
+                        className="min-h-[36px] text-xs"
+                      >
+                        Refresh
+                      </Button>
                     </div>
                   ) : contracts.length === 0 ? (
                     <div className="text-center py-6 sm:py-8">
                       <FileText className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-sm sm:text-base text-gray-600">No contracts uploaded yet</p>
-                      <p className="text-xs sm:text-sm text-gray-500">Upload your first contract to get started</p>
+                      <p className="text-sm sm:text-base text-gray-600 mb-2">No contracts uploaded yet</p>
+                      <p className="text-xs sm:text-sm text-gray-500 mb-4">Upload your first contract to get started</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => loadUserContracts()}
+                        className="min-h-[36px] text-xs"
+                      >
+                        Refresh
+                      </Button>
                     </div>
                   ) : (
                     contracts.slice(0, 5).map((contract) => (
@@ -533,7 +640,11 @@ const Dashboard: React.FC = () => {
                   )}
                 </div>
                 <div className="mt-4 sm:mt-6 text-center">
-                  <Button variant="outline" className="min-h-[44px] text-sm sm:text-base">
+                  <Button 
+                    variant="outline" 
+                    className="min-h-[44px] text-sm sm:text-base"
+                    onClick={() => setIsHistoryModalOpen(true)}
+                  >
                     View All Contracts
                   </Button>
                 </div>
@@ -544,6 +655,15 @@ const Dashboard: React.FC = () => {
       </div>
 
       <Footer />
+      
+      {/* Contract History Modal */}
+      <ContractHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        contracts={contracts}
+        onContractsUpdate={loadUserContracts}
+        userId={user?.id || ''}
+      />
     </div>
   )
 }

@@ -108,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(cachedData.user)
           setProfile(cachedData.profile)
           setSession(cachedData.session)
-          setIsRehydrating(true)
+          // Don't set isRehydrating here to avoid infinite loading
         }
 
         // Create a timeout promise that resolves (doesn't reject) after delay
@@ -116,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           initTimeout = setTimeout(() => {
             // Silently handle timeout without warning - authentication is working with cached data
             resolve({ timedOut: true })
-          }, 20000) // 20 second timeout - very generous for slow connections
+          }, 10000) // Reduced to 10 second timeout
         })
 
         // Create the session fetch promise with optimized retry logic
@@ -276,7 +276,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false)
         setIsRehydrating(false)
       }
-    }, 15000) // 15 second timeout for profile operations - very generous for slow connections
+    }, 8000) // Reduced to 8 second timeout for profile operations
     
     try {
       setSession(session)

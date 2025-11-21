@@ -29,7 +29,18 @@ const Reports: React.FC = () => {
 
   // Load reports on component mount
   useEffect(() => {
+    // Add timeout protection for loading
+    const timeoutId = setTimeout(() => {
+      if (isLoading) {
+        console.warn('Reports loading timeout - proceeding without data')
+        setIsLoading(false)
+        setError('Loading is taking longer than expected. Please refresh the page.')
+      }
+    }, 15000) // 15 second timeout
+
     loadReports()
+
+    return () => clearTimeout(timeoutId)
   }, [user])
 
   // Filter and sort reports when dependencies change
@@ -72,7 +83,11 @@ const Reports: React.FC = () => {
   }, [reports, searchTerm, filterType, sortBy])
 
   const loadReports = async () => {
-    if (!user?.id) return
+    if (!user?.id) {
+      setIsLoading(false)
+      setError('Please log in to view your reports')
+      return
+    }
 
     try {
       setIsLoading(true)
