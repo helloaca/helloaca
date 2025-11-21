@@ -1,4 +1,5 @@
 import React from 'react'
+import Typewriter from 'typewriter-effect'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import Button from '@/components/ui/Button'
@@ -16,9 +17,27 @@ const LandingPage: React.FC = () => {
       {/* Hero Section */}
       <section className="bg-white py-12 sm:py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="font-space-grotesk text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-black mb-6">
-            Understand Any Contract in{' '}
-            <span className="text-primary">Seconds</span>
+          <h1 className="font-space-grotesk text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-black mb-6 flex items-center justify-center gap-2">
+            <span className="mr-1">Built for</span>
+            <span className="text-primary inline-block">
+              <Typewriter
+                options={{
+                  strings: [
+                    'founders',
+                    'lawyers',
+                    'procurement',
+                    'contract managers',
+                    'freelancers',
+                    'vendors',
+                    'buyers',
+                    'teams'
+                  ],
+                  autoStart: true,
+                  loop: true,
+                  deleteSpeed: 30
+                }}
+              />
+            </span>
           </h1>
           <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
             Upload. Analyze. Understand. Make better legal decisions with AI-powered 
