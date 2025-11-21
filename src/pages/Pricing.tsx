@@ -90,32 +90,34 @@ const Pricing: React.FC = () => {
         reference: `PRO-${Date.now()}`,
         channels: ['card'],
         metadata: { plan: 'pro' },
-        callback: async (response: any) => {
-          try {
-            const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
-            const res = await fetch(`${base}/api/paystack-verify`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ reference: response.reference })
-            })
-            const data = await res.json()
-            if (data?.status === 'success') {
-              const { supabase } = await import('../lib/supabase')
-              await supabase
-                .from('user_profiles')
-                .update({ plan: 'pro' })
-                .eq('id', user.id)
-              toast.success('Subscription activated')
-            } else {
-              toast.error('Payment verification failed')
+        callback: (response: any) => {
+          ;(async () => {
+            try {
+              const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
+              const res = await fetch(`${base}/api/paystack-verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reference: response.reference })
+              })
+              const data = await res.json()
+              if (data?.status === 'success') {
+                const { supabase } = await import('../lib/supabase')
+                await supabase
+                  .from('user_profiles')
+                  .update({ plan: 'pro' })
+                  .eq('id', user.id)
+                toast.success('Subscription activated')
+              } else {
+                toast.error('Payment verification failed')
+              }
+            } catch {
+              toast.error('Could not verify payment')
+            } finally {
+              setIsLoading(false)
             }
-          } catch {
-            toast.error('Could not verify payment')
-          } finally {
-            setIsLoading(false)
-          }
+          })()
         },
-        onClose: () => {
+        onClose: function () {
           setIsLoading(false)
           toast.info('Payment canceled')
         }
