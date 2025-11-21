@@ -40,15 +40,14 @@ const LandingPage: React.FC = () => {
             </span>
           </h1>
           <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Upload. Analyze. Understand. Make better legal decisions with AI-powered 
-            contract analysis that detects risks, clauses, and obligations instantly.
+            Upload. Analyze. Understand. Unlimited contract analysis for $3/month. Start free with 1 contract/month.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" className="text-base sm:text-lg px-8 py-4 min-h-[48px]" onClick={() => navigate('/register')}>
-              Try for Free
+              Try Free
             </Button>
-            <Button variant="secondary" size="lg" className="text-base sm:text-lg px-8 py-4 min-h-[48px]">
-              See Demo
+            <Button variant="secondary" size="lg" className="text-base sm:text-lg px-8 py-4 min-h-[48px]" onClick={() => navigate('/pricing')}>
+              Subscribe $3/month
             </Button>
           </div>
           
@@ -199,14 +198,14 @@ const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="font-space-grotesk text-2xl sm:text-3xl md:text-4xl font-bold text-black mb-4">
-              Simple, Transparent Pricing
+              Simple Pricing
             </h2>
             <p className="text-lg sm:text-xl text-gray-600">
-              Choose the plan that fits your needs
+              Free: 1 contract/month • Pro: $3/month unlimited
             </p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 sm:gap-8">
             {/* Free Plan */}
             <Card>
               <CardHeader className="pb-4 sm:pb-6">
@@ -251,46 +250,8 @@ const LandingPage: React.FC = () => {
               </div>
               <CardHeader className="pb-4 sm:pb-6">
                 <CardTitle className="text-lg sm:text-xl">Pro Plan</CardTitle>
-                <div className="text-2xl sm:text-3xl font-bold">$49<span className="text-base sm:text-lg font-normal">/month</span></div>
-                <CardDescription className="text-sm sm:text-base">For professionals and small teams</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 sm:space-y-3 mb-6">
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-                    <span className="text-sm sm:text-base">10 contracts per month</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-                    <span className="text-sm sm:text-base">AI chat functionality</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-                    <span className="text-sm sm:text-base">Risk classification</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-                    <span className="text-sm sm:text-base">PDF report export</span>
-                  </li>
-                </ul>
-                <Button 
-                  className="w-full min-h-[48px] text-base"
-                  onClick={() => {
-                    trackPricing.selectPlan('pro')
-                    navigate('/register')
-                  }}
-                >
-                  Start Pro Trial
-                </Button>
-              </CardContent>
-            </Card>
-            
-            {/* Business Plan */}
-            <Card>
-              <CardHeader className="pb-4 sm:pb-6">
-                <CardTitle className="text-lg sm:text-xl">Business Plan</CardTitle>
-                <div className="text-2xl sm:text-3xl font-bold">$299<span className="text-base sm:text-lg font-normal">/month</span></div>
-                <CardDescription className="text-sm sm:text-base">For growing businesses and law firms</CardDescription>
+                <div className="text-2xl sm:text-3xl font-bold">$3<span className="text-base sm:text-lg font-normal">/month</span></div>
+                <CardDescription className="text-sm sm:text-base">Unlimited contract analysis</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2 sm:space-y-3 mb-6">
@@ -300,29 +261,22 @@ const LandingPage: React.FC = () => {
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-                    <span className="text-sm sm:text-base">Team collaboration</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-                    <span className="text-sm sm:text-base">Multilingual analysis</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-                    <span className="text-sm sm:text-base">White-label reports</span>
+                    <span className="text-sm sm:text-base">Full AI suite</span>
                   </li>
                 </ul>
                 <Button 
-                  variant="outline" 
                   className="w-full min-h-[48px] text-base"
                   onClick={() => {
-                    trackPricing.selectPlan('business')
-                    navigate('/register')
+                    trackPricing.selectPlan('pro')
+                    navigate('/pricing')
                   }}
                 >
-                  Contact Sales
+                  Subscribe $3/month
                 </Button>
               </CardContent>
             </Card>
+            
+            
           </div>
         </div>
       </section>

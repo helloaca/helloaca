@@ -1,69 +1,160 @@
-import React from 'react'
+import React, { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/layout/Header'
 import { Footer } from '../components/layout/Footer'
 import { Check, Star, Zap, Shield, ArrowLeft } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import { toast } from 'sonner'
 
 const Pricing: React.FC = () => {
   const navigate = useNavigate()
   
+  const { user } = useAuth()
+  const [isLoading, setIsLoading] = useState(false)
+
   const plans = [
     {
-      name: 'Starter',
-      price: 29,
+      name: 'Free',
+      price: 0,
       period: 'month',
-      description: 'Perfect for small law firms and individual practitioners',
+      description: 'Try HelloACA with limited usage',
       features: [
-        'Up to 50 contract analyses per month',
-        'Basic AI-powered contract review',
-        'Standard templates library',
-        'Email support',
-        'Basic reporting',
-        '2 user accounts'
+        '1 contract per month',
+        'Basic AI-powered analysis'
       ],
-      popular: false,
-      cta: 'Start Free Trial'
+      popular: false as const,
+      cta: 'Get Started'
     },
     {
-      name: 'Professional',
-      price: 79,
+      name: 'Pro',
+      price: 3,
       period: 'month',
-      description: 'Ideal for growing law firms and legal departments',
+      description: 'Unlimited contract analysis for individuals and teams',
       features: [
-        'Up to 200 contract analyses per month',
-        'Advanced AI contract analysis',
-        'Premium templates library',
-        'Priority email & chat support',
-        'Advanced reporting & analytics',
-        '10 user accounts',
-        'Custom clause library',
-        'Integration with popular tools'
+        'Unlimited contracts',
+        'Full AI analysis suite'
       ],
-      popular: true,
-      cta: 'Start Free Trial'
-    },
-    {
-      name: 'Enterprise',
-      price: 199,
-      period: 'month',
-      description: 'For large organizations with complex needs',
-      features: [
-        'Unlimited contract analyses',
-        'Enterprise-grade AI analysis',
-        'Custom templates & workflows',
-        'Dedicated account manager',
-        'Advanced analytics & insights',
-        'Unlimited user accounts',
-        'Custom integrations',
-        'SLA guarantee',
-        'On-premise deployment option',
-        'Advanced security features'
-      ],
-      popular: false,
-      cta: 'Contact Sales'
+      popular: true as const,
+      cta: 'Subscribe'
     }
   ]
+
+  const loadPaystackScript = useCallback(async () => {
+    if ((window as any).PaystackPop) return
+    await new Promise<void>((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = 'https://js.paystack.co/v1/inline.js'
+      script.async = true
+      script.onload = () => resolve()
+      script.onerror = () => reject(new Error('Failed to load Paystack script'))
+      document.body.appendChild(script)
+    })
+  }, [])
+
+  const handleSubscribe = useCallback(async () => {
+    try {
+      if (!user) {
+        toast.error('Please sign in to subscribe')
+        navigate('/login')
+        return
+      }
+
+      const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY
+      const planCode = import.meta.env.VITE_PAYSTACK_PLAN_CODE
+      if (!publicKey) {
+        toast.error('Payment is not configured')
+        return
+      }
+
+      setIsLoading(true)
+      try {
+        await loadPaystackScript()
+      } catch {
+        setIsLoading(false)
+        toast.error('Network error loading payment library')
+        return
+      }
+
+      const PaystackPop = (window as any).PaystackPop
+      if (!PaystackPop || typeof PaystackPop.setup !== 'function') {
+        setIsLoading(false)
+        toast.error('Payment library failed to load')
+        return
+      }
+
+      const handler = PaystackPop.setup({
+        key: publicKey,
+        email: user.email,
+        amount: 300,
+        currency: 'USD',
+        ...(planCode ? { plan: planCode } : {}),
+        metadata: { plan: 'pro' },
+        callback: async (response: any) => {
+          try {
+            const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
+            const res = await fetch(`${base}/api/paystack-verify`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ reference: response.reference })
+            })
+            const data = await res.json()
+            if (data?.status === 'success') {
+              const { supabase } = await import('../lib/supabase')
+              await supabase
+                .from('user_profiles')
+                .update({ plan: 'pro' })
+                .eq('id', user.id)
+              toast.success('Subscription activated')
+            } else {
+              toast.error('Payment verification failed')
+            }
+          } catch {
+            toast.error('Could not verify payment')
+          } finally {
+            setIsLoading(false)
+          }
+        },
+        onClose: () => {
+          setIsLoading(false)
+          toast.info('Payment canceled')
+        }
+      })
+      handler.openIframe()
+    } catch {
+      setIsLoading(false)
+      toast.error('Payment initialization failed')
+    }
+  }, [user, navigate, loadPaystackScript])
+
+  const handleSubscribeCrypto = useCallback(async () => {
+    try {
+      if (!user) {
+        toast.error('Please sign in to subscribe')
+        navigate('/login')
+        return
+      }
+
+      setIsLoading(true)
+      const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
+      const res = await fetch(`${base}/api/coinbase-create-charge`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, email: user.email })
+      })
+      const data = await res.json()
+      const url = data?.hosted_url
+      if (url) {
+        window.location.href = url
+        return
+      }
+      toast.error('Failed to start crypto payment')
+    } catch {
+      toast.error('Failed to start crypto payment')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user, navigate])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -87,8 +178,7 @@ const Pricing: React.FC = () => {
               Simple, Transparent Pricing
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-              Choose the perfect plan for your legal practice. All plans include our core 
-              AI-powered contract analysis features with no hidden fees.
+              One simple plan for unlimited analysis. Start free and upgrade anytime.
             </p>
             
             <div className="flex items-center justify-center gap-4 mb-12">
@@ -108,7 +198,7 @@ const Pricing: React.FC = () => {
           </div>
 
           {/* Pricing Cards */}
-          <div className="grid lg:grid-cols-3 gap-8 mb-16">
+          <div className="grid lg:grid-cols-2 gap-8 mb-16">
             {plans.map((plan, index) => (
               <div
                 key={index}
@@ -142,17 +232,37 @@ const Pricing: React.FC = () => {
                     </li>
                   ))}
                 </ul>
-
-                <Link
-                  to={plan.cta === 'Contact Sales' ? '/contact' : '/register'}
-                  className={`w-full py-3 px-6 rounded-lg font-medium text-center block transition-colors ${
-                    plan.popular
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
-                      : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                  }`}
-                >
-                  {plan.cta}
-                </Link>
+                {plan.name === 'Pro' ? (
+                  <div className="space-y-3">
+                    <button
+                      onClick={handleSubscribe}
+                      disabled={isLoading}
+                      className={`w-full py-3 px-6 rounded-lg font-medium text-center block transition-colors ${
+                        'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                      }`}
+                    >
+                      {isLoading ? 'Processing…' : 'Subscribe with Card'}
+                    </button>
+                    <button
+                      onClick={handleSubscribeCrypto}
+                      disabled={isLoading}
+                      className={`w-full py-3 px-6 rounded-lg font-medium text-center block transition-colors ${
+                        'bg-gray-900 text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed'
+                      }`}
+                    >
+                      {isLoading ? 'Processing…' : 'Pay with Crypto'}
+                    </button>
+                  </div>
+                ) : (
+                  <Link
+                    to={'/register'}
+                    className={`w-full py-3 px-6 rounded-lg font-medium text-center block transition-colors ${
+                      'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                    }`}
+                  >
+                    {plan.cta}
+                  </Link>
+                )}
               </div>
             ))}
           </div>

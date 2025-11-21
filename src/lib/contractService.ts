@@ -107,6 +107,31 @@ export class ContractService {
         throw new Error('No text content could be extracted from the file')
       }
 
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('plan')
+        .eq('id', userId)
+        .single()
+
+      if (profile?.plan === 'free') {
+        const startOfMonth = new Date()
+        startOfMonth.setDate(1)
+        startOfMonth.setHours(0, 0, 0, 0)
+        const endOfMonth = new Date(startOfMonth)
+        endOfMonth.setMonth(endOfMonth.getMonth() + 1)
+
+        const { count } = await supabase
+          .from('contracts')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .gte('created_at', startOfMonth.toISOString())
+          .lt('created_at', endOfMonth.toISOString())
+
+        if ((count || 0) >= 1) {
+          throw new Error('Free plan limit reached for this month')
+        }
+      }
+
       // Stage 3: Save contract to database
       onProgress?.('Saving contract...', 40)
       const { data: contractData, error: contractError } = await supabase
