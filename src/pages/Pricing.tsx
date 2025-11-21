@@ -86,7 +86,7 @@ const Pricing: React.FC = () => {
       const handler = PaystackPop.setup({
         key: publicKey,
         email: user.email,
-        ...(planCode ? { plan: planCode } : { amount: 30000 }),
+        ...(planCode ? { plan: planCode } : { amount: 500000 }),
         reference: `PRO-${Date.now()}`,
         channels: ['card'],
         metadata: { plan: 'pro' },
