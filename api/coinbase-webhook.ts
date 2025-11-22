@@ -54,10 +54,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .single()
 
       if (profile?.id) {
-        await supabase
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        const { error: upErr } = await supabase
           .from('user_profiles')
-          .update({ plan: 'pro' })
+          .update({ plan: 'pro', plan_expires_at: expiresAt })
           .eq('id', profile.id)
+        if (upErr) {
+          await supabase
+            .from('user_profiles')
+            .update({ plan: 'pro' })
+            .eq('id', profile.id)
+        }
       }
 
       res.status(200).json({ received: true })

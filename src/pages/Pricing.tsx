@@ -2,7 +2,7 @@ import React, { useCallback, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/layout/Header'
 import { Footer } from '../components/layout/Footer'
-import { Check, Star, Zap, Shield, ArrowLeft } from 'lucide-react'
+import { Check, Star, Zap, Shield, ArrowLeft, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'sonner'
@@ -18,9 +18,21 @@ const Pricing: React.FC = () => {
   const currentPlan: 'free' | 'pro' | 'business' = (profile?.plan || user?.plan || 'free')
   const profileUpdatedAt = profile?.updated_at ? new Date(profile.updated_at) : null
   const estimatedExpiry = currentPlan === 'pro' && profileUpdatedAt ? new Date(profileUpdatedAt.getTime() + 30 * 24 * 60 * 60 * 1000) : null
+  const realExpiry = (profile as any)?.plan_expires_at ? new Date((profile as any).plan_expires_at) : null
+  const displayExpiry = realExpiry || estimatedExpiry
   const [isLoading, setIsLoading] = useState(false)
   const [isMethodModalOpen, setMethodModalOpen] = useState(false)
   const [processingMethod, setProcessingMethod] = useState<null | 'card' | 'crypto'>(null)
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMethodModalOpen && !isLoading) {
+        setMethodModalOpen(false)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [isMethodModalOpen, isLoading])
 
   const plans = [
     {
@@ -230,7 +242,7 @@ const Pricing: React.FC = () => {
                 </span>
                 {currentPlan === 'pro' && (
                   <span className="text-sm">
-                    {estimatedExpiry ? `Estimated renewal: ${estimatedExpiry.toLocaleDateString()}` : 'Auto-renews monthly'}
+                    {displayExpiry ? `Renewal: ${displayExpiry.toLocaleDateString()}` : 'Auto-renews monthly'}
                   </span>
                 )}
               </div>
@@ -296,7 +308,7 @@ const Pricing: React.FC = () => {
                           You already have Pro
                         </div>
                         <p className="text-sm text-gray-600 mt-2">
-                          {estimatedExpiry ? `Estimated renewal: ${estimatedExpiry.toLocaleDateString()}` : 'Auto-renews monthly'}
+                          {displayExpiry ? `Renewal: ${displayExpiry.toLocaleDateString()}` : 'Auto-renews monthly'}
                         </p>
                       </div>
                     ) : (
@@ -417,8 +429,24 @@ const Pricing: React.FC = () => {
       <Footer />
 
       {isMethodModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => {
+            if (!isLoading) setMethodModalOpen(false)
+          }}
+        >
+          <div
+            className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              aria-label="Close"
+              onClick={() => setMethodModalOpen(false)}
+              disabled={isLoading}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            >
+              <X className="w-5 h-5" />
+            </button>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Choose payment method</h3>
             <p className="text-gray-600 mb-6">Select how you want to subscribe to Pro.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -441,13 +469,6 @@ const Pricing: React.FC = () => {
                 {processingMethod === 'crypto' ? 'Processing…' : 'Crypto'}
               </button>
             </div>
-            <button
-              onClick={() => setMethodModalOpen(false)}
-              disabled={isLoading}
-              className="mt-6 w-full py-2 px-4 rounded-lg font-medium text-center border border-gray-300 text-gray-900 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
           </div>
         </div>
       )}
