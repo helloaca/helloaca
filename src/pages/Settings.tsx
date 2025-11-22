@@ -43,6 +43,7 @@ const Settings: React.FC = () => {
     securityAlerts: true,
     teamUpdates: true
   })
+  const [isSigningOut, setIsSigningOut] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
   const [failedPasswordAttempts, setFailedPasswordAttempts] = useState(0)
 
@@ -61,6 +62,10 @@ const Settings: React.FC = () => {
   const [deletePhrase, setDeletePhrase] = useState('')
   const [isBillingHistoryOpen, setBillingHistoryOpen] = useState(false)
   const [billingHistory, setBillingHistory] = useState<any[] | null>(null)
+  const [isCancelFeedbackOpen, setCancelFeedbackOpen] = useState(false)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelComeBack, setCancelComeBack] = useState('')
+  const [isCancelSubmitting, setCancelSubmitting] = useState(false)
 
   const loadPaystackScript = useCallback(async () => {
     if ((window as any).PaystackPop) return
@@ -322,15 +327,63 @@ const Settings: React.FC = () => {
 
   const cancelSubscription = async () => {
     try {
+      const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
+      const res = await fetch(`${base}/api/paystack-cancel-subscription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: String(user?.email) })
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        if (res.status === 404) {
+          // No provider subscription found; downgrade locally
+          const result = await updateProfile({ plan: 'free', plan_expires_at: null })
+          if (result.success) {
+            await refreshProfile()
+            toast.info('No provider subscription found. Plan downgraded locally.')
+          } else {
+            toast.error(result.error || 'Failed to cancel subscription locally')
+          }
+          return
+        }
+        toast.error(j?.error || 'Provider cancellation failed')
+        return
+      }
       const result = await updateProfile({ plan: 'free', plan_expires_at: null })
       if (result.success) {
         await refreshProfile()
         toast.success('Subscription canceled')
       } else {
-        toast.error(result.error || 'Failed to cancel subscription')
+        toast.error(result.error || 'Failed to cancel subscription locally')
       }
     } catch {
       toast.error('Failed to cancel subscription')
+    }
+  }
+
+  const submitCancellationFeedback = async (proceed: boolean) => {
+    try {
+      setCancelSubmitting(true)
+      const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
+      await fetch(`${base}/api/cancel-feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: String(user?.email || ''),
+          plan: String(profile?.plan || user?.plan || 'free'),
+          reason: cancelReason,
+          comeback: cancelComeBack
+        })
+      }).catch(() => {})
+      if (proceed) {
+        await cancelSubscription()
+      }
+      setCancelFeedbackOpen(false)
+      setCancelReason('')
+      setCancelComeBack('')
+    } catch {
+    } finally {
+      setCancelSubmitting(false)
     }
   }
 
@@ -487,12 +540,15 @@ const Settings: React.FC = () => {
 
   const handleSignOut = async () => {
     try {
+      setIsSigningOut(true)
       await signOut()
       toast.success('Signed out successfully!')
       navigate('/')
     } catch (error) {
       console.error('Error signing out:', error)
       toast.error('Failed to sign out. Please try again.')
+    } finally {
+      setIsSigningOut(false)
     }
   }
 
@@ -688,7 +744,7 @@ const Settings: React.FC = () => {
             <Button variant="outline" onClick={() => setMethodModalOpen(true)}>Change Plan</Button>
             <Button variant="outline" onClick={() => setBillingHistoryOpen(true)}>View Billing History</Button>
             {String(profile?.plan || user?.plan) !== 'free' && (
-              <Button variant="outline" className="text-red-600 border-red-300 hover:bg-red-50" onClick={cancelSubscription}>
+              <Button variant="outline" className="text-red-600 border-red-300 hover:bg-red-50" onClick={() => setCancelFeedbackOpen(true)}>
                 Cancel Subscription
               </Button>
             )}
@@ -1026,6 +1082,15 @@ const Settings: React.FC = () => {
             </Card>
           </div>
         </div>
+        {isSigningOut && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center">
+              <Loader2 className="w-6 h-6 mx-auto mb-3 animate-spin text-gray-700" />
+              <p className="text-gray-900 font-medium">Signing you out…</p>
+              <p className="text-sm text-gray-600 mt-1">Please wait a moment</p>
+            </div>
+          </div>
+        )}
         {isMethodModalOpen && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => { if (!isLoadingPayment) setMethodModalOpen(false) }}>
             <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
@@ -1086,6 +1151,25 @@ const Settings: React.FC = () => {
                   </table>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+        {isCancelFeedbackOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setCancelFeedbackOpen(false)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Cancel Subscription</h3>
+              <p className="text-sm text-gray-600 mb-4">We’re sorry to see you go. Please share your feedback.</p>
+              <div className="space-y-3">
+                <textarea value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} placeholder="Reason for canceling" className="w-full min-h-[90px] px-4 py-3 border border-gray-300 rounded-lg" />
+                <textarea value={cancelComeBack} onChange={(e) => setCancelComeBack(e.target.value)} placeholder="What could bring you back?" className="w-full min-h-[90px] px-4 py-3 border border-gray-300 rounded-lg" />
+              </div>
+              <div className="flex justify-end gap-3 mt-6">
+                <Button variant="outline" onClick={() => setCancelFeedbackOpen(false)} disabled={isCancelSubmitting}>Keep Subscription</Button>
+                <Button onClick={() => submitCancellationFeedback(true)} disabled={isCancelSubmitting}>
+                  {isCancelSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  Continue to Cancel
+                </Button>
+              </div>
             </div>
           </div>
         )}
