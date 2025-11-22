@@ -26,7 +26,7 @@ interface Contract {
 
 const ChatInterface: React.FC = () => {
   const { contractId } = useParams<{ contractId: string }>()
-  const { user } = useAuth()
+  const { user, profile, loading: authLoading } = useAuth()
   const [contract, setContract] = useState<Contract | null>(null)
   const [isLoadingContract, setIsLoadingContract] = useState(true)
   const [isLoadingChatHistory, setIsLoadingChatHistory] = useState(false)
@@ -216,6 +216,20 @@ Please provide a helpful response based on the contract and our conversation.`
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || !contract || !contract.extracted_text) return
+
+    if (profile?.plan === 'free') {
+      const userMsgCount = await messageService.getUserMessageCount(contract.id)
+      if (userMsgCount >= 5) {
+        const limitMessage: Message = {
+          id: 'limit-reached',
+          type: 'ai',
+          content: 'You have reached the free plan limit of 5 questions for this contract. Upgrade to Pro for unlimited questions and analyses ($3/month).',
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, limitMessage])
+        return
+      }
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -429,6 +443,20 @@ Please provide a helpful response based on the contract and our conversation.`
       e.preventDefault()
       handleSearch()
     }
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+            <p className="text-gray-600">Checking authentication...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (isLoadingContract) {

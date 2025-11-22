@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { Session } from '@supabase/supabase-js'
 import { toast } from 'sonner'
-import { AuthUser, UserProfile, supabase } from '../lib/supabase'
+import { AuthUser, supabase } from '../lib/supabase'
+import type { UserProfile } from '../lib/supabase'
 import { trackAuth, setUserProperties } from '../lib/analytics'
 
 interface AuthContextType {
@@ -17,6 +18,7 @@ interface AuthContextType {
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>
   updateProfile: (updates: Partial<UserProfile>) => Promise<{ success: boolean; error?: string }>
+  refreshProfile: () => Promise<{ success: boolean; error?: string }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -366,15 +368,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
               }
             } else if (existingProfile) {
-              console.log('✅ Profile loaded successfully')
+              const now = new Date()
+              const expiresAt = existingProfile?.plan_expires_at ? new Date(existingProfile.plan_expires_at as string) : null
+              if (existingProfile.plan === 'pro' && expiresAt && expiresAt < now) {
+                const { error: downgradeError } = await supabase
+                  .from('user_profiles')
+                  .update({ plan: 'free', plan_expires_at: null })
+                  .eq('id', session.user.id)
+                if (!downgradeError) {
+                  existingProfile.plan = 'free'
+                  ;(existingProfile as any).plan_expires_at = null
+                }
+              }
               setProfile(existingProfile)
-              // Set user properties for analytics
               setUserProperties({
                 user_id: existingProfile.id,
                 plan: existingProfile.plan,
                 company: existingProfile.company || undefined
               })
-              // Cache the data
               cacheUserData(authUser, existingProfile, session)
             }
           }
@@ -386,20 +397,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (!cachedData.profile) {
             // Create a minimal profile from user data if no cache
             console.log('🔄 Creating minimal profile from user metadata')
-            const minimalProfile = {
+            const minimalProfile: UserProfile = {
               id: session.user.id,
               first_name: session.user.user_metadata?.firstName || null,
               last_name: session.user.user_metadata?.lastName || null,
               email: session.user.email!,
               plan: (session.user.user_metadata?.plan || 'free') as 'free' | 'pro' | 'business',
+              plan_expires_at: null,
               company: null,
               role: null,
               timezone: null,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             }
-            setProfile(minimalProfile)
-            cacheUserData(authUser, minimalProfile, session)
+            setProfile(minimalProfile as UserProfile)
+            cacheUserData(authUser, minimalProfile as UserProfile, session)
           }
         }
       } else {
@@ -448,18 +460,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      })
-      if (error) {
-        return { success: false, error: error.message }
+      console.log('🔐 Attempting sign in with email:', email)
+      
+      // Validate input parameters
+      if (!email || !password) {
+        return { success: false, error: 'Email and password are required' }
       }
+      
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(email)) {
+        return { success: false, error: 'Please enter a valid email address' }
+      }
+      
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password: password
+      })
+      
+      if (error) {
+        console.error('❌ Sign in error:', error)
+        
+        // Provide more specific error messages based on error codes
+        let errorMessage = error.message
+        
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password. Please check your credentials and try again.'
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Please check your email and click the verification link before signing in.'
+        } else if (error.message.includes('Rate limit')) {
+          errorMessage = 'Too many login attempts. Please try again in a few minutes.'
+        }
+        
+        return { success: false, error: errorMessage }
+      }
+      
+      console.log('✅ Sign in successful')
       // Track successful sign in
       trackAuth.signIn('email')
       return { success: true }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred'
+      console.error('❌ Sign in exception:', err)
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred during sign in'
       return { success: false, error: errorMessage }
     }
   }
@@ -544,6 +586,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
+  const refreshProfile = async (): Promise<{ success: boolean; error?: string }> => {
+    if (!user?.id || !session) {
+      return { success: false, error: 'No authenticated user' }
+    }
+    try {
+      const { data: existingProfile, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      if (error) throw error
+      if (existingProfile) {
+        const now = new Date()
+        const expiresAt = existingProfile?.plan_expires_at ? new Date(existingProfile.plan_expires_at as string) : null
+        if (existingProfile.plan === 'pro' && expiresAt && expiresAt < now) {
+          const { error: downgradeError } = await supabase
+            .from('user_profiles')
+            .update({ plan: 'free', plan_expires_at: null })
+            .eq('id', user.id)
+          if (!downgradeError) {
+            existingProfile.plan = 'free'
+            ;(existingProfile as any).plan_expires_at = null
+          }
+        }
+        setProfile(existingProfile)
+        setUser({
+          ...user,
+          plan: existingProfile.plan as 'free' | 'pro' | 'business'
+        })
+        setUserProperties({
+          user_id: existingProfile.id,
+          plan: existingProfile.plan,
+          company: existingProfile.company || undefined
+        })
+        cacheUserData(user, existingProfile, session)
+      }
+      return { success: true }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to refresh profile'
+      console.error('Error refreshing profile:', err)
+      return { success: false, error: errorMessage }
+    }
+  }
+
   // Compute isAuthenticated based on user and session state
   const isAuthenticated = Boolean(user && session)
 
@@ -559,7 +645,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signInWithGoogle,
     signOut,
     resetPassword,
-    updateProfile
+    updateProfile,
+    refreshProfile
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
