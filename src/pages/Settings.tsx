@@ -127,7 +127,7 @@ const Settings: React.FC = () => {
         callback: (response: any) => {
           ;(async () => {
             try {
-              const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
+              const base = import.meta.env.VITE_API_ORIGIN || ((window.location.hostname.endsWith('ngrok-free.app') || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://helloaca.xyz' : '')
               const res = await fetch(`${base}/api/paystack-verify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -178,7 +178,7 @@ const Settings: React.FC = () => {
 
       setIsLoadingPayment(true)
       setProcessingMethod('crypto')
-      const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
+      const base = import.meta.env.VITE_API_ORIGIN || ((window.location.hostname.endsWith('ngrok-free.app') || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://helloaca.xyz' : '')
       const res = await fetch(`${base}/api/coinbase-create-charge`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -279,7 +279,7 @@ const Settings: React.FC = () => {
         toast.error('No user email found')
         return
       }
-      const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
+      const base = import.meta.env.VITE_API_ORIGIN || ((window.location.hostname.endsWith('ngrok-free.app') || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://helloaca.xyz' : '')
       const [cardRes, cryptoRes] = await Promise.all([
         fetch(`${base}/api/paystack-history?email=${encodeURIComponent(String(user.email))}`),
         fetch(`${base}/api/coinbase-list-charges?email=${encodeURIComponent(String(user.email))}`)
@@ -327,7 +327,7 @@ const Settings: React.FC = () => {
 
   const cancelSubscription = async () => {
     try {
-      const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
+      const base = import.meta.env.VITE_API_ORIGIN || ((window.location.hostname.endsWith('ngrok-free.app') || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://helloaca.xyz' : '')
       const res = await fetch(`${base}/api/paystack-cancel-subscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -364,7 +364,7 @@ const Settings: React.FC = () => {
   const submitCancellationFeedback = async (proceed: boolean) => {
     try {
       setCancelSubmitting(true)
-      const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
+      const base = import.meta.env.VITE_API_ORIGIN || ((window.location.hostname.endsWith('ngrok-free.app') || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://helloaca.xyz' : '')
       await fetch(`${base}/api/cancel-feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -424,7 +424,7 @@ const Settings: React.FC = () => {
         return
       }
       if (!user?.id) return
-      const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
+      const base = import.meta.env.VITE_API_ORIGIN || ((window.location.hostname.endsWith('ngrok-free.app') || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://helloaca.xyz' : '')
       const res = await fetch(`${base}/api/delete-account`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

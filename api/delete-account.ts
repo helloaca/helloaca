@@ -14,12 +14,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(405).json({ error: 'Method not allowed' })
     return
   }
-
   try {
     const { userId, email } = req.body as { userId?: string; email?: string }
-    if (!userId || !email) {
+    if (!userId) {
       res.setHeader('Access-Control-Allow-Origin', '*')
-      res.status(400).json({ error: 'Missing user data' })
+      res.status(400).json({ error: 'Missing userId' })
       return
     }
 
@@ -33,21 +32,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const supabase = createClient(url, serviceKey)
 
-    await supabase.from('contracts').delete().eq('user_id', userId)
-    await supabase.from('reports').delete().eq('user_id', userId)
-    await supabase.from('user_profiles').delete().eq('id', userId)
+    const deletions = [
+      (async () => await supabase.from('messages').delete().eq('user_id', userId))(),
+      (async () => await supabase.from('contracts').delete().eq('user_id', userId))(),
+      (async () => await supabase.from('reports').delete().eq('user_id', userId))(),
+      (async () => await supabase.from('user_profiles').delete().eq('id', userId))()
+    ]
+    if (email) {
+      deletions.push((async () => await supabase.from('cancellation_feedback').delete().eq('email', email))())
+    }
 
-    const { error: delErr } = await supabase.auth.admin.deleteUser(userId)
-    if (delErr) {
-      res.setHeader('Access-Control-Allow-Origin', '*')
-      res.status(500).json({ error: 'Failed to delete user' })
+    const results = await Promise.allSettled(deletions)
+
+    const adminDelete = await supabase.auth.admin.deleteUser(userId)
+
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    if (adminDelete.error) {
+      res.status(500).json({ error: adminDelete.error.message, details: results })
       return
     }
 
-    res.setHeader('Access-Control-Allow-Origin', '*')
     res.status(200).json({ status: 'ok' })
-  } catch (e) {
+  } catch (e: any) {
     res.setHeader('Access-Control-Allow-Origin', '*')
-    res.status(500).json({ error: 'Deletion error' })
+    res.status(500).json({ error: e?.message || 'Delete account error' })
   }
 }

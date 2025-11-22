@@ -175,12 +175,23 @@ const ContractHistoryModal: React.FC<ContractHistoryModalProps> = ({
             <h2 className="text-2xl font-bold text-gray-900">Contract History</h2>
             <p className="text-gray-600 mt-1">Manage and search through your contracts</p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleNewContract}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              New Contract
+            </Button>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {/* Controls */}
@@ -226,16 +237,6 @@ const ContractHistoryModal: React.FC<ContractHistoryModalProps> = ({
                 </Button>
               )}
             </div>
-            
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleNewContract}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              New Contract
-            </Button>
           </div>
         </div>
 
@@ -254,13 +255,13 @@ const ContractHistoryModal: React.FC<ContractHistoryModalProps> = ({
               {filteredAndSortedContracts.map((contract) => (
                 <div
                   key={contract.id}
-                  className={`border rounded-lg p-4 transition-all duration-200 ${
+                  className={`border rounded-lg p-4 transition-all duration-200 overflow-hidden ${
                     selectedContracts.has(contract.id)
                       ? 'border-primary bg-primary-50'
                       : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
                   }`}
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-center justify-between gap-3 sm:gap-4">
                     <div className="flex items-start space-x-3 flex-1">
                       <input
                         type="checkbox"
@@ -286,7 +287,7 @@ const ContractHistoryModal: React.FC<ContractHistoryModalProps> = ({
                           </span>
                         </div>
                         
-                        <p className="text-sm text-gray-600 mb-2">
+                        <p className="text-sm text-gray-600 mb-2 truncate">
                           {contract.file_name}
                         </p>
                         
@@ -310,7 +311,7 @@ const ContractHistoryModal: React.FC<ContractHistoryModalProps> = ({
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 flex-shrink-0 ml-2 sm:ml-4">
                       <Button
                         variant="outline"
                         size="sm"

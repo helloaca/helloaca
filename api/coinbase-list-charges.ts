@@ -1,63 +1,57 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-function explorerUrl(network: string | undefined, txid: string | undefined): string | null {
-  if (!network || !txid) return null
-  const n = network.toLowerCase()
-  if (n.includes('bitcoin') || n === 'btc') return `https://www.blockchain.com/btc/tx/${txid}`
-  if (n.includes('ethereum') || n === 'eth') return `https://etherscan.io/tx/${txid}`
-  if (n.includes('polygon') || n === 'matic') return `https://polygonscan.com/tx/${txid}`
-  if (n.includes('litecoin') || n === 'ltc') return `https://blockchair.com/litecoin/transaction/${txid}`
-  if (n.includes('dogecoin') || n === 'doge') return `https://blockchair.com/dogecoin/transaction/${txid}`
-  return null
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+    res.status(200).end()
+    return
+  }
+  if (req.method !== 'GET') {
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.status(405).json({ error: 'Method not allowed' })
+    return
+  }
   try {
+    const email = String((req.query as any)?.email || '')
     const apiKey = process.env.COINBASE_COMMERCE_API_KEY
-    if (!apiKey) {
-      res.status(500).json({ error: 'Crypto not configured' })
+    if (!email) {
+      res.setHeader('Access-Control-Allow-Origin', '*')
+      res.status(400).json({ error: 'Missing email' })
       return
     }
-    const email = (req.query?.email || req.body?.email) as string | undefined
+    if (!apiKey) {
+      res.setHeader('Access-Control-Allow-Origin', '*')
+      res.status(500).json({ error: 'Coinbase not configured' })
+      return
+    }
 
-    const r = await fetch('https://api.commerce.coinbase.com/charges', {
+    const chargesRes = await fetch('https://api.commerce.coinbase.com/charges?limit=50', {
       headers: {
-        Accept: 'application/json',
-        'X-CC-Api-Key': apiKey
+        'X-CC-Api-Key': apiKey,
+        'X-CC-Api-Version': '2018-03-22',
+        'Content-Type': 'application/json'
       }
     })
-    const j = await r.json()
-    const charges: any[] = Array.isArray(j?.data) ? j.data : []
-    const filtered = email ? charges.filter((c) => c?.metadata?.email === email) : charges
+    const chargesJson = await chargesRes.json()
+    const data = Array.isArray(chargesJson?.data) ? chargesJson.data.filter((c: any) => {
+      const metaEmail = c?.metadata?.email || c?.metadata?.customer_email
+      return metaEmail && String(metaEmail).toLowerCase() === email.toLowerCase()
+    }).map((c: any) => ({
+      reference: c?.code || c?.id,
+      status: c?.status || (Array.isArray(c?.timeline) ? c.timeline[c.timeline.length - 1]?.status : undefined),
+      amount: c?.pricing?.local?.amount,
+      currency: c?.pricing?.local?.currency,
+      created_at: c?.created_at,
+      hosted_url: c?.hosted_url,
+      explorer_url: Array.isArray(c?.payments) && c.payments[0]?.block?.explorer_url ? c.payments[0].block.explorer_url : null
+    })) : []
 
-    const out = filtered.slice(0, 50).map((c) => {
-      const code = c?.code || c?.id
-      const status = Array.isArray(c?.timeline) && c.timeline.length ? c.timeline[c.timeline.length - 1]?.status?.toLowerCase() : c?.status?.toLowerCase() || 'unknown'
-      const amount = c?.pricing?.local?.amount || c?.local_price?.amount || null
-      const currency = c?.pricing?.local?.currency || c?.local_price?.currency || 'USD'
-      const created_at = c?.created_at
-      let network: string | undefined
-      let txid: string | undefined
-      if (Array.isArray(c?.payments) && c.payments.length) {
-        const p = c.payments[c.payments.length - 1]
-        network = p?.network || p?.blockchain
-        txid = p?.transaction_id || p?.txid
-      }
-      const explorer = explorerUrl(network, txid)
-      return {
-        method: 'crypto',
-        reference: code,
-        status,
-        amount,
-        currency,
-        created_at,
-        explorer_url: explorer,
-        hosted_url: c?.hosted_url || null
-      }
-    })
-
-    res.status(200).json({ data: out })
-  } catch (e) {
-    res.status(500).json({ error: 'Failed to fetch crypto history' })
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.status(200).json({ data })
+  } catch (e: any) {
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.status(500).json({ error: e?.message || 'Coinbase charges error' })
   }
 }
