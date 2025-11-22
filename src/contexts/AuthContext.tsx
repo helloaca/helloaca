@@ -460,47 +460,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      console.log('🔐 Attempting sign in with email:', email)
-      
-      // Validate input parameters
       if (!email || !password) {
         return { success: false, error: 'Email and password are required' }
       }
-      
-      // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(email)) {
         return { success: false, error: 'Please enter a valid email address' }
       }
-      
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password: password
-      })
-      
-      if (error) {
-        console.error('❌ Sign in error:', error)
-        
-        // Provide more specific error messages based on error codes
-        let errorMessage = error.message
-        
-        if (error.message.includes('Invalid login credentials')) {
+
+      const timeout = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), 8000))
+      const result = await Promise.race([
+        (async () => {
+          const { error } = await supabase.auth.signInWithPassword({
+            email: email.trim().toLowerCase(),
+            password
+          })
+          return { error }
+        })(),
+        timeout
+      ])
+
+      if ('timedOut' in result) {
+        return { success: false, error: 'Network timeout during sign in. Please try again.' }
+      }
+
+      if (result.error) {
+        let errorMessage = result.error.message
+        if (result.error.message.includes('Invalid login credentials')) {
           errorMessage = 'Invalid email or password. Please check your credentials and try again.'
-        } else if (error.message.includes('Email not confirmed')) {
+        } else if (result.error.message.includes('Email not confirmed')) {
           errorMessage = 'Please check your email and click the verification link before signing in.'
-        } else if (error.message.includes('Rate limit')) {
+        } else if (result.error.message.includes('Rate limit')) {
           errorMessage = 'Too many login attempts. Please try again in a few minutes.'
         }
-        
         return { success: false, error: errorMessage }
       }
-      
-      console.log('✅ Sign in successful')
-      // Track successful sign in
+
       trackAuth.signIn('email')
       return { success: true }
     } catch (err) {
-      console.error('❌ Sign in exception:', err)
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred during sign in'
       return { success: false, error: errorMessage }
     }

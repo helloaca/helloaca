@@ -53,24 +53,33 @@ const Login: React.FC = () => {
 
     try {
       const result = await signIn(email, password)
-      
+
       if (result.success) {
+        setIsLoading(false)
         try {
-          const factors = await (supabase as any).auth.mfa.listFactors()
-          const totp = factors?.data?.find((f: any) => f.factorType === 'totp')
+          const mfaTimeout = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), 5000))
+          const factorsResult = await Promise.race([
+            (supabase as any).auth.mfa.listFactors(),
+            mfaTimeout
+          ])
+          if ('timedOut' in factorsResult) {
+            setErrors({ general: 'Signed in, but network is slow. Please try again.' })
+            return
+          }
+          const totp = factorsResult?.data?.find((f: any) => f.factorType === 'totp')
           if (totp) {
             setFactorId(totp.id)
             setRequireMfa(true)
           } else {
             navigate('/dashboard')
           }
-        } catch (e) {
+        } catch {
           navigate('/dashboard')
         }
       } else {
         setErrors({ general: result.error || 'Login failed' })
       }
-    } catch (error) {
+    } catch {
       setErrors({ general: 'An unexpected error occurred' })
     } finally {
       setIsLoading(false)
