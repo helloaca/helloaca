@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { 
   User, 
   Bell, 
@@ -12,16 +12,18 @@ import {
   Crown,
   Check,
   Loader2,
-  ArrowLeft
+  ArrowLeft,
+  X
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 import { toast } from 'sonner'
 
 const Settings: React.FC = () => {
-  const { user, profile, updateProfile, signOut } = useAuth()
+  const { user, profile, updateProfile, signOut, refreshProfile } = useAuth()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'profile' | 'subscription' | 'team' | 'notifications' | 'security'>('profile')
   const [loading, setLoading] = useState(false)
@@ -41,6 +43,269 @@ const Settings: React.FC = () => {
     securityAlerts: true,
     teamUpdates: true
   })
+
+  const [isLoadingPayment, setIsLoadingPayment] = useState(false)
+  const [isMethodModalOpen, setMethodModalOpen] = useState(false)
+  const [processingMethod, setProcessingMethod] = useState<null | 'card' | 'crypto'>(null)
+  const [isChangePasswordOpen, setChangePasswordOpen] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [isEnable2FAOpen, setEnable2FAOpen] = useState(false)
+  const [totpUri, setTotpUri] = useState<string | null>(null)
+  const [factorId, setFactorId] = useState<string | null>(null)
+  const [totpCode, setTotpCode] = useState('')
+  const [isDeleteStep1Open, setDeleteStep1Open] = useState(false)
+  const [isDeleteStep2Open, setDeleteStep2Open] = useState(false)
+  const [deletePhrase, setDeletePhrase] = useState('')
+
+  const loadPaystackScript = useCallback(async () => {
+    if ((window as any).PaystackPop) return
+    await new Promise<void>((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = 'https://js.paystack.co/v1/inline.js'
+      script.async = true
+      script.onload = () => resolve()
+      script.onerror = () => reject(new Error('Failed to load Paystack script'))
+      document.body.appendChild(script)
+    })
+  }, [])
+
+  const handleSubscribe = useCallback(async () => {
+    try {
+      if (!user) {
+        toast.error('Please sign in to subscribe')
+        navigate('/login')
+        return
+      }
+      if (String(user?.plan) === 'pro' || String(profile?.plan) === 'pro') {
+        toast.info('You already have an active Pro plan')
+        return
+      }
+
+      const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY
+      const planCode = import.meta.env.VITE_PAYSTACK_PLAN_CODE
+      if (!publicKey) {
+        toast.error('Payment is not configured')
+        return
+      }
+
+      setIsLoadingPayment(true)
+      setProcessingMethod('card')
+      try {
+        await loadPaystackScript()
+      } catch {
+        setIsLoadingPayment(false)
+        setProcessingMethod(null)
+        toast.error('Network error loading payment library')
+        return
+      }
+
+      const PaystackPop = (window as any).PaystackPop
+      if (!PaystackPop || typeof PaystackPop.setup !== 'function') {
+        setIsLoadingPayment(false)
+        setProcessingMethod(null)
+        toast.error('Payment library failed to load')
+        return
+      }
+
+      const handler = PaystackPop.setup({
+        key: publicKey,
+        email: String(user.email),
+        ...(planCode ? { plan: planCode } : { amount: 300 }),
+        reference: `PRO-${Date.now()}`,
+        channels: ['card'],
+        metadata: { plan: 'pro' },
+        callback: (response: any) => {
+          ;(async () => {
+            try {
+              const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
+              const res = await fetch(`${base}/api/paystack-verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reference: response.reference })
+              })
+              const data = await res.json()
+              if (data?.status === 'success') {
+                await updateProfile({ plan: 'pro' })
+                await refreshProfile()
+                toast.success('Subscription activated')
+              } else {
+                toast.error('Payment verification failed')
+              }
+            } catch {
+              toast.error('Could not verify payment')
+            } finally {
+              setIsLoadingPayment(false)
+              setProcessingMethod(null)
+            }
+          })()
+        },
+        onClose: function () {
+          setIsLoadingPayment(false)
+          setProcessingMethod(null)
+          toast.info('Payment canceled')
+        }
+      })
+      setMethodModalOpen(false)
+      handler.openIframe()
+    } catch (err) {
+      setIsLoadingPayment(false)
+      setProcessingMethod(null)
+      toast.error(err instanceof Error ? err.message : 'Payment initialization failed')
+    }
+  }, [user, navigate, loadPaystackScript, profile])
+
+  const handleSubscribeCrypto = useCallback(async () => {
+    try {
+      if (!user) {
+        toast.error('Please sign in to subscribe')
+        navigate('/login')
+        return
+      }
+      if (String(user?.plan) === 'pro' || String(profile?.plan) === 'pro') {
+        toast.info('You already have an active Pro plan')
+        return
+      }
+
+      setIsLoadingPayment(true)
+      setProcessingMethod('crypto')
+      const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
+      const res = await fetch(`${base}/api/coinbase-create-charge`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, email: user.email })
+      })
+      const data = await res.json()
+      const url = data?.hosted_url
+      if (url) {
+        setMethodModalOpen(false)
+        window.location.href = url
+        return
+      }
+      toast.error('Failed to start crypto payment')
+    } catch {
+      toast.error('Failed to start crypto payment')
+    } finally {
+      setIsLoadingPayment(false)
+      setProcessingMethod(null)
+    }
+  }, [user, navigate, profile])
+
+  const handleChangePassword = async () => {
+    try {
+      if (!newPassword || newPassword !== confirmPassword) {
+        toast.error('Passwords do not match')
+        return
+      }
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      if (error) {
+        toast.error('Failed to change password')
+        return
+      }
+      setChangePasswordOpen(false)
+      setNewPassword('')
+      setConfirmPassword('')
+      toast.success('Password updated')
+    } catch {
+      toast.error('Failed to change password')
+    }
+  }
+
+  const startEnable2FA = async () => {
+    try {
+      const { data, error } = await (supabase as any).auth.mfa.enroll({ factorType: 'totp' })
+      if (error) {
+        toast.error('Failed to start 2FA')
+        return
+      }
+      setFactorId(data?.id || null)
+      setTotpUri(data?.totp?.uri || null)
+      setEnable2FAOpen(true)
+    } catch {
+      toast.error('Failed to start 2FA')
+    }
+  }
+
+  const verify2FA = async () => {
+    try {
+      if (!factorId || !totpCode) {
+        toast.error('Enter the code from your app')
+        return
+      }
+      const { error } = await (supabase as any).auth.mfa.challenge({ factorId })
+      if (error) {
+        toast.error('Failed to challenge 2FA')
+        return
+      }
+      const { error: vErr } = await (supabase as any).auth.mfa.verify({ factorId, code: totpCode })
+      if (vErr) {
+        toast.error('Invalid code')
+        return
+      }
+      setEnable2FAOpen(false)
+      setTotpUri(null)
+      setTotpCode('')
+      setFactorId(null)
+      toast.success('2FA enabled')
+    } catch {
+      toast.error('Failed to enable 2FA')
+    }
+  }
+
+  const exportUserData = async () => {
+    try {
+      if (!user?.id) return
+      const { data: contracts } = await supabase
+        .from('contracts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+      const { data: reports } = await supabase
+        .from('reports')
+        .select('*')
+        .eq('user_id', user.id)
+      const payload = {
+        user: { id: user.id, email: user.email, plan: String(profile?.plan || user?.plan || 'free') },
+        contracts: contracts || [],
+        reports: reports || []
+      }
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'helloaca-data.json'
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success('Data exported')
+    } catch {
+      toast.error('Failed to export data')
+    }
+  }
+
+  const deleteAccount = async () => {
+    try {
+      if (deletePhrase.trim().toLowerCase() !== 'delete my account') {
+        toast.error('Type the exact phrase to confirm')
+        return
+      }
+      if (!user?.id) return
+      const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
+      const res = await fetch(`${base}/api/delete-account`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, email: user.email })
+      })
+      if (res.ok) {
+        toast.success('Account deleted')
+        await signOut()
+        navigate('/')
+      } else {
+        toast.error('Failed to delete account')
+      }
+    } catch {
+      toast.error('Failed to delete account')
+    }
+  }
 
   // Load user data on component mount
   useEffect(() => {
@@ -284,11 +549,9 @@ const Settings: React.FC = () => {
             <div className="flex items-center">
               <Crown className="w-6 h-6 text-[#4ECCA3] mr-3" />
               <div>
-                <h4 className="text-xl font-semibold text-gray-900">{String(user?.plan) === 'pro' ? 'Pro Plan' : String(user?.plan) === 'business' ? 'Business Plan' : 'Free Plan'}</h4>
+                <h4 className="text-xl font-semibold text-gray-900">{String(profile?.plan || user?.plan) === 'pro' ? 'Pro Plan' : 'Free Plan'}</h4>
                 <p className="text-gray-600">
-                  {String(user?.plan) === 'pro' ? '$49/month • Billed monthly' : 
-                   String(user?.plan) === 'business' ? '$299/month • Billed monthly' : 
-                   'Free forever'}
+                  {String(profile?.plan || user?.plan) === 'pro' ? '$3/month • Billed monthly' : 'Free forever'}
                 </p>
               </div>
             </div>
@@ -305,7 +568,7 @@ const Settings: React.FC = () => {
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-[#4ECCA3]">
-                {String(user?.plan) === 'free' ? '1' : String(user?.plan) === 'pro' ? '10' : '∞'}
+                {String(profile?.plan || user?.plan) === 'free' ? '1' : '∞'}
               </p>
               <p className="text-sm text-gray-600">Monthly limit</p>
             </div>
@@ -315,16 +578,16 @@ const Settings: React.FC = () => {
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-[#4ECCA3]">
-                {String(user?.plan) === 'free' ? '0' : '∞'}
+                {String(profile?.plan || user?.plan) === 'free' ? '0' : '∞'}
               </p>
               <p className="text-sm text-gray-600">AI chat messages</p>
             </div>
           </div>
 
           <div className="flex space-x-4">
-            <Button variant="outline">Change Plan</Button>
+            <Button variant="outline" onClick={() => setMethodModalOpen(true)}>Change Plan</Button>
             <Button variant="outline">View Billing History</Button>
-            {user?.plan !== 'free' && (
+            {String(profile?.plan || user?.plan) !== 'free' && (
               <Button variant="outline" className="text-red-600 border-red-300 hover:bg-red-50">
                 Cancel Subscription
               </Button>
@@ -340,23 +603,16 @@ const Settings: React.FC = () => {
             {
               name: 'Free',
               price: '$0',
-              period: 'forever',
-              features: ['1 contract/month', 'Basic analysis', 'Email support'],
-              current: user?.plan === 'free'
+              period: 'month',
+              features: ['1 contract per month', 'Basic AI-powered analysis'],
+              current: String(profile?.plan || user?.plan) === 'free'
             },
             {
               name: 'Pro',
-              price: '$49',
-              period: 'per month',
-              features: ['10 contracts/month', 'AI chat', 'PDF reports', 'Priority support'],
-              current: user?.plan === 'pro'
-            },
-            {
-              name: 'Business',
-              price: '$299',
-              period: 'per month',
-              features: ['Unlimited contracts', 'Team collaboration', 'White-label reports', 'Dedicated support'],
-              current: user?.plan === 'business'
+              price: '$3',
+              period: 'month',
+              features: ['Unlimited contracts', 'Full AI analysis suite'],
+              current: String(profile?.plan || user?.plan) === 'pro'
             }
           ].map((plan) => (
             <Card key={plan.name} className={`p-6 ${plan.current ? 'ring-2 ring-[#4ECCA3]' : ''}`}>
@@ -378,6 +634,9 @@ const Settings: React.FC = () => {
                   variant={plan.current ? "outline" : "primary"}
                   className="w-full"
                   disabled={plan.current}
+                  onClick={() => {
+                    if (!plan.current && plan.name === 'Pro') setMethodModalOpen(true)
+                  }}
                 >
                   {plan.current ? 'Current Plan' : 'Upgrade'}
                 </Button>
@@ -561,14 +820,14 @@ const Settings: React.FC = () => {
                 <p className="font-medium text-gray-900">Password</p>
                 <p className="text-sm text-gray-500">Manage your account password</p>
               </div>
-              <Button variant="outline">Change Password</Button>
+              <Button variant="outline" onClick={() => setChangePasswordOpen(true)}>Change Password</Button>
             </div>
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium text-gray-900">Two-Factor Authentication</p>
                 <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
               </div>
-              <Button variant="outline">Enable 2FA</Button>
+              <Button variant="outline" onClick={startEnable2FA}>Enable 2FA</Button>
             </div>
             <div className="flex items-center justify-between">
               <div>
@@ -592,7 +851,7 @@ const Settings: React.FC = () => {
                 <p className="font-medium text-gray-900">Export Data</p>
                 <p className="text-sm text-gray-500">Download all your contracts and analysis data</p>
               </div>
-              <Button variant="outline">
+              <Button variant="outline" onClick={exportUserData}>
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
@@ -602,7 +861,7 @@ const Settings: React.FC = () => {
                 <p className="font-medium text-gray-900">Delete Account</p>
                 <p className="text-sm text-gray-500">Permanently delete your account and all data</p>
               </div>
-              <Button variant="outline" className="text-red-600 border-red-300 hover:bg-red-50">
+              <Button variant="outline" className="text-red-600 border-red-300 hover:bg-red-50" onClick={() => setDeleteStep1Open(true)}>
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete Account
               </Button>
@@ -667,6 +926,87 @@ const Settings: React.FC = () => {
             </Card>
           </div>
         </div>
+        {isMethodModalOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => { if (!isLoadingPayment) setMethodModalOpen(false) }}>
+            <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
+              <button aria-label="Close" onClick={() => setMethodModalOpen(false)} disabled={isLoadingPayment} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <X className="w-5 h-5" />
+              </button>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Choose payment method</h3>
+              <p className="text-gray-600 mb-6">Select how you want to subscribe to Pro.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button onClick={handleSubscribe} disabled={isLoadingPayment || processingMethod === 'crypto'} className={`w-full py-3 px-6 rounded-lg font-medium text-center transition-colors bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed`}>
+                  {processingMethod === 'card' ? 'Processing…' : 'Card'}
+                </button>
+                <button onClick={handleSubscribeCrypto} disabled={isLoadingPayment || processingMethod === 'card'} className={`w-full py-3 px-6 rounded-lg font-medium text-center transition-colors bg-gray-900 text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed`}>
+                  {processingMethod === 'crypto' ? 'Processing…' : 'Crypto'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {isChangePasswordOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setChangePasswordOpen(false)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Change Password</h3>
+              <div className="space-y-3">
+                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm password" className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+              </div>
+              <div className="flex justify-end gap-3 mt-6">
+                <Button variant="outline" onClick={() => setChangePasswordOpen(false)}>Cancel</Button>
+                <Button onClick={handleChangePassword}>Update</Button>
+              </div>
+            </div>
+          </div>
+        )}
+        {isEnable2FAOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setEnable2FAOpen(false)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Enable Two-Factor Authentication</h3>
+              {totpUri ? (
+                <div className="space-y-4">
+                  <img alt="QR" src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(totpUri)}`} className="mx-auto" />
+                  <p className="text-sm text-gray-600 break-all">{totpUri}</p>
+                  <input type="text" value={totpCode} onChange={(e) => setTotpCode(e.target.value)} placeholder="Enter 6-digit code" className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+                  <div className="flex justify-end gap-3">
+                    <Button variant="outline" onClick={() => setEnable2FAOpen(false)}>Cancel</Button>
+                    <Button onClick={verify2FA}>Verify</Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex justify-end gap-3">
+                  <Button variant="outline" onClick={() => setEnable2FAOpen(false)}>Close</Button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        {isDeleteStep1Open && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setDeleteStep1Open(false)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Delete Account</h3>
+              <p className="text-gray-700 mb-6">Are you sure you want to delete your account?</p>
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setDeleteStep1Open(false)}>No</Button>
+                <Button onClick={() => { setDeleteStep1Open(false); setDeleteStep2Open(true) }}>Yes</Button>
+              </div>
+            </div>
+          </div>
+        )}
+        {isDeleteStep2Open && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setDeleteStep2Open(false)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Confirm Deletion</h3>
+              <p className="text-gray-700 mb-4">Type "delete my account" to confirm.</p>
+              <input type="text" value={deletePhrase} onChange={(e) => setDeletePhrase(e.target.value)} placeholder="delete my account" className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+              <div className="flex justify-end gap-3 mt-6">
+                <Button variant="outline" onClick={() => setDeleteStep2Open(false)}>Cancel</Button>
+                <Button onClick={deleteAccount}>Delete</Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
