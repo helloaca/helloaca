@@ -57,6 +57,8 @@ const Settings: React.FC = () => {
   const [totpUri, setTotpUri] = useState<string | null>(null)
   const [factorId, setFactorId] = useState<string | null>(null)
   const [totpCode, setTotpCode] = useState('')
+  const [isEnrolling2FA, setEnrolling2FA] = useState(false)
+  const [isVerifying2FA, setVerifying2FA] = useState(false)
   const [isDeleteStep1Open, setDeleteStep1Open] = useState(false)
   const [isDeleteStep2Open, setDeleteStep2Open] = useState(false)
   const [deletePhrase, setDeletePhrase] = useState('')
@@ -118,15 +120,28 @@ const Settings: React.FC = () => {
         return
       }
 
+      let amountKobo: number | undefined
+      if (!planCode) {
+        try {
+          const rateRes = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=NGN')
+          const rateJson = await rateRes.json().catch(() => null)
+          const rate = typeof rateJson?.rates?.NGN === 'number' ? rateJson.rates.NGN : null
+          const ngn = Math.round(((rate || 1500) * 3))
+          amountKobo = ngn * 100
+        } catch {
+          amountKobo = 1500 * 3 * 100
+        }
+      }
+
       const handler = PaystackPop.setup({
         key: publicKey,
         email: String(user.email),
-        ...(planCode ? { plan: planCode } : { amount: 300 }),
+        ...(planCode ? { plan: planCode } : { amount: amountKobo, currency: 'NGN' }),
         reference: `PRO-${Date.now()}`,
         channels: ['card'],
         metadata: { plan: 'pro' },
         callback: (response: any) => {
-          ;(async () => {
+          (async () => {
             try {
               const base = import.meta.env.VITE_API_ORIGIN || ((window.location.hostname.endsWith('ngrok-free.app') || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://helloaca.xyz' : '')
               const res = await fetch(`${base}/api/paystack-verify`, {
@@ -235,32 +250,53 @@ const Settings: React.FC = () => {
 
   const startEnable2FA = async () => {
     try {
-      const { data, error } = await (supabase as any).auth.mfa.enroll({ factorType: 'totp' })
-      if (error) {
+      setEnrolling2FA(true)
+      const timeout = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), 8000))
+      const enrollPromise = (supabase as any).auth.mfa.enroll({ factorType: 'totp' })
+      const result: any = await Promise.race([enrollPromise, timeout])
+      if ('timedOut' in result) {
+        toast.error('Network timeout starting 2FA. Please try again.')
+        return
+      }
+      if (result?.error) {
         toast.error('Failed to start 2FA')
         return
       }
-      setFactorId(data?.id || null)
-      setTotpUri(data?.totp?.uri || null)
+      setFactorId(result?.data?.id || null)
+      setTotpUri(result?.data?.totp?.uri || null)
       setEnable2FAOpen(true)
     } catch {
       toast.error('Failed to start 2FA')
+    } finally {
+      setEnrolling2FA(false)
     }
   }
 
   const verify2FA = async () => {
     try {
+      setVerifying2FA(true)
       if (!factorId || !totpCode) {
         toast.error('Enter the code from your app')
         return
       }
-      const { error } = await (supabase as any).auth.mfa.challenge({ factorId })
-      if (error) {
+      const timeout = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), 8000))
+      const challengePromise = (supabase as any).auth.mfa.challenge({ factorId })
+      const challengeResult: any = await Promise.race([challengePromise, timeout])
+      if ('timedOut' in challengeResult) {
+        toast.error('Network timeout initiating verification. Please try again.')
+        return
+      }
+      if (challengeResult?.error) {
         toast.error('Failed to challenge 2FA')
         return
       }
-      const { error: vErr } = await (supabase as any).auth.mfa.verify({ factorId, code: totpCode })
-      if (vErr) {
+      const verifyPromise = (supabase as any).auth.mfa.verify({ factorId, code: totpCode })
+      const verifyResult: any = await Promise.race([verifyPromise, timeout])
+      if ('timedOut' in verifyResult) {
+        toast.error('Network timeout verifying code. Please try again.')
+        return
+      }
+      if (verifyResult?.error) {
         toast.error('Invalid code')
         return
       }
@@ -271,6 +307,8 @@ const Settings: React.FC = () => {
       toast.success('2FA enabled')
     } catch {
       toast.error('Failed to enable 2FA')
+    } finally {
+      setVerifying2FA(false)
     }
   }
 
@@ -338,7 +376,7 @@ const Settings: React.FC = () => {
         const j = await res.json().catch(() => ({}))
         if (res.status === 404) {
           // No provider subscription found; downgrade locally
-          const result = await updateProfile({ plan: 'free', plan_expires_at: null })
+          const result = await updateProfile({ plan: 'free' })
           if (result.success) {
             await refreshProfile()
             toast.info('No provider subscription found. Plan downgraded locally.')
@@ -350,7 +388,7 @@ const Settings: React.FC = () => {
         toast.error(j?.error || 'Provider cancellation failed')
         return
       }
-      const result = await updateProfile({ plan: 'free', plan_expires_at: null })
+      const result = await updateProfile({ plan: 'free' })
       if (result.success) {
         await refreshProfile()
         toast.success('Subscription canceled')
@@ -382,8 +420,8 @@ const Settings: React.FC = () => {
       setCancelFeedbackOpen(false)
       setCancelReason('')
       setCancelComeBack('')
-    } catch {
-    } finally {
+    } catch { void 0 }
+    finally {
       setCancelSubmitting(false)
     }
   }
@@ -460,13 +498,13 @@ const Settings: React.FC = () => {
           setNotifications((prev) => ({ ...prev, ...parsed }))
         }
       }
-    } catch {}
+    } catch { void 0 }
   }, [])
 
   useEffect(() => {
     try {
       localStorage.setItem('helloaca:notification_prefs', JSON.stringify(notifications))
-    } catch {}
+    } catch { void 0 }
   }, [notifications])
 
   // Load user data on component mount
@@ -499,14 +537,14 @@ const Settings: React.FC = () => {
       email: user?.email || '', 
       role: 'Owner', 
       avatar: (() => {
-        const firstName = user?.firstName ? String(user.firstName) : '';
-        const lastName = user?.lastName ? String(user.lastName) : '';
-        const name = user?.name ? String(user.name) : '';
+        const firstName = user?.firstName ? String(user.firstName) : ''
+        const lastName = user?.lastName ? String(user.lastName) : ''
+        const name = user?.name ? String(user.name) : ''
         
-        const firstInitial = firstName?.[0] || name?.[0] || 'U';
-        const lastInitial = lastName?.[0] || '';
+        const firstInitial = firstName?.[0] || name?.[0] || 'U'
+        const lastInitial = lastName?.[0] || ''
         
-        return `${firstInitial}${lastInitial}`;
+        return `${firstInitial}${lastInitial}`
       })(), 
       status: 'active' 
     }
@@ -796,7 +834,7 @@ const Settings: React.FC = () => {
                   ))}
                 </ul>
                 <Button 
-                  variant={plan.current ? "outline" : "primary"}
+                  variant={plan.current ? 'outline' : 'primary'}
                   className="w-full"
                   disabled={plan.current}
                   onClick={() => {
@@ -992,7 +1030,10 @@ const Settings: React.FC = () => {
                 <p className="font-medium text-gray-900">Two-Factor Authentication</p>
                 <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
               </div>
-              <Button variant="outline" onClick={startEnable2FA}>Enable 2FA</Button>
+              <Button variant="outline" onClick={startEnable2FA} disabled={isEnrolling2FA}>
+                {isEnrolling2FA ? (<Loader2 className="w-4 h-4 mr-2 animate-spin" />) : null}
+                Enable 2FA
+              </Button>
             </div>
             <div className="flex items-center justify-between">
               <div>
@@ -1109,10 +1150,10 @@ const Settings: React.FC = () => {
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Choose payment method</h3>
               <p className="text-gray-600 mb-6">Select how you want to subscribe to Pro.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button onClick={handleSubscribe} disabled={isLoadingPayment || processingMethod === 'crypto'} className={`w-full py-3 px-6 rounded-lg font-medium text-center transition-colors bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed`}>
+                <button onClick={handleSubscribe} disabled={isLoadingPayment || processingMethod === 'crypto'} className='w-full py-3 px-6 rounded-lg font-medium text-center transition-colors bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'>
                   {processingMethod === 'card' ? 'Processing…' : 'Card'}
                 </button>
-                <button onClick={handleSubscribeCrypto} disabled={isLoadingPayment || processingMethod === 'card'} className={`w-full py-3 px-6 rounded-lg font-medium text-center transition-colors bg-gray-900 text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed`}>
+                <button onClick={handleSubscribeCrypto} disabled={isLoadingPayment || processingMethod === 'card'} className='w-full py-3 px-6 rounded-lg font-medium text-center transition-colors bg-gray-900 text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed'>
                   {processingMethod === 'crypto' ? 'Processing…' : 'Crypto'}
                 </button>
               </div>
@@ -1209,10 +1250,13 @@ const Settings: React.FC = () => {
                 <div className="space-y-4">
                   <img alt="QR" src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(totpUri)}`} className="mx-auto" />
                   <p className="text-sm text-gray-600 break-all">{totpUri}</p>
-                  <input type="text" value={totpCode} onChange={(e) => setTotpCode(e.target.value)} placeholder="Enter 6-digit code" className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+                  <input type="text" value={totpCode} onChange={(e) => setTotpCode(e.target.value)} placeholder="Enter 6-digit code" className="w-full px-4 py-3 border border-gray-300 rounded-lg" disabled={isVerifying2FA} />
                   <div className="flex justify-end gap-3">
                     <Button variant="outline" onClick={() => setEnable2FAOpen(false)}>Cancel</Button>
-                    <Button onClick={verify2FA}>Verify</Button>
+                    <Button onClick={verify2FA} disabled={isVerifying2FA || !totpCode}>
+                      {isVerifying2FA ? (<Loader2 className="w-4 h-4 mr-2 animate-spin" />) : null}
+                      {isVerifying2FA ? 'Verifying…' : 'Verify'}
+                    </Button>
                   </div>
                 </div>
               ) : (

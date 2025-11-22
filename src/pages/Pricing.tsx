@@ -111,15 +111,28 @@ const Pricing: React.FC = () => {
         return
       }
 
+      let amountKobo: number | undefined
+      if (!planCode) {
+        try {
+          const rateRes = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=NGN')
+          const rateJson = await rateRes.json().catch(() => null)
+          const rate = typeof rateJson?.rates?.NGN === 'number' ? rateJson.rates.NGN : null
+          const ngn = Math.round(((rate || 1500) * 3))
+          amountKobo = ngn * 100
+        } catch {
+          amountKobo = 1500 * 3 * 100
+        }
+      }
+
       const handler = PaystackPop.setup({
         key: publicKey,
         email: user.email,
-        ...(planCode ? { plan: planCode } : { amount: 500000 }),
+        ...(planCode ? { plan: planCode } : { amount: amountKobo, currency: 'NGN' }),
         reference: `PRO-${Date.now()}`,
         channels: ['card'],
         metadata: { plan: 'pro' },
         callback: (response: any) => {
-          ;(async () => {
+          (async () => {
             try {
               const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
               const res = await fetch(`${base}/api/paystack-verify`, {
@@ -163,7 +176,7 @@ const Pricing: React.FC = () => {
     const status = params.get('crypto')
     if (!status || !user) return
     if (status === 'success') {
-      ;(async () => {
+      (async () => {
         const result = await refreshProfile()
         if (result?.success) {
           toast.success('Subscription activated')

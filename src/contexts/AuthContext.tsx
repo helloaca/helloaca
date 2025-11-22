@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
 import { Session } from '@supabase/supabase-js'
 import { toast } from 'sonner'
 import { AuthUser, supabase } from '../lib/supabase'
@@ -97,7 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Initialize auth state with improved timeout protection
   useEffect(() => {
     let isMounted = true
-    let initTimeout: NodeJS.Timeout
+    let initTimeout: ReturnType<typeof setTimeout>
     
     const initializeAuth = async () => {
       console.log('🔄 Initializing authentication...')
@@ -122,30 +122,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         })
 
         // Create the session fetch promise with optimized retry logic
-        const sessionPromise = new Promise<{ session: any; error: any; timedOut?: never }>(async (resolve, reject) => {
-          try {
-            // Get current session from Supabase with optimized retry logic
-            let retryCount = 0
-            const maxRetries = 1 // Reduced retries to prevent timeout
-            
-            while (retryCount <= maxRetries) {
-              try {
-                const { data: { session }, error } = await supabase.auth.getSession()
-                resolve({ session, error })
-                return
-              } catch (err) {
-                retryCount++
-                if (retryCount > maxRetries) {
-                  reject(err)
-                } else {
-                  console.log(`🔄 Retrying session fetch (${retryCount}/${maxRetries})`)
-                  await new Promise(resolve => setTimeout(resolve, 500)) // Reduced wait time to 500ms
+        const sessionPromise = new Promise<{ session: any; error: any; timedOut?: never }>((resolve, reject) => {
+          (async () => {
+            try {
+              let retryCount = 0
+              const maxRetries = 1
+              while (retryCount <= maxRetries) {
+                try {
+                  const { data: { session }, error } = await supabase.auth.getSession()
+                  resolve({ session, error })
+                  return
+                } catch (err) {
+                  retryCount++
+                  if (retryCount > maxRetries) {
+                    reject(err)
+                  } else {
+                    console.log(`🔄 Retrying session fetch (${retryCount}/${maxRetries})`)
+                    await new Promise(r => setTimeout(r, 500))
+                  }
                 }
               }
+            } catch (error) {
+              reject(error)
             }
-          } catch (error) {
-            reject(error)
-          }
+          })()
         })
 
         // Race between session fetch and timeout
@@ -368,18 +368,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
               }
             } else if (existingProfile) {
-              const now = new Date()
-              const expiresAt = existingProfile?.plan_expires_at ? new Date(existingProfile.plan_expires_at as string) : null
-              if (existingProfile.plan === 'pro' && expiresAt && expiresAt < now) {
-                const { error: downgradeError } = await supabase
-                  .from('user_profiles')
-                  .update({ plan: 'free', plan_expires_at: null })
-                  .eq('id', session.user.id)
-                if (!downgradeError) {
-                  existingProfile.plan = 'free'
-                  ;(existingProfile as any).plan_expires_at = null
-                }
-              }
               setProfile(existingProfile)
               setUserProperties({
                 user_id: existingProfile.id,
@@ -601,18 +589,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single()
       if (error) throw error
       if (existingProfile) {
-        const now = new Date()
-        const expiresAt = existingProfile?.plan_expires_at ? new Date(existingProfile.plan_expires_at as string) : null
-        if (existingProfile.plan === 'pro' && expiresAt && expiresAt < now) {
-          const { error: downgradeError } = await supabase
-            .from('user_profiles')
-            .update({ plan: 'free', plan_expires_at: null })
-            .eq('id', user.id)
-          if (!downgradeError) {
-            existingProfile.plan = 'free'
-            ;(existingProfile as any).plan_expires_at = null
-          }
-        }
         setProfile(existingProfile)
         setUser({
           ...user,
