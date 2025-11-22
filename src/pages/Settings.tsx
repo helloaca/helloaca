@@ -43,6 +43,8 @@ const Settings: React.FC = () => {
     securityAlerts: true,
     teamUpdates: true
   })
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [failedPasswordAttempts, setFailedPasswordAttempts] = useState(0)
 
   const [isLoadingPayment, setIsLoadingPayment] = useState(false)
   const [isMethodModalOpen, setMethodModalOpen] = useState(false)
@@ -57,6 +59,8 @@ const Settings: React.FC = () => {
   const [isDeleteStep1Open, setDeleteStep1Open] = useState(false)
   const [isDeleteStep2Open, setDeleteStep2Open] = useState(false)
   const [deletePhrase, setDeletePhrase] = useState('')
+  const [isBillingHistoryOpen, setBillingHistoryOpen] = useState(false)
+  const [billingHistory, setBillingHistory] = useState<any[] | null>(null)
 
   const loadPaystackScript = useCallback(async () => {
     if ((window as any).PaystackPop) return
@@ -193,6 +197,16 @@ const Settings: React.FC = () => {
 
   const handleChangePassword = async () => {
     try {
+      if (!currentPassword) {
+        toast.error('Enter your current password')
+        return
+      }
+      const reauth = await supabase.auth.signInWithPassword({ email: String(user?.email), password: currentPassword })
+      if (reauth.error) {
+        setFailedPasswordAttempts((c) => c + 1)
+        toast.error('Current password is incorrect')
+        return
+      }
       if (!newPassword || newPassword !== confirmPassword) {
         toast.error('Passwords do not match')
         return
@@ -203,8 +217,10 @@ const Settings: React.FC = () => {
         return
       }
       setChangePasswordOpen(false)
+      setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
+      setFailedPasswordAttempts(0)
       toast.success('Password updated')
     } catch {
       toast.error('Failed to change password')
@@ -249,6 +265,66 @@ const Settings: React.FC = () => {
       toast.success('2FA enabled')
     } catch {
       toast.error('Failed to enable 2FA')
+    }
+  }
+
+  const viewBillingHistory = async () => {
+    try {
+      if (!user?.email) {
+        toast.error('No user email found')
+        return
+      }
+      const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
+      const [cardRes, cryptoRes] = await Promise.all([
+        fetch(`${base}/api/paystack-history?email=${encodeURIComponent(String(user.email))}`),
+        fetch(`${base}/api/coinbase-list-charges?email=${encodeURIComponent(String(user.email))}`)
+      ])
+      const [cardJson, cryptoJson] = await Promise.all([cardRes.json(), cryptoRes.json()])
+      const card = Array.isArray(cardJson?.data) ? cardJson.data.map((tx: any) => ({
+        method: 'card',
+        reference: tx.reference,
+        status: tx.status,
+        amount: typeof tx.amount === 'number' ? (tx.amount / 100).toFixed(2) : tx.amount,
+        currency: 'USD',
+        created_at: tx.paid_at || tx.created_at,
+        explorer_url: null
+      })) : []
+      const crypto = Array.isArray(cryptoJson?.data) ? cryptoJson.data.map((c: any) => ({
+        method: 'crypto',
+        reference: c.reference,
+        status: c.status,
+        amount: c.amount,
+        currency: c.currency,
+        created_at: c.created_at,
+        explorer_url: c.explorer_url,
+        hosted_url: c.hosted_url
+      })) : []
+      const combined = [...card, ...crypto].sort((a, b) => {
+        const ta = a.created_at ? new Date(a.created_at).getTime() : 0
+        const tb = b.created_at ? new Date(b.created_at).getTime() : 0
+        return tb - ta
+      })
+      setBillingHistory(combined)
+    } catch {
+      setBillingHistory([])
+    }
+  }
+
+  useEffect(() => {
+    if (isBillingHistoryOpen) viewBillingHistory()
+  }, [isBillingHistoryOpen])
+
+  const cancelSubscription = async () => {
+    try {
+      const result = await updateProfile({ plan: 'free', plan_expires_at: null })
+      if (result.success) {
+        await refreshProfile()
+        toast.success('Subscription canceled')
+      } else {
+        toast.error(result.error || 'Failed to cancel subscription')
+      }
+    } catch {
+      toast.error('Failed to cancel subscription')
     }
   }
 
@@ -306,6 +382,24 @@ const Settings: React.FC = () => {
       toast.error('Failed to delete account')
     }
   }
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('helloaca:notification_prefs')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (parsed && typeof parsed === 'object') {
+          setNotifications((prev) => ({ ...prev, ...parsed }))
+        }
+      }
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('helloaca:notification_prefs', JSON.stringify(notifications))
+    } catch {}
+  }, [notifications])
 
   // Load user data on component mount
   useEffect(() => {
@@ -586,9 +680,9 @@ const Settings: React.FC = () => {
 
           <div className="flex space-x-4">
             <Button variant="outline" onClick={() => setMethodModalOpen(true)}>Change Plan</Button>
-            <Button variant="outline">View Billing History</Button>
+            <Button variant="outline" onClick={() => setBillingHistoryOpen(true)}>View Billing History</Button>
             {String(profile?.plan || user?.plan) !== 'free' && (
-              <Button variant="outline" className="text-red-600 border-red-300 hover:bg-red-50">
+              <Button variant="outline" className="text-red-600 border-red-300 hover:bg-red-50" onClick={cancelSubscription}>
                 Cancel Subscription
               </Button>
             )}
@@ -945,13 +1039,61 @@ const Settings: React.FC = () => {
             </div>
           </div>
         )}
+        {isBillingHistoryOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setBillingHistoryOpen(false)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold text-gray-900">Billing History</h3>
+                <button onClick={() => setBillingHistoryOpen(false)} className="text-gray-500 hover:text-gray-700"><X className="w-5 h-5" /></button>
+              </div>
+              {!billingHistory && (
+                <div className="py-6 text-center text-gray-600">Loading…</div>
+              )}
+              {billingHistory && billingHistory.length === 0 && (
+                <div className="py-6 text-center text-gray-600">No transactions found</div>
+              )}
+              {billingHistory && billingHistory.length > 0 && (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reference</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Explorer</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {billingHistory.map((tx: any) => (
+                        <tr key={`${tx.method}-${tx.reference}`}>
+                          <td className="px-4 py-3 text-sm text-gray-900">{tx.reference}</td>
+                          <td className="px-4 py-3 text-sm"><span className={`px-2 py-1 rounded-full text-xs ${['success','completed','paid'].includes(String(tx.status)) ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>{tx.status}</span></td>
+                          <td className="px-4 py-3 text-sm text-gray-900">{tx.amount ? `$${tx.amount}` : '-'}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{tx.created_at ? new Date(tx.created_at).toLocaleString() : ''}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">{tx.method === 'card' ? 'Card' : 'Crypto'}</td>
+                          <td className="px-4 py-3 text-sm">{tx.explorer_url ? (<a href={tx.explorer_url} target="_blank" rel="noreferrer" className="text-[#4ECCA3] hover:text-[#3DBB90]">View</a>) : (tx.hosted_url ? (<a href={tx.hosted_url} target="_blank" rel="noreferrer" className="text-gray-600 hover:text-gray-800">Charge</a>) : '-')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         {isChangePasswordOpen && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setChangePasswordOpen(false)}>
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Change Password</h3>
               <div className="space-y-3">
+                <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Current password" className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
                 <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
                 <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm password" className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+                {failedPasswordAttempts >= 3 && (
+                  <p className="text-sm text-gray-600">Having trouble? <a href="/forgot-password" className="text-[#4ECCA3] hover:text-[#3DBB90]">Visit the forgotten password page</a>.</p>
+                )}
               </div>
               <div className="flex justify-end gap-3 mt-6">
                 <Button variant="outline" onClick={() => setChangePasswordOpen(false)}>Cancel</Button>
@@ -998,8 +1140,8 @@ const Settings: React.FC = () => {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setDeleteStep2Open(false)}>
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Confirm Deletion</h3>
-              <p className="text-gray-700 mb-4">Type "delete my account" to confirm.</p>
-              <input type="text" value={deletePhrase} onChange={(e) => setDeletePhrase(e.target.value)} placeholder="delete my account" className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+              <p className="text-gray-700 mb-4">Type <span className="text-red-600 font-semibold">"delete my account"</span> to confirm.</p>
+              <input type="text" value={deletePhrase} onChange={(e) => setDeletePhrase(e.target.value)} placeholder="delete my account" className="w-full px-4 py-3 border border-gray-300 rounded-lg text-red-600 placeholder-red-400" />
               <div className="flex justify-end gap-3 mt-6">
                 <Button variant="outline" onClick={() => setDeleteStep2Open(false)}>Cancel</Button>
                 <Button onClick={deleteAccount}>Delete</Button>
