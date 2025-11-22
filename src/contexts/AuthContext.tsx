@@ -331,6 +331,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const lastName = session.user.user_metadata?.lastName || ''
               const plan = session.user.user_metadata?.plan || 'free'
               
+              const avatarSeed = session.user.id
               const { error: createError } = await supabase
                 .from('user_profiles')
                 .insert({
@@ -341,7 +342,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   plan: plan as 'free' | 'pro' | 'business',
                   company: null,
                   role: null,
-                  timezone: null
+                  timezone: null,
+                  avatar_seed: avatarSeed
                 })
               
               if (createError) {
@@ -368,13 +370,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
               }
             } else if (existingProfile) {
-              setProfile(existingProfile)
+              let updatedProfile = existingProfile
+              if (!existingProfile.avatar_seed) {
+                const seed = session.user.id
+                const { error: updateErr, data } = await supabase
+                  .from('user_profiles')
+                  .update({ avatar_seed: seed })
+                  .eq('id', session.user.id)
+                  .select()
+                  .single()
+                if (!updateErr && data) {
+                  updatedProfile = data
+                }
+              }
+              setProfile(updatedProfile)
               setUserProperties({
-                user_id: existingProfile.id,
-                plan: existingProfile.plan,
-                company: existingProfile.company || undefined
+                user_id: updatedProfile.id,
+                plan: updatedProfile.plan,
+                company: updatedProfile.company || undefined
               })
-              cacheUserData(authUser, existingProfile, session)
+              cacheUserData(authUser, updatedProfile, session)
             }
           }
         } catch (err) {
@@ -395,6 +410,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               company: null,
               role: null,
               timezone: null,
+              avatar_seed: session.user.id,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             }

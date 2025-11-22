@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Menu, X, Settings, LogOut } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import Button from '../ui/Button'
+import Avatar from '../ui/Avatar'
 import { toast } from 'sonner'
 
 interface HeaderProps {
@@ -54,19 +55,6 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
     return 'User'
   }
 
-  // Get initials for avatar
-  const getInitials = () => {
-    if (profile?.first_name && profile?.last_name) {
-      return `${profile.first_name.charAt(0)}${profile.last_name.charAt(0)}`.toUpperCase()
-    }
-    if (user?.firstName && user?.lastName) {
-      return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()
-    }
-    if (user?.name && typeof user.name === 'string') {
-      return user.name.charAt(0).toUpperCase()
-    }
-    return 'U'
-  }
 
   // Handle sign out
   const handleSignOut = async () => {
@@ -85,13 +73,11 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-14 sm:h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="flex items-center space-x-2">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-[#4ECCA3] rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm sm:text-lg">H</span>
-              </div>
-              <span className="font-bold text-xl sm:text-2xl text-gray-900">
-                HelloACA
+          <Link to="/" className="flex items-center">
+            <div className="flex items-center space-x-0">
+              <img src="/logo.png" alt="HelloACA" className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg object-contain" />
+              <span className="font-bold text-xl sm:text-2xl text-gray-900 -ml-1 tracking-tight">
+                elloaca
               </span>
             </div>
           </Link>
@@ -140,11 +126,7 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
                   onClick={toggleUserMenu}
                   className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors min-h-[44px]"
                 >
-                  <div className="w-8 h-8 bg-[#4ECCA3] rounded-full flex items-center justify-center">
-                    <span className="text-white font-semibold text-sm">
-                      {getInitials()}
-                    </span>
-                  </div>
+                  <Avatar seed={profile?.avatar_seed || user.id} size={32} className="w-8 h-8 rounded-full" />
                   <span className="text-gray-700 font-medium">{getDisplayName()}</span>
                 </button>
 
@@ -281,11 +263,7 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
                   {isAuthenticated && user && (
                     <div className="pt-4 border-t border-gray-100">
                       <div className="flex items-center space-x-3 mb-4 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-10 h-10 bg-[#4ECCA3] rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold">
-                            {getInitials()}
-                          </span>
-                        </div>
+                        <Avatar seed={profile?.avatar_seed || user.id} size={40} className="w-10 h-10 rounded-full" />
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-gray-900 truncate">{getDisplayName()}</p>
                           <p className="text-sm text-gray-500 truncate">{user.email || ''}</p>

@@ -198,12 +198,12 @@ ${contract.extracted_text}
 
     // Include recent conversation history
     if (conversationContext.length > 0) {
-      prompt += `\n\nPrevious conversation:\n`
+      prompt += '\n\nPrevious conversation:\n'
       conversationContext.forEach(msg => {
         const speaker = msg.role === 'user' ? 'User' : 'Assistant'
         prompt += `${speaker}: ${msg.content}\n`
       })
-      prompt += `\n---\n`
+      prompt += '\n---\n'
     }
 
     // Add current user question
@@ -492,7 +492,7 @@ Please provide a helpful response based on the contract and our conversation.`
       <Header />
       
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-lg h-[calc(100vh-12rem)] flex flex-col">
+        <div className="bg-white rounded-lg shadow-lg min-h-[70vh] sm:min-h-[60vh] md:h-[calc(100vh-12rem)] flex flex-col">
           {/* Chat Header */}
           <div className="border-b px-6 py-4 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center space-x-4">
@@ -586,7 +586,7 @@ Please provide a helpful response based on the contract and our conversation.`
                     className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-3xl rounded-lg px-4 py-3 ${
+                      className={`max-w-[85%] sm:max-w-2xl md:max-w-3xl rounded-lg px-4 py-3 ${
                         message.type === 'user'
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 text-gray-900'
@@ -669,8 +669,8 @@ Please provide a helpful response based on the contract and our conversation.`
                   onKeyPress={handleKeyPress}
                   placeholder={
                     contract && contract.extracted_text
-                      ? "Ask me anything about this contract..."
-                      : "Please upload a contract first..."
+                      ? 'Ask me anything about this contract...'
+                      : 'Please upload a contract first...'
                   }
                   disabled={!contract || !contract.extracted_text || isLoading}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-y-auto"

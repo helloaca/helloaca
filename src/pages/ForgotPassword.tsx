@@ -71,11 +71,9 @@ const ForgotPassword: React.FC = () => {
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           {/* Logo */}
           <div className="flex items-center justify-center mb-6">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-[#4ECCA3] rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">H</span>
-              </div>
-              <span className="text-2xl font-bold text-gray-900">HelloACA</span>
+            <div className="flex items-center space-x-0">
+              <img src="/logo.png" alt="HelloACA" className="w-8 h-8 rounded-lg object-contain" />
+              <span className="text-2xl font-bold text-gray-900 -ml-1 tracking-tight">elloaca</span>
             </div>
           </div>
 
@@ -142,11 +140,9 @@ const ForgotPassword: React.FC = () => {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center mb-6">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-[#4ECCA3] rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">H</span>
-            </div>
-            <span className="text-2xl font-bold text-gray-900">HelloACA</span>
+          <div className="flex items-center space-x-0">
+            <img src="/logo.png" alt="HelloACA" className="w-8 h-8 rounded-lg object-contain" />
+            <span className="text-2xl font-bold text-gray-900 -ml-1 tracking-tight">elloACA</span>
           </div>
         </div>
 

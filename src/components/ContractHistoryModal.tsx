@@ -63,7 +63,7 @@ const ContractHistoryModal: React.FC<ContractHistoryModalProps> = ({
 
   // Filter and sort contracts
   const filteredAndSortedContracts = useMemo(() => {
-    let filtered = enhancedContracts.filter(contract => {
+    const filtered = enhancedContracts.filter(contract => {
       const searchLower = searchTerm.toLowerCase()
       const titleMatch = contract.title.toLowerCase().includes(searchLower)
       const fileNameMatch = contract.file_name.toLowerCase().includes(searchLower)
@@ -170,9 +170,9 @@ const ContractHistoryModal: React.FC<ContractHistoryModalProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Contract History</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Contract History</h2>
             <p className="text-gray-600 mt-1">Manage and search through your contracts</p>
           </div>
           <div className="flex items-center gap-2">
@@ -180,7 +180,7 @@ const ContractHistoryModal: React.FC<ContractHistoryModalProps> = ({
               variant="primary"
               size="sm"
               onClick={handleNewContract}
-              className="flex items-center gap-2"
+              className="hidden sm:flex items-center gap-2"
             >
               <Plus className="h-4 w-4" />
               New Contract
@@ -195,7 +195,7 @@ const ContractHistoryModal: React.FC<ContractHistoryModalProps> = ({
         </div>
 
         {/* Controls */}
-        <div className="p-6 border-b space-y-4">
+        <div className="p-4 sm:p-6 border-b space-y-4">
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Search Bar */}
             <div className="flex-1 relative">
@@ -241,7 +241,7 @@ const ContractHistoryModal: React.FC<ContractHistoryModalProps> = ({
         </div>
 
         {/* Contracts List */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {filteredAndSortedContracts.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -261,7 +261,7 @@ const ContractHistoryModal: React.FC<ContractHistoryModalProps> = ({
                       : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-3 sm:gap-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                     <div className="flex items-start space-x-3 flex-1">
                       <input
                         type="checkbox"
@@ -272,7 +272,7 @@ const ContractHistoryModal: React.FC<ContractHistoryModalProps> = ({
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2 mb-1">
-                          <h3 className="text-lg font-medium text-gray-900 truncate">
+                          <h3 className="text-base sm:text-lg font-medium text-gray-900 truncate">
                             {contract.title}
                           </h3>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -287,7 +287,7 @@ const ContractHistoryModal: React.FC<ContractHistoryModalProps> = ({
                           </span>
                         </div>
                         
-                        <p className="text-sm text-gray-600 mb-2 truncate">
+                        <p className="text-xs sm:text-sm text-gray-600 mb-2 truncate">
                           {contract.file_name}
                         </p>
                         
@@ -303,7 +303,7 @@ const ContractHistoryModal: React.FC<ContractHistoryModalProps> = ({
                         </div>
                         
                         {(contract.analysis?.analysis_data as any)?.summary && (
-                          <p className="text-sm text-gray-700 mt-2 line-clamp-2">
+                          <p className="text-xs sm:text-sm text-gray-700 mt-2 line-clamp-2">
                             {(contract.analysis?.analysis_data as any).summary.substring(0, 150)}
                             {(contract.analysis?.analysis_data as any).summary.length > 150 ? '...' : ''}
                           </p>
@@ -311,7 +311,7 @@ const ContractHistoryModal: React.FC<ContractHistoryModalProps> = ({
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-2 flex-shrink-0 ml-2 sm:ml-4">
+                    <div className="flex items-center space-x-2 flex-shrink-0 ml-0 sm:ml-4 w-full sm:w-auto mt-2 sm:mt-0 justify-end">
                       <Button
                         variant="outline"
                         size="sm"
@@ -331,7 +331,7 @@ const ContractHistoryModal: React.FC<ContractHistoryModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="border-t p-6">
+        <div className="border-t p-4 sm:p-6">
           <div className="flex items-center justify-between text-sm text-gray-600">
             <span>{filteredAndSortedContracts.length} contract{filteredAndSortedContracts.length !== 1 ? 's' : ''}</span>
             <span>{selectedContracts.size} selected</span>

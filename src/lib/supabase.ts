@@ -34,6 +34,7 @@ export interface Database {
           company: string | null
           role: string | null
           timezone: string | null
+          avatar_seed: string | null
           created_at: string
           updated_at: string
         }
@@ -47,6 +48,7 @@ export interface Database {
           company?: string | null
           role?: string | null
           timezone?: string | null
+          avatar_seed?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -60,6 +62,7 @@ export interface Database {
           company?: string | null
           role?: string | null
           timezone?: string | null
+          avatar_seed?: string | null
           created_at?: string
           updated_at?: string
         }
