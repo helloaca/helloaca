@@ -468,7 +468,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, error: 'Please enter a valid email address' }
       }
 
-      const timeout = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), 8000))
+      const timeout = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), 20000))
       const result = await Promise.race([
         (async () => {
           const { error } = await supabase.auth.signInWithPassword({
