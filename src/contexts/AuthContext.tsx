@@ -528,17 +528,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut()
-      if (error) throw error
-      // Track successful sign out
+      const timeout = new Promise<void>((resolve) => setTimeout(resolve, 8000))
+      await Promise.race([
+        (async () => {
+          const { error } = await supabase.auth.signOut()
+          if (error) throw error
+        })(),
+        timeout
+      ])
+    } catch (err) {
+      // Swallow sign-out errors to ensure UI can proceed
+    } finally {
       trackAuth.signOut()
       setUser(null)
       setProfile(null)
       setSession(null)
       clearCachedUserData()
-    } catch (err) {
-      handleError(err as Error)
-      throw err
     }
   }
 

@@ -66,6 +66,7 @@ const Settings: React.FC = () => {
   const [cancelReason, setCancelReason] = useState('')
   const [cancelComeBack, setCancelComeBack] = useState('')
   const [isCancelSubmitting, setCancelSubmitting] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
 
   const loadPaystackScript = useCallback(async () => {
     if ((window as any).PaystackPop) return
@@ -389,7 +390,11 @@ const Settings: React.FC = () => {
 
   const exportUserData = async () => {
     try {
-      if (!user?.id) return
+      setIsExporting(true)
+      if (!user?.id) {
+        toast.error('Please sign in to export data')
+        return
+      }
       const { data: contracts } = await supabase
         .from('contracts')
         .select('*')
@@ -409,11 +414,15 @@ const Settings: React.FC = () => {
       const a = document.createElement('a')
       a.href = url
       a.download = 'helloaca-data.json'
+      document.body.appendChild(a)
       a.click()
+      document.body.removeChild(a)
       URL.revokeObjectURL(url)
       toast.success('Data exported')
     } catch {
       toast.error('Failed to export data')
+    } finally {
+      setIsExporting(false)
     }
   }
 
@@ -1007,9 +1016,9 @@ const Settings: React.FC = () => {
                 <p className="font-medium text-gray-900">Export Data</p>
                 <p className="text-sm text-gray-500">Download all your contracts and analysis data</p>
               </div>
-              <Button variant="outline" onClick={exportUserData}>
-                <Download className="w-4 h-4 mr-2" />
-                Export
+              <Button variant="outline" onClick={exportUserData} disabled={isExporting}>
+                {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                {isExporting ? 'Exporting…' : 'Export'}
               </Button>
             </div>
             <div className="flex items-center justify-between">
