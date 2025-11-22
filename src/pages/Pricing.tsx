@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/layout/Header'
 import { Footer } from '../components/layout/Footer'
@@ -10,8 +10,17 @@ import { toast } from 'sonner'
 const Pricing: React.FC = () => {
   const navigate = useNavigate()
   
-  const { user } = useAuth()
+  const auth = useAuth() as any
+  const user = auth.user as { id: string; email: string; plan?: 'free' | 'pro' | 'business' } | null
+  const profile = auth.profile as { plan?: 'free' | 'pro' | 'business'; updated_at?: string } | null
+  const updateProfile = auth.updateProfile as (updates: any) => Promise<any>
+  const refreshProfile = auth.refreshProfile as () => Promise<any>
+  const currentPlan: 'free' | 'pro' | 'business' = (profile?.plan || user?.plan || 'free')
+  const profileUpdatedAt = profile?.updated_at ? new Date(profile.updated_at) : null
+  const estimatedExpiry = currentPlan === 'pro' && profileUpdatedAt ? new Date(profileUpdatedAt.getTime() + 30 * 24 * 60 * 60 * 1000) : null
   const [isLoading, setIsLoading] = useState(false)
+  const [isMethodModalOpen, setMethodModalOpen] = useState(false)
+  const [processingMethod, setProcessingMethod] = useState<null | 'card' | 'crypto'>(null)
 
   const plans = [
     {
@@ -59,6 +68,10 @@ const Pricing: React.FC = () => {
         navigate('/login')
         return
       }
+      if (currentPlan === 'pro') {
+        toast.info('You already have an active Pro plan')
+        return
+      }
 
       const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY
       const planCode = import.meta.env.VITE_PAYSTACK_PLAN_CODE
@@ -68,10 +81,12 @@ const Pricing: React.FC = () => {
       }
 
       setIsLoading(true)
+      setProcessingMethod('card')
       try {
         await loadPaystackScript()
       } catch {
         setIsLoading(false)
+        setProcessingMethod(null)
         toast.error('Network error loading payment library')
         return
       }
@@ -79,6 +94,7 @@ const Pricing: React.FC = () => {
       const PaystackPop = (window as any).PaystackPop
       if (!PaystackPop || typeof PaystackPop.setup !== 'function') {
         setIsLoading(false)
+        setProcessingMethod(null)
         toast.error('Payment library failed to load')
         return
       }
@@ -101,11 +117,8 @@ const Pricing: React.FC = () => {
               })
               const data = await res.json()
               if (data?.status === 'success') {
-                const { supabase } = await import('../lib/supabase')
-                await supabase
-                  .from('user_profiles')
-                  .update({ plan: 'pro' })
-                  .eq('id', user.id)
+                await updateProfile({ plan: 'pro' })
+                await refreshProfile()
                 toast.success('Subscription activated')
               } else {
                 toast.error('Payment verification failed')
@@ -114,20 +127,40 @@ const Pricing: React.FC = () => {
               toast.error('Could not verify payment')
             } finally {
               setIsLoading(false)
+              setProcessingMethod(null)
             }
           })()
         },
         onClose: function () {
           setIsLoading(false)
+          setProcessingMethod(null)
           toast.info('Payment canceled')
         }
       })
+      setMethodModalOpen(false)
       handler.openIframe()
     } catch (err) {
       setIsLoading(false)
+      setProcessingMethod(null)
       toast.error(err instanceof Error ? err.message : 'Payment initialization failed')
     }
-  }, [user, navigate, loadPaystackScript])
+  }, [user, navigate, loadPaystackScript, currentPlan])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const status = params.get('crypto')
+    if (!status || !user) return
+    if (status === 'success') {
+      ;(async () => {
+        const result = await refreshProfile()
+        if (result?.success) {
+          toast.success('Subscription activated')
+        }
+      })()
+    } else if (status === 'canceled') {
+      toast.info('Crypto payment canceled')
+    }
+  }, [user, refreshProfile])
 
   const handleSubscribeCrypto = useCallback(async () => {
     try {
@@ -136,8 +169,13 @@ const Pricing: React.FC = () => {
         navigate('/login')
         return
       }
+      if (currentPlan === 'pro') {
+        toast.info('You already have an active Pro plan')
+        return
+      }
 
       setIsLoading(true)
+      setProcessingMethod('crypto')
       const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
       const res = await fetch(`${base}/api/coinbase-create-charge`, {
         method: 'POST',
@@ -147,6 +185,7 @@ const Pricing: React.FC = () => {
       const data = await res.json()
       const url = data?.hosted_url
       if (url) {
+        setMethodModalOpen(false)
         window.location.href = url
         return
       }
@@ -155,8 +194,9 @@ const Pricing: React.FC = () => {
       toast.error('Failed to start crypto payment')
     } finally {
       setIsLoading(false)
+      setProcessingMethod(null)
     }
-  }, [user, navigate])
+  }, [user, navigate, currentPlan])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -182,6 +222,19 @@ const Pricing: React.FC = () => {
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
               One simple plan for unlimited analysis. Start free and upgrade anytime.
             </p>
+
+            {user && (
+              <div className={`inline-flex items-center gap-3 px-4 py-2 rounded-full mb-6 ${currentPlan === 'pro' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                <span className="font-medium">
+                  {currentPlan === 'pro' ? 'You are on the Pro plan' : 'You are on the Free plan'}
+                </span>
+                {currentPlan === 'pro' && (
+                  <span className="text-sm">
+                    {estimatedExpiry ? `Estimated renewal: ${estimatedExpiry.toLocaleDateString()}` : 'Auto-renews monthly'}
+                  </span>
+                )}
+              </div>
+            )}
             
             <div className="flex items-center justify-center gap-4 mb-12">
               <div className="flex items-center gap-2 text-green-600">
@@ -236,24 +289,27 @@ const Pricing: React.FC = () => {
                 </ul>
                 {plan.name === 'Pro' ? (
                   <div className="space-y-3">
-                    <button
-                      onClick={handleSubscribe}
-                      disabled={isLoading}
-                      className={`w-full py-3 px-6 rounded-lg font-medium text-center block transition-colors ${
-                        'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
-                      }`}
-                    >
-                      {isLoading ? 'Processing…' : 'Subscribe with Card'}
-                    </button>
-                    <button
-                      onClick={handleSubscribeCrypto}
-                      disabled={isLoading}
-                      className={`w-full py-3 px-6 rounded-lg font-medium text-center block transition-colors ${
-                        'bg-gray-900 text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed'
-                      }`}
-                    >
-                      {isLoading ? 'Processing…' : 'Pay with Crypto'}
-                    </button>
+                    {currentPlan === 'pro' ? (
+                      <div className="text-center">
+                        <div className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-green-100 text-green-800 font-medium">
+                          <Check className="h-5 w-5" />
+                          You already have Pro
+                        </div>
+                        <p className="text-sm text-gray-600 mt-2">
+                          {estimatedExpiry ? `Estimated renewal: ${estimatedExpiry.toLocaleDateString()}` : 'Auto-renews monthly'}
+                        </p>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setMethodModalOpen(true)}
+                        disabled={isLoading}
+                        className={`w-full py-3 px-6 rounded-lg font-medium text-center block transition-colors ${
+                          'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                        }`}
+                      >
+                        {isLoading ? 'Processing…' : 'Subscribe'}
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <Link
@@ -262,7 +318,7 @@ const Pricing: React.FC = () => {
                       'bg-gray-100 text-gray-900 hover:bg-gray-200'
                     }`}
                   >
-                    {plan.cta}
+                    {currentPlan === 'free' ? plan.cta : 'Continue'}
                   </Link>
                 )}
               </div>
@@ -359,6 +415,42 @@ const Pricing: React.FC = () => {
       </main>
 
       <Footer />
+
+      {isMethodModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Choose payment method</h3>
+            <p className="text-gray-600 mb-6">Select how you want to subscribe to Pro.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                onClick={handleSubscribe}
+                disabled={isLoading || processingMethod === 'crypto'}
+                className={`w-full py-3 px-6 rounded-lg font-medium text-center transition-colors ${
+                  'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                }`}
+              >
+                {processingMethod === 'card' ? 'Processing…' : 'Card'}
+              </button>
+              <button
+                onClick={handleSubscribeCrypto}
+                disabled={isLoading || processingMethod === 'card'}
+                className={`w-full py-3 px-6 rounded-lg font-medium text-center transition-colors ${
+                  'bg-gray-900 text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed'
+                }`}
+              >
+                {processingMethod === 'crypto' ? 'Processing…' : 'Crypto'}
+              </button>
+            </div>
+            <button
+              onClick={() => setMethodModalOpen(false)}
+              disabled={isLoading}
+              className="mt-6 w-full py-2 px-4 rounded-lg font-medium text-center border border-gray-300 text-gray-900 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
