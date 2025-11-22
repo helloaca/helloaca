@@ -289,16 +289,22 @@ const Settings: React.FC = () => {
         created_at: tx.paid_at || tx.created_at,
         explorer_url: null
       })) : []
-      const crypto = Array.isArray(cryptoJson?.data) ? cryptoJson.data.map((c: any) => ({
-        method: 'crypto',
-        reference: c.reference,
-        status: c.status,
-        amount: c.amount,
-        currency: c.currency,
-        created_at: c.created_at,
-        explorer_url: c.explorer_url,
-        hosted_url: c.hosted_url
-      })) : []
+      const crypto = Array.isArray(cryptoJson?.data) ? cryptoJson.data.map((c: any) => {
+        const created = c.created_at ? new Date(c.created_at).getTime() : 0
+        const ageMs = Date.now() - created
+        const isComplete = ['success','completed','paid'].includes(String(c.status))
+        const isExpired = !isComplete && ageMs > 24 * 60 * 60 * 1000
+        return {
+          method: 'crypto',
+          reference: c.reference,
+          status: isExpired ? 'expired' : c.status,
+          amount: c.amount,
+          currency: c.currency,
+          created_at: c.created_at,
+          explorer_url: isExpired ? null : c.explorer_url,
+          hosted_url: isExpired ? null : c.hosted_url
+        }
+      }) : []
       const combined = [...card, ...crypto].sort((a, b) => {
         const ta = a.created_at ? new Date(a.created_at).getTime() : 0
         const tb = b.created_at ? new Date(b.created_at).getTime() : 0
@@ -1041,7 +1047,7 @@ const Settings: React.FC = () => {
         )}
         {isBillingHistoryOpen && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setBillingHistoryOpen(false)}>
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-semibold text-gray-900">Billing History</h3>
                 <button onClick={() => setBillingHistoryOpen(false)} className="text-gray-500 hover:text-gray-700"><X className="w-5 h-5" /></button>
@@ -1069,11 +1075,11 @@ const Settings: React.FC = () => {
                       {billingHistory.map((tx: any) => (
                         <tr key={`${tx.method}-${tx.reference}`}>
                           <td className="px-4 py-3 text-sm text-gray-900">{tx.reference}</td>
-                          <td className="px-4 py-3 text-sm"><span className={`px-2 py-1 rounded-full text-xs ${['success','completed','paid'].includes(String(tx.status)) ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>{tx.status}</span></td>
+                          <td className="px-4 py-3 text-sm"><span className={`px-2 py-1 rounded-full text-xs ${['success','completed','paid'].includes(String(tx.status)) ? 'bg-green-100 text-green-800' : (String(tx.status) === 'expired' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')}`}>{tx.status}</span></td>
                           <td className="px-4 py-3 text-sm text-gray-900">{tx.amount ? `$${tx.amount}` : '-'}</td>
                           <td className="px-4 py-3 text-sm text-gray-600">{tx.created_at ? new Date(tx.created_at).toLocaleString() : ''}</td>
                           <td className="px-4 py-3 text-sm text-gray-900">{tx.method === 'card' ? 'Card' : 'Crypto'}</td>
-                          <td className="px-4 py-3 text-sm">{tx.explorer_url ? (<a href={tx.explorer_url} target="_blank" rel="noreferrer" className="text-[#4ECCA3] hover:text-[#3DBB90]">View</a>) : (tx.hosted_url ? (<a href={tx.hosted_url} target="_blank" rel="noreferrer" className="text-gray-600 hover:text-gray-800">Charge</a>) : '-')}</td>
+                          <td className="px-4 py-3 text-sm">{(tx.explorer_url && tx.status !== 'expired') ? (<a href={tx.explorer_url} target="_blank" rel="noreferrer" className="text-[#4ECCA3] hover:text-[#3DBB90]">View</a>) : ((tx.hosted_url && tx.status !== 'expired') ? (<a href={tx.hosted_url} target="_blank" rel="noreferrer" className="text-gray-600 hover:text-gray-800">Charge</a>) : '-')}</td>
                         </tr>
                       ))}
                     </tbody>
