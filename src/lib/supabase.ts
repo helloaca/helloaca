@@ -30,6 +30,7 @@ export interface Database {
           last_name: string | null
           email: string
           plan: 'free' | 'pro' | 'business'
+          plan_expires_at: string | null
           company: string | null
           role: string | null
           timezone: string | null
@@ -42,6 +43,7 @@ export interface Database {
           last_name?: string | null
           email: string
           plan?: 'free' | 'pro' | 'business'
+          plan_expires_at?: string | null
           company?: string | null
           role?: string | null
           timezone?: string | null
@@ -54,6 +56,7 @@ export interface Database {
           last_name?: string | null
           email?: string
           plan?: 'free' | 'pro' | 'business'
+          plan_expires_at?: string | null
           company?: string | null
           role?: string | null
           timezone?: string | null

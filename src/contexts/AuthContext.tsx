@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
 import { Session } from '@supabase/supabase-js'
 import { toast } from 'sonner'
-import { AuthUser, UserProfile, supabase } from '../lib/supabase'
+import { AuthUser, supabase } from '../lib/supabase'
+import type { UserProfile } from '../lib/supabase'
 import { trackAuth, setUserProperties } from '../lib/analytics'
 
 interface AuthContextType {
@@ -17,6 +18,7 @@ interface AuthContextType {
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>
   updateProfile: (updates: Partial<UserProfile>) => Promise<{ success: boolean; error?: string }>
+  refreshProfile: () => Promise<{ success: boolean; error?: string }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -95,7 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Initialize auth state with improved timeout protection
   useEffect(() => {
     let isMounted = true
-    let initTimeout: NodeJS.Timeout
+    let initTimeout: ReturnType<typeof setTimeout>
     
     const initializeAuth = async () => {
       console.log('🔄 Initializing authentication...')
@@ -120,30 +122,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         })
 
         // Create the session fetch promise with optimized retry logic
-        const sessionPromise = new Promise<{ session: any; error: any; timedOut?: never }>(async (resolve, reject) => {
-          try {
-            // Get current session from Supabase with optimized retry logic
-            let retryCount = 0
-            const maxRetries = 1 // Reduced retries to prevent timeout
-            
-            while (retryCount <= maxRetries) {
-              try {
-                const { data: { session }, error } = await supabase.auth.getSession()
-                resolve({ session, error })
-                return
-              } catch (err) {
-                retryCount++
-                if (retryCount > maxRetries) {
-                  reject(err)
-                } else {
-                  console.log(`🔄 Retrying session fetch (${retryCount}/${maxRetries})`)
-                  await new Promise(resolve => setTimeout(resolve, 500)) // Reduced wait time to 500ms
+        const sessionPromise = new Promise<{ session: any; error: any; timedOut?: never }>((resolve, reject) => {
+          (async () => {
+            try {
+              let retryCount = 0
+              const maxRetries = 1
+              while (retryCount <= maxRetries) {
+                try {
+                  const { data: { session }, error } = await supabase.auth.getSession()
+                  resolve({ session, error })
+                  return
+                } catch (err) {
+                  retryCount++
+                  if (retryCount > maxRetries) {
+                    reject(err)
+                  } else {
+                    console.log(`🔄 Retrying session fetch (${retryCount}/${maxRetries})`)
+                    await new Promise(r => setTimeout(r, 500))
+                  }
                 }
               }
+            } catch (error) {
+              reject(error)
             }
-          } catch (error) {
-            reject(error)
-          }
+          })()
         })
 
         // Race between session fetch and timeout
@@ -366,15 +368,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
               }
             } else if (existingProfile) {
-              console.log('✅ Profile loaded successfully')
               setProfile(existingProfile)
-              // Set user properties for analytics
               setUserProperties({
                 user_id: existingProfile.id,
                 plan: existingProfile.plan,
                 company: existingProfile.company || undefined
               })
-              // Cache the data
               cacheUserData(authUser, existingProfile, session)
             }
           }
@@ -386,20 +385,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (!cachedData.profile) {
             // Create a minimal profile from user data if no cache
             console.log('🔄 Creating minimal profile from user metadata')
-            const minimalProfile = {
+            const minimalProfile: UserProfile = {
               id: session.user.id,
               first_name: session.user.user_metadata?.firstName || null,
               last_name: session.user.user_metadata?.lastName || null,
               email: session.user.email!,
               plan: (session.user.user_metadata?.plan || 'free') as 'free' | 'pro' | 'business',
+              plan_expires_at: null,
               company: null,
               role: null,
               timezone: null,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             }
-            setProfile(minimalProfile)
-            cacheUserData(authUser, minimalProfile, session)
+            setProfile(minimalProfile as UserProfile)
+            cacheUserData(authUser, minimalProfile as UserProfile, session)
           }
         }
       } else {
@@ -448,18 +448,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      })
-      if (error) {
-        return { success: false, error: error.message }
+      if (!email || !password) {
+        return { success: false, error: 'Email and password are required' }
       }
-      // Track successful sign in
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(email)) {
+        return { success: false, error: 'Please enter a valid email address' }
+      }
+
+      const timeout = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), 20000))
+      const result = await Promise.race([
+        (async () => {
+          const { error } = await supabase.auth.signInWithPassword({
+            email: email.trim().toLowerCase(),
+            password
+          })
+          return { error }
+        })(),
+        timeout
+      ])
+
+      if ('timedOut' in result) {
+        return { success: false, error: 'Network timeout during sign in. Please try again.' }
+      }
+
+      if (result.error) {
+        let errorMessage = result.error.message
+        if (result.error.message.includes('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password. Please check your credentials and try again.'
+        } else if (result.error.message.includes('Email not confirmed')) {
+          errorMessage = 'Please check your email and click the verification link before signing in.'
+        } else if (result.error.message.includes('Rate limit')) {
+          errorMessage = 'Too many login attempts. Please try again in a few minutes.'
+        }
+        return { success: false, error: errorMessage }
+      }
+
       trackAuth.signIn('email')
       return { success: true }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred'
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred during sign in'
       return { success: false, error: errorMessage }
     }
   }
@@ -486,17 +514,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut()
-      if (error) throw error
-      // Track successful sign out
+      const timeout = new Promise<void>((resolve) => setTimeout(resolve, 8000))
+      await Promise.race([
+        (async () => {
+          const { error } = await supabase.auth.signOut()
+          if (error) throw error
+        })(),
+        timeout
+      ])
+    } catch (err) {
+      // Swallow sign-out errors to ensure UI can proceed
+    } finally {
       trackAuth.signOut()
       setUser(null)
       setProfile(null)
       setSession(null)
       clearCachedUserData()
-    } catch (err) {
-      handleError(err as Error)
-      throw err
     }
   }
 
@@ -544,6 +577,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
+  const refreshProfile = async (): Promise<{ success: boolean; error?: string }> => {
+    if (!user?.id || !session) {
+      return { success: false, error: 'No authenticated user' }
+    }
+    try {
+      const { data: existingProfile, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      if (error) throw error
+      if (existingProfile) {
+        setProfile(existingProfile)
+        setUser({
+          ...user,
+          plan: existingProfile.plan as 'free' | 'pro' | 'business'
+        })
+        setUserProperties({
+          user_id: existingProfile.id,
+          plan: existingProfile.plan,
+          company: existingProfile.company || undefined
+        })
+        cacheUserData(user, existingProfile, session)
+      }
+      return { success: true }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to refresh profile'
+      console.error('Error refreshing profile:', err)
+      return { success: false, error: errorMessage }
+    }
+  }
+
   // Compute isAuthenticated based on user and session state
   const isAuthenticated = Boolean(user && session)
 
@@ -559,7 +624,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signInWithGoogle,
     signOut,
     resetPassword,
-    updateProfile
+    updateProfile,
+    refreshProfile
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

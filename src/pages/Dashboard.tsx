@@ -370,6 +370,12 @@ const Dashboard: React.FC = () => {
     return 'Contract document with standard terms and conditions.'
   }
 
+  const getDisplayTitle = (title: string): string => {
+    const max = 60
+    if (!title) return ''
+    return title.length > max ? `${title.slice(0, max - 1)}…` : title
+  }
+
   // Show loading state only when absolutely necessary
   if (authLoading) {
     return (
@@ -599,13 +605,13 @@ const Dashboard: React.FC = () => {
                     </div>
                   ) : (
                     contracts.slice(0, 5).map((contract) => (
-                      <div key={contract.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 space-y-3 sm:space-y-0">
+                      <div key={contract.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 gap-3 sm:gap-4 overflow-hidden">
                         <div className="flex items-center space-x-3 sm:space-x-4">
                           <div className="p-2 bg-primary-100 rounded-lg flex-shrink-0">
                             <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <h4 className="font-medium text-sm sm:text-base truncate">{contract.title}</h4>
+                            <h4 className="font-medium text-sm sm:text-base truncate">{getDisplayTitle(contract.title)}</h4>
                             <p className="text-xs sm:text-sm text-gray-600">
                               Uploaded on {new Date(contract.created_at).toLocaleDateString()}
                             </p>
@@ -614,7 +620,7 @@ const Dashboard: React.FC = () => {
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between sm:justify-end space-x-3 sm:space-x-4">
+                        <div className="flex items-center justify-end space-x-3 sm:space-x-4 flex-shrink-0 ml-0 sm:ml-4">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
                             contract.analysis_status === 'completed' ? 'bg-green-100 text-green-800' :
                             contract.analysis_status === 'processing' ? 'bg-blue-100 text-blue-800' :
@@ -628,7 +634,7 @@ const Dashboard: React.FC = () => {
                           <Button 
                             variant="outline" 
                             size="sm"
-                            className="min-h-[40px] text-xs sm:text-sm"
+                            className="min-h-[40px] text-xs sm:text-sm flex-shrink-0"
                             onClick={() => handleContractView(contract.id)}
                             disabled={contract.analysis_status !== 'completed'}
                           >

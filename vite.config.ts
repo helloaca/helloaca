@@ -17,6 +17,7 @@ export default defineConfig({
   server: {
     fs: {
       allow: ['..', './api']
-    }
+    },
+    allowedHosts: ['.ngrok-free.app']
   }
 })

@@ -18,7 +18,7 @@ const Register: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [acceptTerms, setAcceptTerms] = useState(false)
-  const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'business'>('free')
+  const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro'>('free')
   const [errors, setErrors] = useState<{
     firstName?: string
     lastName?: string
@@ -137,22 +137,15 @@ const Register: React.FC = () => {
       id: 'free' as const,
       name: 'Free',
       price: '$0',
-      period: 'forever',
-      features: ['1 contract per month', 'Basic clause analysis', 'Email support']
+      period: 'month',
+      features: ['1 contract per month', 'Basic AI-powered analysis']
     },
     {
       id: 'pro' as const,
       name: 'Pro',
-      price: '$49',
-      period: 'per month',
-      features: ['10 contracts per month', 'AI chat', 'Risk classification', 'PDF reports', 'Priority support']
-    },
-    {
-      id: 'business' as const,
-      name: 'Business',
-      price: '$299',
-      period: 'per month',
-      features: ['Unlimited contracts', 'Team collaboration', 'Multilingual analysis', 'White-label reports', 'Dedicated support']
+      price: '$3',
+      period: 'month',
+      features: ['Unlimited contracts', 'Full AI analysis suite']
     }
   ]
 

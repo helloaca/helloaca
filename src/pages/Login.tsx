@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import Button from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('')
@@ -15,6 +16,11 @@ const Login: React.FC = () => {
 
   const { signIn, signInWithGoogle } = useAuth()
   const navigate = useNavigate()
+  const [requireMfa, setRequireMfa] = useState(false)
+  const [factorId, setFactorId] = useState<string | null>(null)
+  const [totpCode, setTotpCode] = useState('')
+  const [mfaError, setMfaError] = useState<string | null>(null)
+  const [isVerifying, setIsVerifying] = useState(false)
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {}
@@ -47,13 +53,33 @@ const Login: React.FC = () => {
 
     try {
       const result = await signIn(email, password)
-      
+
       if (result.success) {
-        navigate('/dashboard')
+        setIsLoading(false)
+        try {
+          const mfaTimeout = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), 5000))
+          const factorsResult = await Promise.race([
+            (supabase as any).auth.mfa.listFactors(),
+            mfaTimeout
+          ])
+          if ('timedOut' in factorsResult) {
+            setErrors({ general: 'Signed in, but network is slow. Please try again.' })
+            return
+          }
+          const totp = factorsResult?.data?.find((f: any) => f.factorType === 'totp')
+          if (totp) {
+            setFactorId(totp.id)
+            setRequireMfa(true)
+          } else {
+            navigate('/dashboard')
+          }
+        } catch {
+          navigate('/dashboard')
+        }
       } else {
         setErrors({ general: result.error || 'Login failed' })
       }
-    } catch (error) {
+    } catch {
       setErrors({ general: 'An unexpected error occurred' })
     } finally {
       setIsLoading(false)
@@ -75,6 +101,36 @@ const Login: React.FC = () => {
       setErrors({ general: 'An unexpected error occurred during Google sign-in' })
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const verifyMfa = async () => {
+    try {
+      if (!factorId || !totpCode) {
+        setMfaError('Enter the code from your app')
+        return
+      }
+      setIsVerifying(true)
+      const { error: cErr } = await (supabase as any).auth.mfa.challenge({ factorId })
+      if (cErr) {
+        setMfaError('Challenge failed')
+        setIsVerifying(false)
+        return
+      }
+      const { error: vErr } = await (supabase as any).auth.mfa.verify({ factorId, code: totpCode })
+      if (vErr) {
+        setMfaError('Invalid code')
+        setIsVerifying(false)
+        return
+      }
+      setRequireMfa(false)
+      setTotpCode('')
+      setFactorId(null)
+      setIsVerifying(false)
+      navigate('/dashboard')
+    } catch (e) {
+      setMfaError('Verification failed')
+      setIsVerifying(false)
     }
   }
 
@@ -247,6 +303,18 @@ const Login: React.FC = () => {
               )}
             </Button>
           </form>
+
+          {requireMfa && (
+            <div className="mt-6 p-6 border border-gray-200 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Two‑Factor Authentication Required</h3>
+              <p className="text-sm text-gray-600 mb-4">Open your authenticator app and enter the 6‑digit code.</p>
+              <div className="flex items-center gap-3">
+                <input type="text" value={totpCode} onChange={(e) => setTotpCode(e.target.value)} placeholder="123456" className="flex-1 px-4 py-3 border border-gray-300 rounded-lg" />
+                <Button onClick={verifyMfa} disabled={isVerifying}>{isVerifying ? 'Verifying…' : 'Verify'}</Button>
+              </div>
+              {mfaError && <p className="mt-2 text-sm text-red-600">{mfaError}</p>}
+            </div>
+          )}
 
           {/* Sign up link */}
           <div className="mt-6 text-center">

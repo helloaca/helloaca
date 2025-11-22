@@ -1,69 +1,227 @@
-import React from 'react'
+import React, { useCallback, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/layout/Header'
 import { Footer } from '../components/layout/Footer'
-import { Check, Star, Zap, Shield, ArrowLeft } from 'lucide-react'
+import { Check, Star, Zap, Shield, ArrowLeft, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import { toast } from 'sonner'
 
 const Pricing: React.FC = () => {
   const navigate = useNavigate()
   
+  const auth = useAuth() as any
+  const user = auth.user as { id: string; email: string; plan?: 'free' | 'pro' | 'business' } | null
+  const profile = auth.profile as { plan?: 'free' | 'pro' | 'business'; updated_at?: string } | null
+  const updateProfile = auth.updateProfile as (updates: any) => Promise<any>
+  const refreshProfile = auth.refreshProfile as () => Promise<any>
+  const currentPlan: 'free' | 'pro' | 'business' = (profile?.plan || user?.plan || 'free')
+  const profileUpdatedAt = profile?.updated_at ? new Date(profile.updated_at) : null
+  const estimatedExpiry = currentPlan === 'pro' && profileUpdatedAt ? new Date(profileUpdatedAt.getTime() + 30 * 24 * 60 * 60 * 1000) : null
+  const realExpiry = (profile as any)?.plan_expires_at ? new Date((profile as any).plan_expires_at) : null
+  const displayExpiry = realExpiry || estimatedExpiry
+  const [isLoading, setIsLoading] = useState(false)
+  const [isMethodModalOpen, setMethodModalOpen] = useState(false)
+  const [processingMethod, setProcessingMethod] = useState<null | 'card' | 'crypto'>(null)
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMethodModalOpen && !isLoading) {
+        setMethodModalOpen(false)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [isMethodModalOpen, isLoading])
+
   const plans = [
     {
-      name: 'Starter',
-      price: 29,
+      name: 'Free',
+      price: 0,
       period: 'month',
-      description: 'Perfect for small law firms and individual practitioners',
+      description: 'Try HelloACA with limited usage',
       features: [
-        'Up to 50 contract analyses per month',
-        'Basic AI-powered contract review',
-        'Standard templates library',
-        'Email support',
-        'Basic reporting',
-        '2 user accounts'
+        '1 contract per month',
+        'Basic AI-powered analysis'
       ],
-      popular: false,
-      cta: 'Start Free Trial'
+      popular: false as const,
+      cta: 'Get Started'
     },
     {
-      name: 'Professional',
-      price: 79,
+      name: 'Pro',
+      price: 3,
       period: 'month',
-      description: 'Ideal for growing law firms and legal departments',
+      description: 'Unlimited contract analysis for individuals and teams',
       features: [
-        'Up to 200 contract analyses per month',
-        'Advanced AI contract analysis',
-        'Premium templates library',
-        'Priority email & chat support',
-        'Advanced reporting & analytics',
-        '10 user accounts',
-        'Custom clause library',
-        'Integration with popular tools'
+        'Unlimited contracts',
+        'Full AI analysis suite'
       ],
-      popular: true,
-      cta: 'Start Free Trial'
-    },
-    {
-      name: 'Enterprise',
-      price: 199,
-      period: 'month',
-      description: 'For large organizations with complex needs',
-      features: [
-        'Unlimited contract analyses',
-        'Enterprise-grade AI analysis',
-        'Custom templates & workflows',
-        'Dedicated account manager',
-        'Advanced analytics & insights',
-        'Unlimited user accounts',
-        'Custom integrations',
-        'SLA guarantee',
-        'On-premise deployment option',
-        'Advanced security features'
-      ],
-      popular: false,
-      cta: 'Contact Sales'
+      popular: true as const,
+      cta: 'Subscribe'
     }
   ]
+
+  const loadPaystackScript = useCallback(async () => {
+    if ((window as any).PaystackPop) return
+    await new Promise<void>((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = 'https://js.paystack.co/v1/inline.js'
+      script.async = true
+      script.onload = () => resolve()
+      script.onerror = () => reject(new Error('Failed to load Paystack script'))
+      document.body.appendChild(script)
+    })
+  }, [])
+
+  const handleSubscribe = useCallback(async () => {
+    try {
+      if (!user) {
+        toast.error('Please sign in to subscribe')
+        navigate('/login')
+        return
+      }
+      if (currentPlan === 'pro') {
+        toast.info('You already have an active Pro plan')
+        return
+      }
+
+      const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY
+      const planCode = import.meta.env.VITE_PAYSTACK_PLAN_CODE
+      if (!publicKey) {
+        toast.error('Payment is not configured')
+        return
+      }
+
+      setIsLoading(true)
+      setProcessingMethod('card')
+      try {
+        await loadPaystackScript()
+      } catch {
+        setIsLoading(false)
+        setProcessingMethod(null)
+        toast.error('Network error loading payment library')
+        return
+      }
+
+      const PaystackPop = (window as any).PaystackPop
+      if (!PaystackPop || typeof PaystackPop.setup !== 'function') {
+        setIsLoading(false)
+        setProcessingMethod(null)
+        toast.error('Payment library failed to load')
+        return
+      }
+
+      let amountKobo: number | undefined
+      if (!planCode) {
+        try {
+          const rateRes = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=NGN')
+          const rateJson = await rateRes.json().catch(() => null)
+          const rate = typeof rateJson?.rates?.NGN === 'number' ? rateJson.rates.NGN : null
+          const ngn = Math.round(((rate || 1500) * 3))
+          amountKobo = ngn * 100
+        } catch {
+          amountKobo = 1500 * 3 * 100
+        }
+      }
+
+      const handler = PaystackPop.setup({
+        key: publicKey,
+        email: user.email,
+        ...(planCode ? { plan: planCode } : { amount: amountKobo, currency: 'NGN' }),
+        reference: `PRO-${Date.now()}`,
+        channels: ['card'],
+        metadata: { plan: 'pro' },
+        callback: (response: any) => {
+          (async () => {
+            try {
+              const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
+              const res = await fetch(`${base}/api/paystack-verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reference: response.reference })
+              })
+              const data = await res.json()
+              if (data?.status === 'success') {
+                await updateProfile({ plan: 'pro' })
+                await refreshProfile()
+                toast.success('Subscription activated')
+              } else {
+                toast.error('Payment verification failed')
+              }
+            } catch {
+              toast.error('Could not verify payment')
+            } finally {
+              setIsLoading(false)
+              setProcessingMethod(null)
+            }
+          })()
+        },
+        onClose: function () {
+          setIsLoading(false)
+          setProcessingMethod(null)
+          toast.info('Payment canceled')
+        }
+      })
+      setMethodModalOpen(false)
+      handler.openIframe()
+    } catch (err) {
+      setIsLoading(false)
+      setProcessingMethod(null)
+      toast.error(err instanceof Error ? err.message : 'Payment initialization failed')
+    }
+  }, [user, navigate, loadPaystackScript, currentPlan])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const status = params.get('crypto')
+    if (!status || !user) return
+    if (status === 'success') {
+      (async () => {
+        const result = await refreshProfile()
+        if (result?.success) {
+          toast.success('Subscription activated')
+        }
+      })()
+    } else if (status === 'canceled') {
+      toast.info('Crypto payment canceled')
+    }
+  }, [user, refreshProfile])
+
+  const handleSubscribeCrypto = useCallback(async () => {
+    try {
+      if (!user) {
+        toast.error('Please sign in to subscribe')
+        navigate('/login')
+        return
+      }
+      if (currentPlan === 'pro') {
+        toast.info('You already have an active Pro plan')
+        return
+      }
+
+      setIsLoading(true)
+      setProcessingMethod('crypto')
+      const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
+      const res = await fetch(`${base}/api/coinbase-create-charge`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, email: user.email })
+      })
+      const data = await res.json()
+      const url = data?.hosted_url
+      if (url) {
+        setMethodModalOpen(false)
+        window.location.href = url
+        return
+      }
+      toast.error('Failed to start crypto payment')
+    } catch {
+      toast.error('Failed to start crypto payment')
+    } finally {
+      setIsLoading(false)
+      setProcessingMethod(null)
+    }
+  }, [user, navigate, currentPlan])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -87,9 +245,21 @@ const Pricing: React.FC = () => {
               Simple, Transparent Pricing
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-              Choose the perfect plan for your legal practice. All plans include our core 
-              AI-powered contract analysis features with no hidden fees.
+              One simple plan for unlimited analysis. Start free and upgrade anytime.
             </p>
+
+            {user && (
+              <div className={`inline-flex items-center gap-3 px-4 py-2 rounded-full mb-6 ${currentPlan === 'pro' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                <span className="font-medium">
+                  {currentPlan === 'pro' ? 'You are on the Pro plan' : 'You are on the Free plan'}
+                </span>
+                {currentPlan === 'pro' && (
+                  <span className="text-sm">
+                    {displayExpiry ? `Renewal: ${displayExpiry.toLocaleDateString()}` : 'Auto-renews monthly'}
+                  </span>
+                )}
+              </div>
+            )}
             
             <div className="flex items-center justify-center gap-4 mb-12">
               <div className="flex items-center gap-2 text-green-600">
@@ -108,7 +278,7 @@ const Pricing: React.FC = () => {
           </div>
 
           {/* Pricing Cards */}
-          <div className="grid lg:grid-cols-3 gap-8 mb-16">
+          <div className="grid lg:grid-cols-2 gap-8 mb-16">
             {plans.map((plan, index) => (
               <div
                 key={index}
@@ -142,17 +312,40 @@ const Pricing: React.FC = () => {
                     </li>
                   ))}
                 </ul>
-
-                <Link
-                  to={plan.cta === 'Contact Sales' ? '/contact' : '/register'}
-                  className={`w-full py-3 px-6 rounded-lg font-medium text-center block transition-colors ${
-                    plan.popular
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
-                      : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                  }`}
-                >
-                  {plan.cta}
-                </Link>
+                {plan.name === 'Pro' ? (
+                  <div className="space-y-3">
+                    {currentPlan === 'pro' ? (
+                      <div className="text-center">
+                        <div className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-green-100 text-green-800 font-medium">
+                          <Check className="h-5 w-5" />
+                          You already have Pro
+                        </div>
+                        <p className="text-sm text-gray-600 mt-2">
+                          {displayExpiry ? `Renewal: ${displayExpiry.toLocaleDateString()}` : 'Auto-renews monthly'}
+                        </p>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setMethodModalOpen(true)}
+                        disabled={isLoading}
+                        className={`w-full py-3 px-6 rounded-lg font-medium text-center block transition-colors ${
+                          'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                        }`}
+                      >
+                        {isLoading ? 'Processing…' : 'Subscribe'}
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <Link
+                    to={'/register'}
+                    className={`w-full py-3 px-6 rounded-lg font-medium text-center block transition-colors ${
+                      'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                    }`}
+                  >
+                    {currentPlan === 'free' ? plan.cta : 'Continue'}
+                  </Link>
+                )}
               </div>
             ))}
           </div>
@@ -247,6 +440,51 @@ const Pricing: React.FC = () => {
       </main>
 
       <Footer />
+
+      {isMethodModalOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => {
+            if (!isLoading) setMethodModalOpen(false)
+          }}
+        >
+          <div
+            className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              aria-label="Close"
+              onClick={() => setMethodModalOpen(false)}
+              disabled={isLoading}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Choose payment method</h3>
+            <p className="text-gray-600 mb-6">Select how you want to subscribe to Pro.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                onClick={handleSubscribe}
+                disabled={isLoading || processingMethod === 'crypto'}
+                className={`w-full py-3 px-6 rounded-lg font-medium text-center transition-colors ${
+                  'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                }`}
+              >
+                {processingMethod === 'card' ? 'Processing…' : 'Card'}
+              </button>
+              <button
+                onClick={handleSubscribeCrypto}
+                disabled={isLoading || processingMethod === 'card'}
+                className={`w-full py-3 px-6 rounded-lg font-medium text-center transition-colors ${
+                  'bg-gray-900 text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed'
+                }`}
+              >
+                {processingMethod === 'crypto' ? 'Processing…' : 'Crypto'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
