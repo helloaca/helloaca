@@ -1047,7 +1047,7 @@ const Settings: React.FC = () => {
         )}
         {isBillingHistoryOpen && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setBillingHistoryOpen(false)}>
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-6 max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-semibold text-gray-900">Billing History</h3>
                 <button onClick={() => setBillingHistoryOpen(false)} className="text-gray-500 hover:text-gray-700"><X className="w-5 h-5" /></button>
@@ -1060,7 +1060,7 @@ const Settings: React.FC = () => {
               )}
               {billingHistory && billingHistory.length > 0 && (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
+                  <table className="min-w-full table-fixed divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reference</th>
@@ -1074,7 +1074,7 @@ const Settings: React.FC = () => {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {billingHistory.map((tx: any) => (
                         <tr key={`${tx.method}-${tx.reference}`}>
-                          <td className="px-4 py-3 text-sm text-gray-900">{tx.reference}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900 break-all">{tx.reference}</td>
                           <td className="px-4 py-3 text-sm"><span className={`px-2 py-1 rounded-full text-xs ${['success','completed','paid'].includes(String(tx.status)) ? 'bg-green-100 text-green-800' : (String(tx.status) === 'expired' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')}`}>{tx.status}</span></td>
                           <td className="px-4 py-3 text-sm text-gray-900">{tx.amount ? `$${tx.amount}` : '-'}</td>
                           <td className="px-4 py-3 text-sm text-gray-600">{tx.created_at ? new Date(tx.created_at).toLocaleString() : ''}</td>
