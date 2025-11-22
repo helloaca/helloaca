@@ -134,7 +134,7 @@ const Pricing: React.FC = () => {
         callback: (response: any) => {
           (async () => {
             try {
-              const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
+              const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
               const res = await fetch(`${base}/api/paystack-verify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -201,7 +201,7 @@ const Pricing: React.FC = () => {
 
       setIsLoading(true)
       setProcessingMethod('crypto')
-      const base = import.meta.env.VITE_API_ORIGIN || (window.location.hostname.endsWith('ngrok-free.app') ? 'https://helloaca.xyz' : '')
+      const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
       const res = await fetch(`${base}/api/coinbase-create-charge`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
