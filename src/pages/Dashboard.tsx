@@ -371,9 +371,9 @@ const Dashboard: React.FC = () => {
   }
 
   const getDisplayTitle = (title: string): string => {
-    const max = 60
+    const max = 40
     if (!title) return ''
-    return title.length > max ? `${title.slice(0, max - 1)}…` : title
+    return title.length > max ? `${title.slice(0, max)}...` : title
   }
 
   // Show loading state only when absolutely necessary

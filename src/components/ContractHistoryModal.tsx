@@ -53,6 +53,12 @@ const ContractHistoryModal: React.FC<ContractHistoryModalProps> = ({
     return `${Math.floor(diffInSeconds / 31536000)}y ago`
   }
 
+  const getDisplayTitle = (title: string): string => {
+    const max = 40
+    if (!title) return ''
+    return title.length > max ? `${title.slice(0, max)}...` : title
+  }
+
   // Enhanced contracts with last visited data
   const enhancedContracts = useMemo(() => {
     return contracts.map(contract => ({
@@ -273,7 +279,7 @@ const ContractHistoryModal: React.FC<ContractHistoryModalProps> = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2 mb-1">
                           <h3 className="text-base sm:text-lg font-medium text-gray-900 truncate">
-                            {contract.title}
+                            {getDisplayTitle(contract.title)}
                           </h3>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                             contract.analysis_status === 'completed' ? 'bg-green-100 text-green-800' :

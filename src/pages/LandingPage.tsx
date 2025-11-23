@@ -23,6 +23,7 @@ const LandingPage: React.FC = () => {
               <Typewriter
                 options={{
                   strings: [
+                    'you',
                     'founders',
                     'lawyers',
                     'procurement',
@@ -51,25 +52,32 @@ const LandingPage: React.FC = () => {
             </Button>
           </div>
           
-          {/* Hero Image Placeholder */}
-          <div className="mt-12 sm:mt-16 bg-gradient-to-br from-primary-50 to-primary-100 rounded-card p-4 sm:p-6 md:p-8 max-w-4xl mx-auto">
-            <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 text-left">
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              </div>
-              <div className="space-y-3">
-                <div className="h-3 sm:h-4 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-3 sm:h-4 bg-primary-200 rounded w-1/2"></div>
-                <div className="h-3 sm:h-4 bg-gray-200 rounded w-5/6"></div>
-                <div className="h-3 sm:h-4 bg-red-200 rounded w-2/3"></div>
-              </div>
-              <div className="mt-4 sm:mt-6 flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
-                <span className="text-xs sm:text-sm text-gray-600">Analysis complete in 12 seconds</span>
+          <div className="mt-12 sm:mt-16 bg-gradient-to-br from-primary-50 to-primary-100 rounded-card p-2 sm:p-3 md:p-4 max-w-4xl mx-auto relative">
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden relative">
+              <img
+                src="/mobile-dashboard-screenshot.png"
+                alt="HelloACA mobile dashboard screenshot"
+                className="w-full h-auto object-cover block sm:hidden"
+              />
+              <img
+                src="/dashboard-screenshot.png"
+                alt="HelloACA dashboard screenshot"
+                className="w-full h-auto object-cover hidden sm:block"
+              />
+            </div>
+            <div className="hidden sm:block absolute -right-12 md:-right-16 lg:-right-24 bottom-6 z-20">
+              <div className="rounded-2xl border-4 border-primary-100 bg-primary-50 shadow-2xl p-1 overflow-hidden">
+                <div className="relative">
+                  <img
+                    src="/mobile-dashboard-screenshot.png"
+                    alt="HelloACA mobile dashboard screenshot"
+                    className="w-28 md:w-40 lg:w-48 rounded-xl"
+                  />
+                  <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 md:h-12 bg-gradient-to-t from-primary-50 to-transparent" />
+                </div>
               </div>
             </div>
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-20 sm:h-24 bg-gradient-to-t from-white to-transparent z-10" />
           </div>
         </div>
       </section>
