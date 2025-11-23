@@ -620,7 +620,7 @@ const Dashboard: React.FC = () => {
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center justify-end space-x-3 sm:space-x-4 flex-shrink-0 ml-0 sm:ml-4">
+                        <div className="flex items-center justify-end space-x-3 sm:space-x-4 flex-shrink-0 ml-0 sm:ml-4 w-full sm:w-auto mt-2 sm:mt-0">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
                             contract.analysis_status === 'completed' ? 'bg-green-100 text-green-800' :
                             contract.analysis_status === 'processing' ? 'bg-blue-100 text-blue-800' :

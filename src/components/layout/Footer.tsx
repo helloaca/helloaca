@@ -1,6 +1,5 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Scale } from 'lucide-react'
 
 const Footer: React.FC = () => {
   return (
@@ -9,11 +8,10 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 sm:gap-8">
           {/* Logo and Description */}
           <div className="col-span-1 md:col-span-2 mb-6 md:mb-0">
-            <div className="flex items-center space-x-2 mb-4">
-              <Scale className="h-8 w-8 text-primary" />
-              <span className="font-space-grotesk font-bold text-2xl">
-                Hello<span className="text-primary">ACA</span>
-              </span>
+            <div className="flex items-center space-x-0 mb-4">
+              <img src="/logo.png" alt="HelloACA" className="h-8 w-8 object-contain" />
+              <span className="font-space-grotesk font-bold text-2xl -ml-1">ello</span>
+              <span className="font-space-grotesk font-bold text-2xl text-primary">aca</span>
             </div>
             <p className="text-gray-300 mb-4 max-w-md text-sm sm:text-base">
               AI-powered contract analysis that helps small law firms, real estate agents, 

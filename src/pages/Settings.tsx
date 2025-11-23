@@ -21,6 +21,7 @@ import { Card } from '../components/ui/Card'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { toast } from 'sonner'
+import Avatar from '../components/ui/Avatar'
 
 const Settings: React.FC = () => {
   const { user, profile, updateProfile, signOut, refreshProfile } = useAuth()
@@ -747,51 +748,51 @@ const Settings: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Current Plan</h3>
-        <Card className="p-6 border-2 border-[#4ECCA3]">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
+        <Card className="p-5 sm:p-6 border-2 border-[#4ECCA3]">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4">
+            <div className="flex items-center min-w-0">
               <Crown className="w-6 h-6 text-[#4ECCA3] mr-3" />
               <div>
-                <h4 className="text-xl font-semibold text-gray-900">{String(profile?.plan || user?.plan) === 'pro' ? 'Pro Plan' : 'Free Plan'}</h4>
-                <p className="text-gray-600">
+                <h4 className="text-lg sm:text-xl font-semibold text-gray-900">{String(profile?.plan || user?.plan) === 'pro' ? 'Pro Plan' : 'Free Plan'}</h4>
+                <p className="text-sm sm:text-base text-gray-600">
                   {String(profile?.plan || user?.plan) === 'pro' ? '$3/month • Billed monthly' : 'Free forever'}
                 </p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500">Member since</p>
-              <p className="font-semibold text-gray-900">{profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}</p>
+            <div className="text-left sm:text-right">
+              <p className="text-xs sm:text-sm text-gray-500">Member since</p>
+              <p className="text-sm sm:text-base font-semibold text-gray-900">{profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}</p>
             </div>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
             <div className="text-center">
-              <p className="text-2xl font-bold text-[#4ECCA3]">0</p>
-              <p className="text-sm text-gray-600">Contracts this month</p>
+              <p className="text-xl sm:text-2xl font-bold text-[#4ECCA3]">0</p>
+              <p className="text-xs sm:text-sm text-gray-600">Contracts this month</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-[#4ECCA3]">
+              <p className="text-xl sm:text-2xl font-bold text-[#4ECCA3]">
                 {String(profile?.plan || user?.plan) === 'free' ? '1' : '∞'}
               </p>
-              <p className="text-sm text-gray-600">Monthly limit</p>
+              <p className="text-xs sm:text-sm text-gray-600">Monthly limit</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-[#4ECCA3]">0</p>
-              <p className="text-sm text-gray-600">Reports generated</p>
+              <p className="text-xl sm:text-2xl font-bold text-[#4ECCA3]">0</p>
+              <p className="text-xs sm:text-sm text-gray-600">Reports generated</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-[#4ECCA3]">
+              <p className="text-xl sm:text-2xl font-bold text-[#4ECCA3]">
                 {String(profile?.plan || user?.plan) === 'free' ? '0' : '∞'}
               </p>
-              <p className="text-sm text-gray-600">AI chat messages</p>
+              <p className="text-xs sm:text-sm text-gray-600">AI chat messages</p>
             </div>
           </div>
 
-          <div className="flex space-x-4">
-            <Button variant="outline" onClick={() => setMethodModalOpen(true)}>Change Plan</Button>
-            <Button variant="outline" onClick={() => setBillingHistoryOpen(true)}>View Billing History</Button>
+          <div className="flex flex-col sm:flex-row gap-3 sm:space-x-4">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setMethodModalOpen(true)}>Change Plan</Button>
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setBillingHistoryOpen(true)}>View Billing History</Button>
             {String(profile?.plan || user?.plan) !== 'free' && (
-              <Button variant="outline" className="text-red-600 border-red-300 hover:bg-red-50" onClick={() => setCancelFeedbackOpen(true)}>
+              <Button variant="outline" className="w-full sm:w-auto text-red-600 border-red-300 hover:bg-red-50" onClick={() => setCancelFeedbackOpen(true)}>
                 Cancel Subscription
               </Button>
             )}
@@ -885,9 +886,7 @@ const Settings: React.FC = () => {
                 <tr key={member.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 bg-[#4ECCA3] rounded-full flex items-center justify-center text-white font-semibold mr-4">
-                        {String(member.avatar)}
-                      </div>
+                      <Avatar seed={profile?.avatar_seed || user?.id || String(member.id)} size={40} className="w-10 h-10 rounded-full mr-4" />
                       <div>
                         <div className="text-sm font-medium text-gray-900">{member.name}</div>
                         <div className="text-sm text-gray-500">{member.email}</div>
@@ -1018,29 +1017,29 @@ const Settings: React.FC = () => {
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Password &amp; Authentication</h3>
         <Card className="p-6">
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
                 <p className="font-medium text-gray-900">Password</p>
                 <p className="text-sm text-gray-500">Manage your account password</p>
               </div>
-              <Button variant="outline" onClick={() => setChangePasswordOpen(true)}>Change Password</Button>
+              <Button variant="outline" className="w-full sm:w-auto" onClick={() => setChangePasswordOpen(true)}>Change Password</Button>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
                 <p className="font-medium text-gray-900">Two-Factor Authentication</p>
                 <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
               </div>
-              <Button variant="outline" onClick={startEnable2FA} disabled={isEnrolling2FA}>
+              <Button variant="outline" className="w-full sm:w-auto" onClick={startEnable2FA} disabled={isEnrolling2FA}>
                 {isEnrolling2FA ? (<Loader2 className="w-4 h-4 mr-2 animate-spin" />) : null}
                 Enable 2FA
               </Button>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
                 <p className="font-medium text-gray-900">Sign Out</p>
                 <p className="text-sm text-gray-500">Sign out of your account on this device</p>
               </div>
-              <Button variant="outline" onClick={handleSignOut}>
+              <Button variant="outline" className="w-full sm:w-auto" onClick={handleSignOut}>
                 Sign Out
               </Button>
             </div>
@@ -1052,22 +1051,22 @@ const Settings: React.FC = () => {
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Data &amp; Privacy</h3>
         <Card className="p-6">
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
                 <p className="font-medium text-gray-900">Export Data</p>
                 <p className="text-sm text-gray-500">Download all your contracts and analysis data</p>
               </div>
-              <Button variant="outline" onClick={exportUserData} disabled={isExporting}>
+              <Button variant="outline" className="w-full sm:w-auto" onClick={exportUserData} disabled={isExporting}>
                 {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
                 {isExporting ? 'Exporting…' : 'Export'}
               </Button>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
                 <p className="font-medium text-gray-900">Delete Account</p>
                 <p className="text-sm text-gray-500">Permanently delete your account and all data</p>
               </div>
-              <Button variant="outline" className="text-red-600 border-red-300 hover:bg-red-50" onClick={() => setDeleteStep1Open(true)}>
+              <Button variant="outline" className="w-full sm:w-auto text-red-600 border-red-300 hover:bg-red-50" onClick={() => setDeleteStep1Open(true)}>
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete Account
               </Button>
@@ -1095,10 +1094,10 @@ const Settings: React.FC = () => {
           <p className="text-gray-600 mt-2">Manage your account preferences and team settings</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8">
           {/* Sidebar Navigation */}
           <div className="lg:col-span-1">
-            <Card className="p-4">
+            <Card className="p-3 sm:p-4">
               <nav className="space-y-2">
                 {tabs.map((tab) => {
                   const Icon = tab.icon
@@ -1106,13 +1105,13 @@ const Settings: React.FC = () => {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-colors ${
+                      className={`w-full flex items-center px-3 py-2 sm:px-4 sm:py-3 text-left rounded-lg transition-colors text-sm sm:text-base ${
                         activeTab === tab.id
                           ? 'bg-[#4ECCA3] text-white'
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
-                      <Icon className="w-5 h-5 mr-3" />
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5 mr-3" />
                       {tab.label}
                     </button>
                   )
@@ -1123,7 +1122,7 @@ const Settings: React.FC = () => {
 
           {/* Main Content */}
           <div className="lg:col-span-3">
-            <Card className="p-8">
+            <Card className="p-5 sm:p-8">
               {activeTab === 'profile' && renderProfileTab()}
               {activeTab === 'subscription' && renderSubscriptionTab()}
               {activeTab === 'team' && renderTeamTab()}
@@ -1142,8 +1141,8 @@ const Settings: React.FC = () => {
           </div>
         )}
         {isMethodModalOpen && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => { if (!isLoadingPayment) setMethodModalOpen(false) }}>
-            <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { if (!isLoadingPayment) setMethodModalOpen(false) }}>
+            <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-4 sm:p-6 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <button aria-label="Close" onClick={() => setMethodModalOpen(false)} disabled={isLoadingPayment} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
                 <X className="w-5 h-5" />
               </button>
@@ -1161,8 +1160,8 @@ const Settings: React.FC = () => {
           </div>
         )}
         {isBillingHistoryOpen && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setBillingHistoryOpen(false)}>
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-6 max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setBillingHistoryOpen(false)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-4 sm:p-6 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-semibold text-gray-900">Billing History</h3>
                 <button onClick={() => setBillingHistoryOpen(false)} className="text-gray-500 hover:text-gray-700"><X className="w-5 h-5" /></button>
@@ -1205,8 +1204,8 @@ const Settings: React.FC = () => {
           </div>
         )}
         {isCancelFeedbackOpen && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setCancelFeedbackOpen(false)}>
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setCancelFeedbackOpen(false)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-4 sm:p-6 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Cancel Subscription</h3>
               <p className="text-sm text-gray-600 mb-4">We’re sorry to see you go. Please share your feedback.</p>
               <div className="space-y-3">
@@ -1224,8 +1223,8 @@ const Settings: React.FC = () => {
           </div>
         )}
         {isChangePasswordOpen && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setChangePasswordOpen(false)}>
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setChangePasswordOpen(false)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-4 sm:p-6 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Change Password</h3>
               <div className="space-y-3">
                 <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Current password" className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
@@ -1243,8 +1242,8 @@ const Settings: React.FC = () => {
           </div>
         )}
         {isEnable2FAOpen && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setEnable2FAOpen(false)}>
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setEnable2FAOpen(false)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-4 sm:p-6 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Enable Two-Factor Authentication</h3>
               {totpUri ? (
                 <div className="space-y-4">
@@ -1268,8 +1267,8 @@ const Settings: React.FC = () => {
           </div>
         )}
         {isDeleteStep1Open && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setDeleteStep1Open(false)}>
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setDeleteStep1Open(false)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-4 sm:p-6 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Delete Account</h3>
               <p className="text-gray-700 mb-6">Are you sure you want to delete your account?</p>
               <div className="flex justify-end gap-3">
@@ -1280,8 +1279,8 @@ const Settings: React.FC = () => {
           </div>
         )}
         {isDeleteStep2Open && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setDeleteStep2Open(false)}>
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setDeleteStep2Open(false)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-4 sm:p-6 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Confirm Deletion</h3>
               <p className="text-gray-700 mb-4">Type <span className="text-red-600 font-semibold">"delete my account"</span> to confirm.</p>
               <input type="text" value={deletePhrase} onChange={(e) => setDeletePhrase(e.target.value)} placeholder="delete my account" className="w-full px-4 py-3 border border-gray-300 rounded-lg text-red-600 placeholder-red-400" />

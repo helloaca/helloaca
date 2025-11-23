@@ -155,11 +155,9 @@ const Register: React.FC = () => {
         {/* Logo and Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-6">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-[#4ECCA3] rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">H</span>
-              </div>
-              <span className="text-2xl font-bold text-gray-900">HelloACA</span>
+            <div className="flex items-center space-x-0">
+              <img src="/logo.png" alt="HelloACA" className="w-8 h-8 rounded-lg object-contain" />
+              <span className="text-2xl font-bold text-gray-900 -ml-1 tracking-tight">elloaca</span>
             </div>
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Create your account</h2>
