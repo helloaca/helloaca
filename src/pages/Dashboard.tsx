@@ -516,6 +516,17 @@ const Dashboard: React.FC = () => {
                   }`}>
                     {uploadMessage || (isDragOver ? 'Drop your file here!' : 'Drop files here or click to upload')}
                   </p>
+
+                  {uploadStatus === 'error' && uploadMessage.toLowerCase().includes('free plan limit') && (
+                    <div className="mt-2">
+                      <Button 
+                        onClick={(e) => { e.stopPropagation(); navigate('/pricing') }}
+                        className="min-h-[44px]"
+                      >
+                        Upgrade to Pro
+                      </Button>
+                    </div>
+                  )}
                   
                   {uploadStatus === 'uploading' ? (
                     <div className="flex flex-col items-center">
