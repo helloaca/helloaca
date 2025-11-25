@@ -38,9 +38,44 @@ const Dashboard: React.FC = () => {
   // Contract history modal state
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
 
+  const getCacheKey = () => `contracts_cache_${user?.id || 'anon'}`
+  const readCachedContracts = (): Array<Contract & { analysis?: any }> => {
+    try {
+      const raw = localStorage.getItem(getCacheKey())
+      return raw ? JSON.parse(raw) : []
+    } catch {
+      return []
+    }
+  }
+  const writeCachedContracts = (items: Array<Contract & { analysis?: any }>) => {
+    try {
+      localStorage.setItem(getCacheKey(), JSON.stringify(items))
+    } catch { void 0 }
+  }
+
   // Load user contracts on component mount or when user changes
   useEffect(() => {
     if (user?.id && !authLoading) {
+      const cached = readCachedContracts()
+      if (cached && cached.length > 0) {
+        setContracts(cached)
+        const now = new Date()
+        const thisMonth = now.getMonth()
+        const thisYear = now.getFullYear()
+        const thisMonthContracts = cached.filter(c => {
+          const d = new Date(c.created_at)
+          return d.getMonth() === thisMonth && d.getFullYear() === thisYear
+        })
+        let totalRisks = 0
+        cached.forEach(contract => {
+          const sections = contract.analysis?.analysis_data?.sections
+          if (sections) {
+            const count = Object.values(sections).reduce((acc: number, section: any) => acc + (section.keyFindings?.length || 0), 0)
+            totalRisks += count
+          }
+        })
+        setStats({ totalContracts: cached.length, thisMonth: thisMonthContracts.length, avgAnalysisTime: '32s', risksSaved: totalRisks })
+      }
       loadUserContracts()
     }
   }, [user?.id, authLoading])
@@ -54,38 +89,47 @@ const Dashboard: React.FC = () => {
       
       console.log(`Starting contract load for user: ${user?.id} (retry: ${retryCount})`)
       
-      // Add timeout protection for contract loading - increased to 30 seconds
-      const loadTimeout = setTimeout(() => {
-        console.warn(`Contract loading timeout after 30s on retry ${retryCount} - proceeding without contracts`)
-        toast.error('Contract loading is taking longer than expected. Retrying...')
-      }, 30000) // 30 second timeout - more reasonable for database operations
-      
+      const timeoutMs = 12000
+      const timeoutPromise = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), timeoutMs))
       console.log('Loading contracts for user:', user?.id)
       
       // Try to load contracts with better error handling
       let userContracts: Array<Contract & { analysis?: any }> = []
-      
-      try {
-        userContracts = await ContractService.getUserContractsWithAnalysis(user!.id)
-        console.log('Successfully loaded contracts:', userContracts.length)
-      } catch (serviceError) {
-        console.error('ContractService error:', serviceError)
-        
-        // Fallback: try loading just the basic contracts without analysis
+      const fetchPromise = (async () => {
         try {
-          console.log('Falling back to basic contract loading...')
-          const basicContracts = await ContractService.getUserContracts(user!.id)
-          userContracts = basicContracts.map(contract => ({ ...contract, analysis: undefined }))
-          console.log('Loaded basic contracts:', userContracts.length)
-        } catch (fallbackError) {
-          console.error('Fallback loading also failed:', fallbackError)
-          throw fallbackError // Re-throw to be caught by outer catch
+          const full = await ContractService.getUserContractsWithAnalysis(user!.id)
+          return { data: full }
+        } catch (serviceError) {
+          console.error('ContractService error:', serviceError)
+          try {
+            const basic = await ContractService.getUserContracts(user!.id)
+            return { data: basic.map(c => ({ ...c, analysis: undefined })) }
+          } catch (fallbackError) {
+            console.error('Fallback loading also failed:', fallbackError)
+            return { error: fallbackError }
+          }
         }
+      })()
+
+      const result = await Promise.race([fetchPromise, timeoutPromise])
+      if ('timedOut' in result) {
+        console.warn(`Contract loading timeout after ${timeoutMs/1000}s on retry ${retryCount} - using cache if available`)
+        const cached = readCachedContracts()
+        if (cached && cached.length > 0) {
+          setContracts(cached)
+        }
+        setIsLoadingContracts(false)
+        return
+      }
+
+      if (result && 'data' in result && Array.isArray(result.data)) {
+        userContracts = result.data
+      } else {
+        throw (result as any).error || new Error('Failed to load contracts')
       }
       
-      clearTimeout(loadTimeout)
-      
       setContracts(userContracts)
+      writeCachedContracts(userContracts)
       
       // Calculate stats
       const now = new Date()
