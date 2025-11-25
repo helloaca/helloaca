@@ -4,7 +4,7 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import Button from '@/components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Upload, Search, MessageCircle, CheckCircle, Star } from 'lucide-react'
+import { CheckCircle, Star } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { trackPricing } from '@/lib/analytics'
 
@@ -83,56 +83,62 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-12 sm:py-16 md:py-20 bg-gray-50">
+      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-br from-primary-50 to-primary-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
-            <h2 className="font-space-grotesk text-2xl sm:text-3xl md:text-4xl font-bold text-black mb-4">
-              How HelloACA Works
+            <h2 className="font-space-grotesk text-2xl sm:text-3xl md:text-4xl font-bold text-black mb-4 flex items-center justify-center gap-2">
+              <span>Why</span>
+              <img src="/helloaca.png" alt="helloaca" className="h-8 sm:h-10" />
             </h2>
             <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
-              Three simple steps to understand any contract completely
+              Clarity without complexity, instant risk detection, full control, and protection that’s always accessible.
             </p>
           </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
-            <Card className="text-center">
-              <CardHeader className="pb-4 sm:pb-6">
-                <div className="mx-auto mb-4 p-3 sm:p-4 bg-primary-100 rounded-full w-fit">
-                  <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
-                </div>
-                <CardTitle className="text-lg sm:text-xl">Upload &amp; Scan</CardTitle>
-                <CardDescription className="text-sm sm:text-base leading-relaxed">
-                  Drag your contract or NDA directly. We support PDF and DOCX files 
-                  with automatic OCR processing.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-            
-            <Card className="text-center">
-              <CardHeader className="pb-4 sm:pb-6">
-                <div className="mx-auto mb-4 p-3 sm:p-4 bg-primary-100 rounded-full w-fit">
-                  <Search className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
-                </div>
-                <CardTitle className="text-lg sm:text-xl">Instant AI Insights</CardTitle>
-                <CardDescription className="text-sm sm:text-base leading-relaxed">
-                  Get comprehensive analysis in 30 seconds. Risk assessment, 
-                  clause extraction, and obligation identification.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-            
-            <Card className="text-center">
-              <CardHeader className="pb-4 sm:pb-6">
-                <div className="mx-auto mb-4 p-3 sm:p-4 bg-primary-100 rounded-full w-fit">
-                  <MessageCircle className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
-                </div>
-                <CardTitle className="text-lg sm:text-xl">Chat with Contract</CardTitle>
-                <CardDescription className="text-sm sm:text-base leading-relaxed">
-                  Ask AI your legal questions. Get instant answers about 
-                  responsibilities, deadlines, and contract terms.
-                </CardDescription>
-              </CardHeader>
-            </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="relative rounded-2xl bg-white backdrop-blur-md ring-1 ring-white/50 shadow-xl p-6 sm:p-7">
+              <div className="absolute -top-3 left-6 h-6 w-20 rounded-t-xl bg-white ring-1 ring-white/50" />
+              <h3 className="font-space-grotesk font-bold tracking-tight text-lg sm:text-xl text-black">
+                Clarity
+                <br className="hidden md:block" />
+                Without Complexity
+              </h3>
+              <p className="mt-2 text-gray-700 text-sm sm:text-base leading-relaxed">
+                Understand exactly what your contract says — without legal jargon, confusion, or overwhelm. AI turns dense text into clear insights.
+              </p>
+            </div>
+            <div className="relative rounded-2xl bg-white backdrop-blur-md ring-1 ring-white/50 shadow-xl p-6 sm:p-7">
+              <div className="absolute -top-3 left-6 h-6 w-20 rounded-t-xl bg-white ring-1 ring-white/50" />
+              <h3 className="font-space-grotesk font-bold tracking-tight text-lg sm:text-xl text-black">
+                Instant
+                <br className="hidden md:block" />
+                Risk Detection
+              </h3>
+              <p className="mt-2 text-gray-700 text-sm sm:text-base leading-relaxed">
+                Spot hidden clauses, unfair terms, and risky obligations in seconds. Know the danger zones before they become real problems.
+              </p>
+            </div>
+            <div className="relative rounded-2xl bg-white backdrop-blur-md ring-1 ring-white/50 shadow-xl p-6 sm:p-7">
+              <div className="absolute -top-3 left-6 h-6 w-20 rounded-t-xl bg-white ring-1 ring-white/50" />
+              <h3 className="font-space-grotesk font-bold tracking-tight text-lg sm:text-xl text-black">
+                Control Over
+                <br className="hidden md:block" />
+                Every Decision
+              </h3>
+              <p className="mt-2 text-gray-700 text-sm sm:text-base leading-relaxed">
+                See your rights, duties, deadlines, and protections at a glance. Make confident choices backed by AI precision — not guesswork.
+              </p>
+            </div>
+            <div className="relative rounded-2xl bg-white backdrop-blur-md ring-1 ring-white/50 shadow-xl p-6 sm:p-7">
+              <div className="absolute -top-3 left-6 h-6 w-20 rounded-t-xl bg-white ring-1 ring-white/50" />
+              <h3 className="font-space-grotesk font-bold tracking-tight text-lg sm:text-xl text-black">
+                Protection
+                <br className="hidden md:block" />
+                That’s Always Accessible
+              </h3>
+              <p className="mt-2 text-gray-700 text-sm sm:text-base leading-relaxed">
+                No delays, no appointments, no expensive legal fees. Upload a contract anytime and get lawyer-level clarity instantly.
+              </p>
+            </div>
           </div>
         </div>
       </section>
