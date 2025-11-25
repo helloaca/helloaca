@@ -1,16 +1,17 @@
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-// import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
 import { Download, FileText, FileBarChart, AlertTriangle } from 'lucide-react'
-import { ExportData } from '@/types/contractAnalysis'
+import { ExportData, EnhancedContractAnalysis } from '@/types/contractAnalysis'
+import jsPDF from 'jspdf'
 
 interface ExportCenterProps {
   exportData: ExportData
   contractTitle: string
+  analysis?: EnhancedContractAnalysis
 }
 
-export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contractTitle }) => {
+export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contractTitle, analysis }) => {
 
 
 
@@ -54,42 +55,202 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contract
 
   const safeContractTitle = contractTitle || 'Contract_Analysis'
 
-  const handleExport = async (type: string) => {
-    try {
-      // Simulate export generation
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Create a mock download
-      const mockContent = {
-        pdf_template: `PDF Report for ${safeContractTitle}`,
-        word_template: `Word Document for ${safeContractTitle}`,
-        annotations: JSON.stringify(safeExportData.annotations, null, 2),
-        charts_data: JSON.stringify(safeExportData.charts_data, null, 2)
-      }
-      
-      const blob = new Blob([mockContent[type as keyof typeof mockContent]], {
-        type: type === 'pdf_template' ? 'application/pdf' : 
-              type === 'word_template' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' :
-              'application/json'
-      })
-      
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${safeContractTitle}_${type}.${type === 'pdf_template' ? 'pdf' : 
-                                                 type === 'word_template' ? 'docx' : 'json'}`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-      
-    } catch (error) {
-      console.error('Export failed:', error)
-    }
+  const addPdfHeader = (doc: jsPDF, subtitle: string) => {
+    doc.setFillColor('#4ECCA3')
+    doc.rect(0, 0, doc.internal.pageSize.getWidth(), 48, 'F')
+    doc.setTextColor('#000000')
+    doc.setFontSize(20)
+    doc.text('HelloACA', 40, 30)
+    doc.setFontSize(12)
+    doc.text(subtitle, 160, 30)
+    doc.setTextColor('#111827')
   }
 
-  const handleDownload = (type: string) => {
-    handleExport(type === 'pdf' ? 'pdf_template' : type === 'word' ? 'word_template' : type === 'annotated' ? 'annotations' : 'charts_data')
+  const addPdfFooter = (doc: jsPDF) => {
+    const w = doc.internal.pageSize.getWidth()
+    const h = doc.internal.pageSize.getHeight()
+    doc.setFontSize(10)
+    doc.setTextColor('#6B7280')
+    doc.text('© 2025 HelloACA • helloaca.xyz', 40, h - 24)
+    doc.setDrawColor('#E5E7EB')
+    doc.line(40, h - 36, w - 40, h - 36)
+    doc.setTextColor('#111827')
+  }
+
+  const ensurePage = (doc: jsPDF, y: number, subtitle: string) => {
+    if (y > 780) {
+      doc.addPage()
+      addPdfHeader(doc, subtitle)
+      return 96
+    }
+    return y
+  }
+
+  const addSectionHeading = (doc: jsPDF, y: number, text: string) => {
+    doc.setFillColor('#4ECCA3')
+    doc.rect(40, y - 12, 6, 18, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(14)
+    doc.text(text, 60, y)
+    doc.setFont('helvetica', 'normal')
+    return y + 30
+  }
+
+  const addItalicParagraph = (doc: jsPDF, y: number, text: string, subtitle: string) => {
+    const lines = doc.splitTextToSize(text, 515)
+    doc.setFont('times', 'italic')
+    doc.setFontSize(12)
+    lines.forEach((t: string) => {
+      y = ensurePage(doc, y, subtitle)
+      doc.text(t, 40, y)
+      y += 18
+    })
+    doc.setFont('helvetica', 'normal')
+    return y + 8
+  }
+
+  const addLabelValueRows = (doc: jsPDF, y: number, rows: Array<{ label: string; value: string }>, subtitle: string) => {
+    rows.forEach(row => {
+      y = ensurePage(doc, y, subtitle)
+      doc.setFont('helvetica', 'bold')
+      doc.text(`${row.label}:`, 40, y)
+      doc.setFont('helvetica', 'normal')
+      doc.text(row.value, 120, y)
+      y += 18
+    })
+    return y + 8
+  }
+
+  const addBulletList = (doc: jsPDF, y: number, items: string[], subtitle: string) => {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(12)
+    items.forEach(it => {
+      const wrapped = doc.splitTextToSize(`• ${it}`, 515)
+      wrapped.forEach((t: string) => {
+        y = ensurePage(doc, y, subtitle)
+        doc.text(t, 40, y)
+        y += 18
+      })
+    })
+    return y + 8
+  }
+
+  const downloadPdfReport = () => {
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+    addPdfHeader(doc, `Contract Report: ${safeContractTitle}`)
+    let y = 96
+    y = addSectionHeading(doc, y, 'Executive Summary')
+    if (analysis?.executive_summary?.contract_overview?.purpose_summary) {
+      y = addItalicParagraph(doc, y, analysis.executive_summary.contract_overview.purpose_summary, `Contract Report: ${safeContractTitle}`)
+    }
+    const score = analysis?.executive_summary?.key_metrics?.risk_score
+    const dist = analysis?.risk_assessment?.risk_distribution
+    const stats: Array<{ label: string; value: string }> = []
+    if (typeof score === 'number') stats.push({ label: 'Risk Score', value: String(score) })
+    if (dist) stats.push({ label: 'Risk Distribution', value: `Critical ${dist.critical}, High ${dist.high}, Medium ${dist.medium}, Low ${dist.low}, Safe ${dist.safe}` })
+    if (stats.length) {
+      y = addSectionHeading(doc, y, 'Key Metrics')
+      y = addLabelValueRows(doc, y, stats, `Contract Report: ${safeContractTitle}`)
+    }
+    const missing = analysis?.clause_analysis?.missing_clauses || []
+    if (missing.length > 0) {
+      y = addSectionHeading(doc, y, 'Missing Clauses')
+      y = addBulletList(doc, y, missing.map(m => m.clauseType), `Contract Report: ${safeContractTitle}`)
+    }
+    const recs = [
+      ...(analysis?.legal_insights?.contextual_recommendations || []).map(r => `${r.title}: ${r.description}`),
+      ...(analysis?.legal_insights?.action_items || []).map(a => `${a.title}: ${a.description}`)
+    ]
+    if (recs.length > 0) {
+      y = addSectionHeading(doc, y, 'Recommendations')
+      y = addBulletList(doc, y, recs, `Contract Report: ${safeContractTitle}`)
+    }
+    addPdfFooter(doc)
+    doc.save(`${safeContractTitle}_Report.pdf`)
+  }
+
+  const downloadWordDoc = () => {
+    const overview = analysis?.executive_summary?.contract_overview?.purpose_summary || ''
+    const score = analysis?.executive_summary?.key_metrics?.risk_score
+    const dist = analysis?.risk_assessment?.risk_distribution
+    const missing = analysis?.clause_analysis?.missing_clauses || []
+    const recs = [
+      ...(analysis?.legal_insights?.contextual_recommendations || []).map(r => `- ${r.title}: ${r.description}`),
+      ...(analysis?.legal_insights?.action_items || []).map(a => `- ${a.title}: ${a.description}`)
+    ].join('\n')
+    const distRow = dist ? `<tr><td>${dist.critical}</td><td>${dist.high}</td><td>${dist.medium}</td><td>${dist.low}</td><td>${dist.safe}</td></tr>` : ''
+    const missingList = missing.length ? `<ul class="list">${missing.map(m => `<li>${m.clauseType}</li>`).join('')}</ul>` : ''
+    const recList = recs ? `<ul class="list">${recs.split('\n').map(line => `<li>${line}</li>`).join('')}</ul>` : ''
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Contract Report</title><style>body{font-family:Inter,Arial,sans-serif;color:#111827} .header{background:#4ECCA3;color:#000;padding:16px 24px;border-bottom:1px solid #E5E7EB} .title{margin:0;font-size:22px;font-weight:700} .subtitle{margin:4px 0 0;font-size:13px} .footer{border-top:1px solid #E5E7EB;color:#6B7280;font-size:12px;padding:12px 24px;margin-top:24px} h1{font-size:20px;margin:20px 24px} h2{font-size:16px;margin:18px 24px} p{margin:10px 24px;font-size:14px;line-height:1.6} em{font-style:italic} .list{margin:10px 24px;font-size:14px;line-height:1.6} .list li{margin:6px 0} table{border-collapse:collapse;margin:12px 24px} th,td{border:1px solid #E5E7EB;padding:10px 14px;text-align:center}</style></head><body><div class="header"><div class="title">HelloACA</div><div class="subtitle">Contract Report: ${safeContractTitle}</div></div><h1>Executive Summary</h1>${overview ? `<h2>Overview</h2><p><em>${overview}</em></p>` : ''}${typeof score === 'number' ? `<h2>Risk Score</h2><p><strong>${score}</strong></p>` : ''}${dist ? `<h2>Risk Distribution</h2><table><thead><tr><th>Critical</th><th>High</th><th>Medium</th><th>Low</th><th>Safe</th></tr></thead><tbody>${distRow}</tbody></table>` : ''}${missing.length > 0 ? `<h2>Missing Clauses</h2>${missingList}` : ''}${recs ? `<h2>Recommendations</h2>${recList}` : ''}<div class="footer">© 2025 HelloACA • helloaca.xyz</div></body></html>`
+    const blob = new Blob([html], { type: 'application/msword' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${safeContractTitle}_Report.doc`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const downloadAnnotatedPdf = () => {
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+    addPdfHeader(doc, `Annotated Contract: ${safeContractTitle}`)
+    let y = 96
+    y = addSectionHeading(doc, y, 'Annotations')
+    const ann = safeExportData.annotations || []
+    if (ann.length === 0) {
+      const wrapped = doc.splitTextToSize('No annotations available.', 515)
+      wrapped.forEach((t: string) => { if (y > 780) { doc.addPage(); y = 60 } doc.text(t, 40, y); y += 16 })
+      doc.save(`${safeContractTitle}_Annotated.pdf`)
+      return
+    }
+    ann.forEach(a => {
+      y = addSectionHeading(doc, y, `Clause ${a.clause_id}`)
+      const rows = [
+        { label: 'Type', value: a.annotation_type },
+        { label: 'Risk', value: a.risk_level ?? 'Unknown' },
+        { label: 'Position', value: String(a.position) }
+      ]
+      y = addLabelValueRows(doc, y, rows, `Annotated Contract: ${safeContractTitle}`)
+      y = addItalicParagraph(doc, y, a.content, `Annotated Contract: ${safeContractTitle}`)
+      if (y > 760) { doc.addPage(); y = 60 }
+    })
+    addPdfFooter(doc)
+    doc.save(`${safeContractTitle}_Annotated.pdf`)
+  }
+
+  const downloadChartsCsv = () => {
+    const rows: string[] = [
+      'HelloACA,Charts & Data Export',
+      `Contract,${safeContractTitle}`,
+      `Exported,${new Date().toISOString()}`,
+      '',
+      'chart_type,category,score'
+    ]
+    const charts = safeExportData.charts_data || []
+    charts.forEach(c => {
+      const d = c.data || []
+      d.forEach((item: any) => {
+        if (Array.isArray(item) && item.length >= 2) {
+          rows.push(`${c.chart_type},${String(item[0]).replace(/[,\n]/g, ' ')},${String(item[1]).replace(/[,\n]/g, ' ')}`)
+        } else if (item && typeof item === 'object' && 'category' in item && 'score' in item) {
+          rows.push(`${c.chart_type},${String(item.category).replace(/[,\n]/g, ' ')},${String(item.score).replace(/[,\n]/g, ' ')}`)
+        } else {
+          rows.push(`${c.chart_type},${JSON.stringify(item).replace(/[,\n]/g, ' ')},`)
+        }
+      })
+    })
+    const csv = rows.join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${safeContractTitle}_Charts.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
 
@@ -106,7 +267,7 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contract
 
       {/* Export Options - Responsive Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleDownload('pdf')}>
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={downloadPdfReport}>
           <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center text-sm sm:text-base">
@@ -127,7 +288,7 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contract
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleDownload('word')}>
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={downloadWordDoc}>
           <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center text-sm sm:text-base">
@@ -148,7 +309,7 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contract
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleDownload('annotated')}>
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={downloadAnnotatedPdf}>
           <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center text-sm sm:text-base">
@@ -169,7 +330,7 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contract
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleDownload('charts')}>
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={downloadChartsCsv}>
           <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center text-sm sm:text-base">

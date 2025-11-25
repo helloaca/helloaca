@@ -6,6 +6,7 @@ import {
   validateEnhancedAnalysis,
   LegacyAnalysisData
 } from '../types/contractAnalysis'
+import jsPDF from 'jspdf'
 
 export interface Contract {
   id: string
@@ -1137,7 +1138,7 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
     try {
       const { data: contracts, error: contractsError } = await supabase
         .from('contracts')
-        .select('*')
+        .select('id,user_id,title,file_name,file_size,upload_date,analysis_status,created_at,updated_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
 
@@ -1154,7 +1155,7 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
       const contractIds = contracts.map(c => c.id)
       const { data: analyses, error: analysesError } = await supabase
         .from('reports')
-        .select('*')
+        .select('id,contract_id,user_id,risk_score,created_at,updated_at')
         .in('contract_id', contractIds)
 
       if (analysesError) {
@@ -1164,7 +1165,7 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
 
       // Combine contracts with their analysis data and merge legacy fields if needed
       const contractsWithAnalysis = contracts.map(contract => {
-        const analysis = analyses?.find(a => a.contract_id === contract.id)
+        let analysis: any = analyses?.find(a => a.contract_id === contract.id)
         if (analysis?.analysis_data && validateEnhancedAnalysis(analysis.analysis_data)) {
           analysis.analysis_data = { 
             ...analysis.analysis_data, 
@@ -1303,21 +1304,8 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
             } catch {}
 
             if (enhanced) {
-              const legacy = toLegacyAnalysis(enhanced)
-              return {
-                id: `fallback-${contract.id}`,
-                contract_id: contract.id,
-                user_id: contract.user_id,
-                analysis_data: { ...enhanced, ...legacy },
-                risk_score: enhanced.executive_summary.key_metrics.risk_score,
-                key_clauses: enhanced.clause_analysis.missing_clauses.map(c => c.clauseType),
-                recommendations: [
-                  ...enhanced.legal_insights.action_items.map(i => i.description),
-                  ...enhanced.legal_insights.contextual_recommendations.map(r => r.description)
-                ],
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              }
+              const saved = await this.saveAnalysisResults(contract.id, contract.user_id, enhanced)
+              return saved
             }
           }
           return null
@@ -1495,32 +1483,76 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
         throw new Error('Contract or analysis not found')
       }
 
-      // Create a comprehensive report
-      const reportData = {
-        contractTitle: contract.title,
-        analysisDate: analysis.created_at,
-        riskScore: analysis.risk_score,
-        analysisData: analysis.analysis_data,
-        exportDate: new Date().toISOString()
+      const data = analysis.analysis_data as EnhancedContractAnalysis
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+      doc.setFillColor('#4ECCA3')
+      doc.rect(0, 0, doc.internal.pageSize.getWidth(), 48, 'F')
+      doc.setTextColor('#000000')
+      doc.setFontSize(20)
+      doc.text('HelloACA', 40, 30)
+      doc.setFontSize(12)
+      doc.text(`Contract Report: ${contract.title}`, 160, 30)
+      doc.setTextColor('#111827')
+      let y = 96
+      const subtitle = `Contract Report: ${contract.title}`
+      const ensurePage = () => { if (y > 780) { doc.addPage(); doc.setFillColor('#4ECCA3'); doc.rect(0, 0, doc.internal.pageSize.getWidth(), 48, 'F'); doc.setTextColor('#000000'); doc.setFontSize(20); doc.text('HelloACA', 40, 30); doc.setFontSize(12); doc.text(subtitle, 160, 30); doc.setTextColor('#111827'); y = 96 } }
+      const addText = (text: string) => {
+        const wrapped = doc.splitTextToSize(text, 515)
+        wrapped.forEach((t: string) => { ensurePage(); doc.text(t, 40, y); y += 18 })
       }
-
-      // Convert to JSON and create downloadable file
-      const reportJson = JSON.stringify(reportData, null, 2)
-      const blob = new Blob([reportJson], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
+      const addHeading = (text: string) => {
+        doc.setFillColor('#4ECCA3')
+        doc.rect(40, y - 12, 6, 18, 'F')
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(14)
+        doc.text(text, 60, y)
+        doc.setFont('helvetica', 'normal')
+        y += 30
+      }
+      const addLabelValue = (label: string, value: string) => {
+        ensurePage()
+        doc.setFont('helvetica', 'bold')
+        doc.text(`${label}:`, 40, y)
+        doc.setFont('helvetica', 'normal')
+        doc.text(value, 120, y)
+        y += 18
+      }
+      const addItalicPara = (text: string) => {
+        const lines = doc.splitTextToSize(text, 515)
+        doc.setFont('times', 'italic')
+        doc.setFontSize(12)
+        lines.forEach((t: string) => { ensurePage(); doc.text(t, 40, y); y += 18 })
+        doc.setFont('helvetica', 'normal')
+        y += 8
+      }
+      const overview = (data?.executive_summary as any)?.contract_overview?.purpose_summary || ''
+      if (overview) { addHeading('Executive Summary'); addItalicPara(overview) }
+      const score = analysis.risk_score ?? data?.executive_summary?.key_metrics?.risk_score
+      if (typeof score === 'number') { addHeading('Key Metrics'); addLabelValue('Risk Score', String(score)) }
+      const dist = data?.risk_assessment?.risk_distribution
+      if (dist) { addLabelValue('Risk Distribution', `Critical ${dist.critical}, High ${dist.high}, Medium ${dist.medium}, Low ${dist.low}, Safe ${dist.safe}`) }
+      const missing = data?.clause_analysis?.missing_clauses || []
+      if (missing.length > 0) { addHeading('Missing Clauses'); missing.map(m => m.clauseType).forEach(item => addText(`• ${item}`)); y += 8 }
+      const recs = [
+        ...(data?.legal_insights?.contextual_recommendations || []).map(r => `• ${r.title}: ${r.description}`),
+        ...(data?.legal_insights?.action_items || []).map(a => `• ${a.title}: ${a.description}`)
+      ]
+      if (recs.length > 0) {
+        addHeading('Recommendations')
+        recs.forEach(addText)
+        y += 8
+      }
+      const w = doc.internal.pageSize.getWidth()
+      const h = doc.internal.pageSize.getHeight()
+      doc.setFontSize(10)
+      doc.setTextColor('#6B7280')
+      doc.text('© 2025 HelloACA • helloaca.xyz', 40, h - 24)
+      doc.setDrawColor('#E5E7EB')
+      doc.line(40, h - 36, w - 40, h - 36)
+      doc.setTextColor('#111827')
+      doc.save(`contract-analysis-${contract.title.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`)
       
-      // Create download link
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `contract-analysis-${contract.title.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.json`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      
-      // Cleanup
-      URL.revokeObjectURL(url)
-      
-      console.log('✅ Analysis report downloaded successfully')
+      console.log('✅ Analysis PDF downloaded successfully')
     } catch (error) {
       console.error('Failed to download analysis report:', error)
       throw error

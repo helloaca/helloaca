@@ -36,7 +36,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        'X-CC-Api-Key': apiKey
+        'X-CC-Api-Key': apiKey,
+        'X-CC-Api-Version': '2018-03-22'
       },
       body: JSON.stringify({
         name: 'HelloACA Pro',

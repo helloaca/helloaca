@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Button from '@/components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
-import { FileText, AlertTriangle, MessageCircle, Download, CheckCircle, XCircle, AlertCircle, Info, ChevronDown, ChevronRight, Users, FileCheck, Briefcase, CreditCard, Calendar, Shield, Lock, Scale, Gavel, FileSignature, PenTool } from 'lucide-react'
+import { FileText, AlertTriangle, MessageCircle, Download, CheckCircle, XCircle, AlertCircle, Info, ChevronDown, ChevronRight, ChevronLeft, Users, FileCheck, Briefcase, CreditCard, Calendar, Shield, Lock, Scale, Gavel, FileSignature, PenTool } from 'lucide-react'
 import { ContractService, Contract, ContractAnalysis as ContractAnalysisType } from '@/lib/contractService'
 import { EnhancedContractAnalysis } from '@/types/contractAnalysis'
 import { ExecutiveSummary } from '@/components/contract-analysis/ExecutiveSummary'
@@ -44,8 +44,19 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
   onDownloadReport,
   onChatWithAI
 }) => {
+  const nav = useNavigate()
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<'executive' | 'clauses' | 'risk' | 'legal' | 'export'>('executive')
+  const tabs: Array<{ id: 'executive' | 'clauses' | 'risk' | 'legal' | 'export'; label: string; icon: any }> = [
+    { id: 'executive', label: 'Executive Summary', icon: FileText },
+    { id: 'clauses', label: 'Clause Analysis', icon: Scale },
+    { id: 'risk', label: 'Risk Assessment', icon: AlertTriangle },
+    { id: 'legal', label: 'Legal Insights', icon: Gavel },
+    { id: 'export', label: 'Export Center', icon: Download }
+  ]
+  const currentIndex = tabs.findIndex(t => t.id === activeTab)
+  const handlePrev = () => { if (currentIndex > 0) setActiveTab(tabs[currentIndex - 1].id) }
+  const handleNext = () => { if (currentIndex < tabs.length - 1) setActiveTab(tabs[currentIndex + 1].id) }
 
   const toggleSection = (sectionName: string) => {
     const newExpanded = new Set(expandedSections)
@@ -77,17 +88,33 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
     <div className="space-y-8">
       {/* Tab Navigation */}
       <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {[
-            { id: 'executive', label: 'Executive Summary', icon: FileText },
-            { id: 'clauses', label: 'Clause Analysis', icon: Scale },
-            { id: 'risk', label: 'Risk Assessment', icon: AlertTriangle },
-            { id: 'legal', label: 'Legal Insights', icon: Gavel },
-            { id: 'export', label: 'Export Center', icon: Download }
-          ].map(({ id, label, icon: Icon }) => (
+        <div className="py-2">
+          <Button variant="outline" size="sm" onClick={() => nav('/dashboard')} className="min-h-[36px]">
+            <ChevronLeft className="h-4 w-4 mr-2" /> Back to Dashboard
+          </Button>
+        </div>
+        <div className="sm:hidden flex items-center gap-2 py-2">
+          <select
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value as any)}
+            className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
+          >
+            {tabs.map(t => (
+              <option key={t.id} value={t.id}>{t.label}</option>
+            ))}
+          </select>
+          <Button variant="outline" size="sm" onClick={handlePrev} disabled={currentIndex <= 0} className="min-h-[36px]">
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleNext} disabled={currentIndex >= tabs.length - 1} className="min-h-[36px]">
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        <nav className="hidden sm:flex -mb-px space-x-8">
+          {tabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
-              onClick={() => setActiveTab(id as any)}
+              onClick={() => setActiveTab(id)}
               className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === id
                   ? 'border-primary text-primary'
@@ -121,6 +148,7 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
               <Button 
                 variant="outline" 
                 size="sm"
+                className="whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 flex-shrink-0"
                 onClick={() => setExpandedSections(new Set(sectionsArray.map(s => s.sectionName)))}
               >
                 Expand All
@@ -128,6 +156,7 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
               <Button 
                 variant="outline" 
                 size="sm"
+                className="whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 flex-shrink-0"
                 onClick={() => setExpandedSections(new Set())}
               >
                 Collapse All
@@ -421,6 +450,7 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
         <ExportCenter 
           exportData={enhancedData.export_data} 
           contractTitle={contract.title}
+          analysis={enhancedData}
         />
       )}
 
@@ -452,6 +482,26 @@ const ContractAnalysis: React.FC = () => {
   const [analysis, setAnalysis] = useState<ContractAnalysisType | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const getContractCacheKey = (id: string) => `contract_cache_${id}`
+  const getAnalysisCacheKey = (id: string) => `analysis_cache_${id}`
+  const readCachedContract = (id: string): Contract | null => {
+    try {
+      const raw = localStorage.getItem(getContractCacheKey(id))
+      return raw ? JSON.parse(raw) : null
+    } catch { return null }
+  }
+  const writeCachedContract = (id: string, data: Contract) => {
+    try { localStorage.setItem(getContractCacheKey(id), JSON.stringify(data)) } catch { void 0 }
+  }
+  const readCachedAnalysis = (id: string): ContractAnalysisType | null => {
+    try {
+      const raw = localStorage.getItem(getAnalysisCacheKey(id))
+      return raw ? JSON.parse(raw) : null
+    } catch { return null }
+  }
+  const writeCachedAnalysis = (id: string, data: ContractAnalysisType) => {
+    try { localStorage.setItem(getAnalysisCacheKey(id), JSON.stringify(data)) } catch { void 0 }
+  }
   
   useEffect(() => {
     const loadContractData = async () => {
@@ -460,30 +510,48 @@ const ContractAnalysis: React.FC = () => {
         setIsLoading(false)
         return
       }
-
-      try {
-        setIsLoading(true)
-        const contractData = await ContractService.getContract(contractId)
-        if (!contractData) {
-          setError('Contract not found')
-          return
-        }
-
-        setContract(contractData)
-
-        // Load analysis if contract is completed
-        if (contractData.analysis_status === 'completed') {
-          const analysisData = await ContractService.getContractAnalysis(contractId)
-          setAnalysis(analysisData)
-        }
-      } catch (err) {
-        console.error('Error loading contract:', err)
-        setError('Failed to load contract data')
-      } finally {
+      const cachedContract = readCachedContract(contractId)
+      const cachedAnalysis = readCachedAnalysis(contractId)
+      if (cachedContract) {
+        setContract(cachedContract)
+        if (cachedAnalysis) setAnalysis(cachedAnalysis)
         setIsLoading(false)
       }
+      const timeoutMs = 12000
+      const timeoutPromise = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), timeoutMs))
+      const fetchPromise = (async () => {
+        try {
+          const c = await ContractService.getContract(contractId)
+          if (!c) return { error: new Error('Contract not found') }
+          let a: ContractAnalysisType | null = null
+          if (c.analysis_status === 'completed') {
+            a = await ContractService.getContractAnalysis(contractId)
+          }
+          return { contract: c, analysis: a }
+        } catch (e) {
+          return { error: e }
+        }
+      })()
+      const result = await Promise.race([fetchPromise, timeoutPromise])
+      if ('timedOut' in result) {
+        setIsLoading(false)
+        return
+      }
+      if ('error' in result && result.error) {
+        setError('Failed to load contract data')
+        setIsLoading(false)
+        return
+      }
+      const finalContract = (result as any).contract as Contract
+      const finalAnalysis = (result as any).analysis as ContractAnalysisType | null
+      setContract(finalContract)
+      writeCachedContract(contractId, finalContract)
+      if (finalAnalysis) {
+        setAnalysis(finalAnalysis)
+        writeCachedAnalysis(contractId, finalAnalysis)
+      }
+      setIsLoading(false)
     }
-
     loadContractData()
   }, [contractId])
 

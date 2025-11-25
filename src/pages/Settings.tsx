@@ -195,22 +195,31 @@ const Settings: React.FC = () => {
 
       setIsLoadingPayment(true)
       setProcessingMethod('crypto')
-      const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
-      const res = await fetch(`${base}/api/coinbase-create-charge`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, email: user.email })
-      })
-      const data = await res.json()
-      const url = data?.hosted_url
-      if (url) {
-        setMethodModalOpen(false)
-        window.location.href = url
-        return
+      const base = import.meta.env.VITE_API_ORIGIN || window.location.origin
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 10000)
+      let data: any = null
+      try {
+        const res = await fetch(`${base}/api/coinbase-create-charge`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id, email: user.email }),
+          signal: controller.signal
+        })
+        data = await res.json().catch(() => null)
+        clearTimeout(timer)
+        const url = data?.hosted_url
+        if (res.ok && url) {
+          setMethodModalOpen(false)
+          window.location.href = url
+          return
+        }
+        const message = typeof data?.error === 'string' ? data.error : 'Failed to start crypto payment'
+        toast.error(message)
+      } catch {
+        clearTimeout(timer)
+        toast.error('Network error starting crypto payment')
       }
-      toast.error('Failed to start crypto payment')
-    } catch {
-      toast.error('Failed to start crypto payment')
     } finally {
       setIsLoadingPayment(false)
       setProcessingMethod(null)

@@ -43,21 +43,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     toast.error(error.message)
   }
 
-  // Cache keys for sessionStorage
+  // Cache keys for persistent storage
   const CACHE_KEYS = {
     USER: 'auth_user',
     PROFILE: 'auth_profile',
     SESSION: 'auth_session'
   }
 
-  // Helper functions for sessionStorage
+  // Helper functions for persistent storage
   const cacheUserData = (user: AuthUser, profile: UserProfile | null, session: Session) => {
     try {
-      sessionStorage.setItem(CACHE_KEYS.USER, JSON.stringify(user))
+      localStorage.setItem(CACHE_KEYS.USER, JSON.stringify(user))
       if (profile) {
-        sessionStorage.setItem(CACHE_KEYS.PROFILE, JSON.stringify(profile))
+        localStorage.setItem(CACHE_KEYS.PROFILE, JSON.stringify(profile))
       }
-      sessionStorage.setItem(CACHE_KEYS.SESSION, JSON.stringify(session))
+      localStorage.setItem(CACHE_KEYS.SESSION, JSON.stringify(session))
     } catch (error) {
       console.warn('Failed to cache user data:', error)
       toast.error('Failed to save session data. Some features may not work properly.')
@@ -66,9 +66,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const getCachedUserData = () => {
     try {
-      const cachedUser = sessionStorage.getItem(CACHE_KEYS.USER)
-      const cachedProfile = sessionStorage.getItem(CACHE_KEYS.PROFILE)
-      const cachedSession = sessionStorage.getItem(CACHE_KEYS.SESSION)
+      const cachedUser = localStorage.getItem(CACHE_KEYS.USER)
+      const cachedProfile = localStorage.getItem(CACHE_KEYS.PROFILE)
+      const cachedSession = localStorage.getItem(CACHE_KEYS.SESSION)
       
       return {
         user: cachedUser ? JSON.parse(cachedUser) : null,
@@ -84,9 +84,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clearCachedUserData = () => {
     try {
-      sessionStorage.removeItem(CACHE_KEYS.USER)
-      sessionStorage.removeItem(CACHE_KEYS.PROFILE)
-      sessionStorage.removeItem(CACHE_KEYS.SESSION)
+      localStorage.removeItem(CACHE_KEYS.USER)
+      localStorage.removeItem(CACHE_KEYS.PROFILE)
+      localStorage.removeItem(CACHE_KEYS.SESSION)
     } catch (error) {
       console.warn('Failed to clear cached user data:', error)
     }
@@ -110,7 +110,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(cachedData.user)
           setProfile(cachedData.profile)
           setSession(cachedData.session)
-          // Don't set isRehydrating here to avoid infinite loading
+          // Immediately allow UI to proceed while background revalidation happens
+          setLoading(false)
         }
 
         // Create a timeout promise that resolves (doesn't reject) after delay
@@ -118,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           initTimeout = setTimeout(() => {
             // Silently handle timeout without warning - authentication is working with cached data
             resolve({ timedOut: true })
-          }, 10000) // Reduced to 10 second timeout
+          }, 10000)
         })
 
         // Create the session fetch promise with optimized retry logic
@@ -155,7 +156,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if ('timedOut' in result) {
             // Timeout occurred - use cached data if available (silently)
             if (cachedData.user && cachedData.session) {
-              // Keep cached data, just update loading states
               setLoading(false)
               setIsRehydrating(false)
             } else {
