@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Send, FileText, Loader2, Trash2, Download, Search } from 'lucide-react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import Header from '../components/layout/Header'
@@ -27,6 +27,7 @@ interface Contract {
 const ChatInterface: React.FC = () => {
   const { contractId } = useParams<{ contractId: string }>()
   const { user, profile, loading: authLoading } = useAuth()
+  const navigate = useNavigate()
   const [contract, setContract] = useState<Contract | null>(null)
   const [isLoadingContract, setIsLoadingContract] = useState(true)
   const [isLoadingChatHistory, setIsLoadingChatHistory] = useState(false)
@@ -629,6 +630,17 @@ Please provide a helpful response based on the contract and our conversation.`
                         </ReactMarkdown>
                       ) : (
                         <p className="whitespace-pre-wrap">{message.content}</p>
+                      )}
+
+                      {message.id === 'limit-reached' && (
+                        <div className="mt-2">
+                          <button
+                            onClick={() => navigate('/pricing')}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            Upgrade to Pro
+                          </button>
+                        </div>
                       )}
                       
                       <div className="text-xs opacity-70 mt-2">

@@ -2,7 +2,7 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/layout/Header'
 import { Footer } from '../components/layout/Footer'
-import { Shield, Users, Target, Award, ArrowLeft } from 'lucide-react'
+import { Shield, Users, Target, Award, ArrowLeft, Linkedin, Twitter, Mail } from 'lucide-react'
 
 const About: React.FC = () => {
   const navigate = useNavigate()
@@ -107,14 +107,41 @@ const About: React.FC = () => {
           </div>
 
           {/* Team Section */}
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">Built by Experts</h2>
-            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-              Our team combines deep expertise in artificial intelligence, legal technology, 
-              and user experience design to create the most intuitive and powerful contract 
-              analysis platform available.
-            </p>
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-gray-900 mb-6">Built by Experts</h2>
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+            Our team combines deep expertise in artificial intelligence, legal technology, 
+            and user experience design to create the most intuitive and powerful contract 
+            analysis platform available.
+          </p>
+          <div className="mt-8 flex items-center justify-center gap-4">
+            <a
+              href="https://linkedin.com/company/helloaca"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white shadow-sm border border-gray-200 text-gray-700 hover:text-primary"
+            >
+              <Linkedin className="h-5 w-5" />
+              <span>LinkedIn</span>
+            </a>
+            <a
+              href="https://x.com/helloacaxyz"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white shadow-sm border border-gray-200 text-gray-700 hover:text-primary"
+            >
+              <Twitter className="h-5 w-5" />
+              <span>X</span>
+            </a>
+            <a
+              href="mailto:support@helloaca.xyz"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white shadow-sm border border-gray-200 text-gray-700 hover:text-primary"
+            >
+              <Mail className="h-5 w-5" />
+              <span>support@helloaca.xyz</span>
+            </a>
           </div>
+        </div>
         </div>
       </main>
 
