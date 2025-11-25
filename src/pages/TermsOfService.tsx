@@ -37,7 +37,7 @@ const TermsOfService: React.FC = () => {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Acceptance of Terms</h2>
                 <p>
-                  By accessing or using HelloACA ("Service"), you agree to be bound by these Terms of Service ("Terms"). 
+                  By accessing or using Helloaca ("Service"), you agree to be bound by these Terms of Service ("Terms"). 
                   If you disagree with any part of these terms, you may not access the Service.
                 </p>
               </section>
@@ -45,7 +45,7 @@ const TermsOfService: React.FC = () => {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">2. Description of Service</h2>
                 <p>
-                  HelloACA is an AI-powered contract analysis platform that provides:
+                  Helloaca is an AI-powered contract analysis platform that provides:
                 </p>
                 <ul>
                   <li>Automated contract review and analysis</li>
@@ -99,7 +99,7 @@ const TermsOfService: React.FC = () => {
                   <div className="flex">
                     <div className="ml-3">
                       <p className="text-sm text-yellow-700">
-                        <strong>Important Legal Disclaimer:</strong> HelloACA uses artificial intelligence for contract analysis. 
+                        <strong>Important Legal Disclaimer:</strong> Helloaca uses artificial intelligence for contract analysis. 
                         AI analysis is provided as a tool to assist, not replace, professional legal advice.
                       </p>
                     </div>
@@ -108,7 +108,7 @@ const TermsOfService: React.FC = () => {
                 
                 <h3 className="text-xl font-semibold text-gray-800 mb-3">5.1 AI Technology Disclaimer</h3>
                 <ul>
-                  <li>HelloACA uses artificial intelligence for contract analysis</li>
+                  <li>Helloaca uses artificial intelligence for contract analysis</li>
                   <li>AI analysis is provided as a tool to assist, not replace, professional legal advice</li>
                   <li>Results may contain errors or omissions</li>
                   <li>Users should verify all AI-generated insights</li>
@@ -116,7 +116,7 @@ const TermsOfService: React.FC = () => {
                 
                 <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">5.2 No Legal Advice</h3>
                 <ul>
-                  <li>HelloACA does not provide legal advice</li>
+                  <li>Helloaca does not provide legal advice</li>
                   <li>The Service is not a substitute for professional legal counsel</li>
                   <li>Users should consult qualified attorneys for legal matters</li>
                   <li>We are not responsible for legal decisions based on our analysis</li>
@@ -173,7 +173,7 @@ const TermsOfService: React.FC = () => {
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">8. Intellectual Property</h2>
                 <h3 className="text-xl font-semibold text-gray-800 mb-3">8.1 Service IP</h3>
                 <ul>
-                  <li>HelloACA owns all rights to the Service, including AI models</li>
+                  <li>Helloaca owns all rights to the Service, including AI models</li>
                   <li>Users receive a limited license to use the Service</li>
                   <li>No rights are granted beyond the scope of these Terms</li>
                 </ul>
@@ -214,7 +214,7 @@ const TermsOfService: React.FC = () => {
                 
                 <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">10.2 Indemnification</h3>
                 <ul>
-                  <li>Users agree to indemnify HelloACA against claims arising from their use</li>
+                  <li>Users agree to indemnify Helloaca against claims arising from their use</li>
                   <li>This includes violations of Terms or applicable laws</li>
                 </ul>
               </section>
@@ -227,7 +227,7 @@ const TermsOfService: React.FC = () => {
                   <li>Data export tools are available before termination</li>
                 </ul>
                 
-                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">11.2 Termination by HelloACA</h3>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">11.2 Termination by Helloaca</h3>
                 <ul>
                   <li>We may terminate accounts for Terms violations</li>
                   <li>We may suspend Service for non-payment</li>
@@ -263,7 +263,7 @@ const TermsOfService: React.FC = () => {
                   <div className="flex">
                     <div className="ml-3">
                       <p className="text-sm text-blue-700">
-                        <strong>Security Standards:</strong> HelloACA maintains SOC 2 Type II compliance, 
+                        <strong>Security Standards:</strong> Helloaca maintains SOC 2 Type II compliance, 
                         end-to-end encryption (AES-256), and GDPR/CCPA compliance to protect your data.
                       </p>
                     </div>

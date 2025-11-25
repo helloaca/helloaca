@@ -37,7 +37,7 @@ const PrivacyPolicy: React.FC = () => {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Introduction</h2>
                 <p>
-                  HelloACA ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy 
+                  Helloaca ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy 
                   explains how we collect, use, disclose, and safeguard your information when you use our 
                   AI-powered contract analysis platform ("Service").
                 </p>
@@ -195,7 +195,7 @@ const PrivacyPolicy: React.FC = () => {
                   <div className="flex">
                     <div className="ml-3">
                       <p className="text-sm text-green-700">
-                        <strong>Security Standards:</strong> HelloACA maintains SOC 2 Type II compliance, 
+                        <strong>Security Standards:</strong> Helloaca maintains SOC 2 Type II compliance, 
                         end-to-end encryption (AES-256), and enterprise-grade security measures.
                       </p>
                     </div>
@@ -333,7 +333,7 @@ const PrivacyPolicy: React.FC = () => {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">12. Children's Privacy</h2>
                 <p>
-                  HelloACA is not intended for use by children under 18 years of age. We do not knowingly 
+                  Helloaca is not intended for use by children under 18 years of age. We do not knowingly 
                   collect personal information from children under 18. If we become aware that we have 
                   collected personal information from a child under 18, we will take steps to delete such 
                   information promptly.
