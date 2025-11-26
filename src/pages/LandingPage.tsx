@@ -496,6 +496,10 @@ const LandingPage: React.FC = () => {
                     <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
                     <span className="text-sm sm:text-base">Full AI suite</span>
                   </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
+                    <span className="text-sm sm:text-base">Priorty Support</span>
+                  </li>
                 </ul>
                 <Button 
                   className="w-full min-h-[48px] text-base"
