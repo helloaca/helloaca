@@ -1,55 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://helloaca.com/</loc>
+    <loc>https://helloaca.xyz/</loc>
     <lastmod>2025-11-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://helloaca.com/pricing</loc>
+    <loc>https://helloaca.xyz/pricing</loc>
     <lastmod>2025-11-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://helloaca.com/about</loc>
+    <loc>https://helloaca.xyz/about</loc>
     <lastmod>2025-11-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://helloaca.com/contact</loc>
+    <loc>https://helloaca.xyz/contact</loc>
     <lastmod>2025-11-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://helloaca.com/privacy</loc>
+    <loc>https://helloaca.xyz/privacy</loc>
     <lastmod>2025-11-26</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://helloaca.com/terms</loc>
+    <loc>https://helloaca.xyz/terms</loc>
     <lastmod>2025-11-26</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://helloaca.com/login</loc>
+    <loc>https://helloaca.xyz/login</loc>
     <lastmod>2025-11-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://helloaca.com/register</loc>
+    <loc>https://helloaca.xyz/register</loc>
     <lastmod>2025-11-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://helloaca.com/forgot-password</loc>
+    <loc>https://helloaca.xyz/forgot-password</loc>
     <lastmod>2025-11-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
