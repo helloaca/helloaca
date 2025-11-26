@@ -4,7 +4,7 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import Button from '@/components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { CheckCircle, Star } from 'lucide-react'
+import { CheckCircle, Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { trackPricing } from '@/lib/analytics'
 
@@ -33,6 +33,30 @@ const AnimateOnScroll: React.FC<{ children: React.ReactNode; className?: string;
 }
 const LandingPage: React.FC = () => {
   const navigate = useNavigate()
+  const worksTrackRef = useRef<HTMLDivElement>(null)
+  const worksSectionRef = useRef<HTMLDivElement>(null)
+  const [newsletterEmail, setNewsletterEmail] = useState('')
+  useEffect(() => {
+    const section = worksSectionRef.current
+    const track = worksTrackRef.current
+    if (!section || !track) return
+    const onWheel = (e: WheelEvent) => {
+      const rect = section.getBoundingClientRect()
+      const visible = rect.top < window.innerHeight && rect.bottom > 0
+      if (!visible) return
+      const max = track.scrollWidth - track.clientWidth
+      const left = track.scrollLeft
+      if ((e.deltaY > 0 && left < max) || (e.deltaY < 0 && left > 0)) {
+        e.preventDefault()
+        const step = e.deltaY * 1.2
+        track.scrollBy({ left: step, behavior: 'smooth' })
+      }
+    }
+    section.addEventListener('wheel', onWheel, { passive: false })
+    return () => {
+      section.removeEventListener('wheel', onWheel)
+    }
+  }, [])
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -113,7 +137,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      <section className="py-12 sm:py-16 md:py-20 bg-white">
+        <section className="py-12 sm:py-16 md:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll>
           <div className="text-center mb-12 sm:mb-16">
@@ -247,6 +271,86 @@ const LandingPage: React.FC = () => {
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 sm:h-28 md:h-32 bg-gradient-to-t from-white to-transparent" />
       </section>
 
+      <section className="py-12 sm:py-16 md:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimateOnScroll>
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="font-space-grotesk text-2xl sm:text-3xl md:text-4xl font-bold text-black mb-4 flex items-center justify-center gap-2">
+              <span>Where</span>
+              <img src="/helloaca.png" alt="helloaca" className="h-8 sm:h-10" />
+              <span>works best</span>
+            </h2>
+            <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
+              The contract types we analyze most accurately and quickly.
+            </p>
+          </div>
+          </AnimateOnScroll>
+
+          <AnimateOnScroll>
+          <div ref={worksSectionRef} className="relative rounded-3xl bg-teal-700 text-white ring-1 ring-white/20 shadow-xl overflow-hidden">
+            <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-teal-700 to-transparent" />
+            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-teal-700 to-transparent" />
+            <button
+              type="button"
+              aria-label="Previous"
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-white/20 hover:bg-white/30 text-white ring-1 ring-white/30 rounded-full p-2 backdrop-blur"
+              onClick={() => {
+                const el = worksTrackRef.current
+                if (!el) return
+                const amt = Math.max(300, Math.floor(el.clientWidth * 0.9))
+                el.scrollBy({ left: -amt, behavior: 'smooth' })
+              }}
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            <button
+              type="button"
+              aria-label="Next"
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-white/20 hover:bg-white/30 text-white ring-1 ring-white/30 rounded-full p-2 backdrop-blur"
+              onClick={() => {
+                const el = worksTrackRef.current
+                if (!el) return
+                const amt = Math.max(300, Math.floor(el.clientWidth * 0.9))
+                el.scrollBy({ left: amt, behavior: 'smooth' })
+              }}
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+            <div ref={worksTrackRef} className="flex overflow-x-auto snap-x snap-mandatory divide-x divide-white/20">
+              {[
+                { l1: 'Non‑Disclosure', l2: 'Agreements (NDA)', d: 'Scope, duration, carve‑outs, mutuality, confidentiality.' },
+                { l1: 'Master Service', l2: 'Agreements (MSA)', d: 'Risk allocation, indemnity, liabilities, termination.' },
+                { l1: 'Statements of', l2: 'Work (SOW)', d: 'Deliverables, milestones, acceptance criteria, change‑orders.' },
+                { l1: 'SaaS/Subscription', l2: 'Agreements', d: 'SLAs, uptime, data rights, privacy terms, DPA compliance.' },
+                { l1: 'Vendor/Procurement', l2: 'Contracts', d: 'Pricing models, delivery, warranties, performance obligations.' },
+                { l1: 'Licensing and', l2: 'IP Agreements', d: 'Grant scope, exclusivity, royalties, field of use, ownership.' },
+                { l1: 'Employment', l2: 'Agreements', d: 'Compensation, termination, IP assignment, confidentiality.' },
+                { l1: 'Independent Contractor', l2: 'Agreements', d: 'Deliverables, payment, IP rights, non‑solicitation.' },
+                { l1: 'Lease and Rental', l2: 'Agreements', d: 'Term, obligations, maintenance, liability, exit provisions.' },
+                { l1: 'Partnership/Joint', l2: 'Venture Agreements', d: 'Capital, roles, profit splits, governance, exit rights.' },
+                { l1: 'Loan and', l2: 'Financing Agreements', d: 'Interest, covenants, security, events of default.' },
+                { l1: 'Consulting', l2: 'Agreements', d: 'Scope, deliverables, confidentiality, IP ownership.' },
+                { l1: 'Data Processing', l2: 'Agreements (DPA)', d: 'Roles, SCCs, audit, deletion, lawful basis.' },
+                { l1: 'End User License', l2: 'Agreements (EULA)', d: 'Use rights, restrictions, warranties, liability.' },
+                { l1: 'Distribution', l2: 'Agreements', d: 'Territory, exclusivity, performance targets, termination.' },
+                { l1: 'Reseller', l2: 'Agreements', d: 'Discounting, branding, support, obligations.' },
+                { l1: 'Service Level', l2: 'Agreements (SLA)', d: 'Availability, response times, remedies, reporting.' }
+              ].map((item) => (
+                <div key={`${item.l1}-${item.l2}`} className="snap-start shrink-0 w-[260px] sm:w-[300px] lg:w-[320px] p-6 sm:p-8">
+                  <h3 className="font-space-grotesk font-bold tracking-tight text-base sm:text-lg md:text-base lg:text-lg leading-snug">
+                    <span className="md:whitespace-nowrap">{item.l1}</span>
+                    <br className="hidden md:block" />
+                    <span className="md:whitespace-nowrap">{item.l2}</span>
+                  </h3>
+                  <p className="mt-2 text-white/80 text-sm sm:text-base leading-relaxed">{item.d}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          </AnimateOnScroll>
+        </div>
+      </section>
+
       {/* Testimonials Section */}
       <section className="py-12 sm:py-16 md:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -256,7 +360,7 @@ const LandingPage: React.FC = () => {
               Trusted by Professionals
             </h2>
             <p className="text-lg sm:text-xl text-gray-600">
-              See what our users say about HelloACA
+              See what our users say about Helloaca
             </p>
           </div>
           </AnimateOnScroll>
@@ -408,6 +512,38 @@ const LandingPage: React.FC = () => {
             
             
           </div>
+        </div>
+      </section>
+
+      <section className="py-14 sm:py-16 md:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimateOnScroll>
+          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 sm:p-8 lg:p-10">
+            <div className="text-center mb-6">
+              <h2 className="font-space-grotesk text-2xl sm:text-3xl md:text-4xl font-bold text-black">Join our newsletter</h2>
+              <p className="text-gray-600 text-base sm:text-lg mt-2">No spam. Unsubscribe anytime.</p>
+            </div>
+            <form
+              className="mx-auto max-w-xl flex items-center gap-3"
+              onSubmit={(e) => {
+                e.preventDefault()
+                const valid = /.+@.+\..+/.test(newsletterEmail)
+                if (!valid) return
+                setNewsletterEmail('')
+              }}
+            >
+              <input
+                type="email"
+                required
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                placeholder="Email address"
+                className="flex-1 h-12 rounded-button border border-gray-300 bg-white px-4 text-base focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <Button type="submit" size="md" className="h-12 px-6">Subscribe</Button>
+            </form>
+          </div>
+          </AnimateOnScroll>
         </div>
       </section>
 
