@@ -20,6 +20,7 @@ const Pricing: React.FC = () => {
   const [processingMethod, setProcessingMethod] = useState<null | 'card' | 'crypto'>(null)
   const [selectedBundle, setSelectedBundle] = useState<{ credits: number; priceUSD: number } | null>(null)
   const [creditBalance, setCreditBalance] = useState<number>(0)
+  const [customCredits, setCustomCredits] = useState<number>(1)
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -42,6 +43,14 @@ const Pricing: React.FC = () => {
     { credits: 5, priceUSD: 30, popular: true as const },
     { credits: 10, priceUSD: 55, popular: false as const }
   ]
+
+  const computePriceUSD = (credits: number) => {
+    if (!Number.isFinite(credits) || credits < 1) return 0
+    if (credits >= 10) return +(credits * 5.5).toFixed(2)
+    if (credits >= 5) return +(credits * 6).toFixed(2)
+    return +(credits * 7).toFixed(2)
+  }
+  const customPriceUSD = computePriceUSD(customCredits)
 
   const loadPaystackScript = useCallback(async () => {
     if ((window as any).PaystackPop) return
@@ -317,6 +326,46 @@ const Pricing: React.FC = () => {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Custom Credits */}
+          <div className="bg-white rounded-2xl shadow-xl p-8 mb-16">
+            <div className="grid md:grid-cols-2 gap-8 items-end">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Custom Credits</h3>
+                <p className="text-gray-600 mb-4">Choose any number of credits. Automatic volume discounts apply.</p>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min={1}
+                    value={customCredits}
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value || '1', 10)
+                      setCustomCredits(Number.isFinite(v) && v >= 1 ? v : 1)
+                    }}
+                    className="w-32 h-12 rounded-lg border border-gray-300 bg-white px-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-gray-700">credits</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-gray-600 mb-2">Price</div>
+                <div className="text-4xl font-bold text-gray-900 mb-4">${customPriceUSD}</div>
+                <button
+                  onClick={() => {
+                    const bundle = { credits: customCredits, priceUSD: customPriceUSD }
+                    setSelectedBundle(bundle)
+                    setMethodModalOpen(true)
+                  }}
+                  disabled={isLoading || customPriceUSD <= 0}
+                  className={`py-3 px-6 rounded-lg font-medium text-center transition-colors ${
+                    'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                  }`}
+                >
+                  {isLoading ? 'Processing…' : 'Buy Custom Credits'}
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Features Comparison */}
