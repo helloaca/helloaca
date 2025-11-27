@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import mixpanel from 'mixpanel-browser'
 
 const claudeApiKey = import.meta.env.VITE_CLAUDE_API_KEY
 
@@ -20,6 +21,12 @@ export const claudeService = {
   async sendMessage(messages: ClaudeMessage[], contractContext?: string, forceJsonResponse?: boolean): Promise<string> {
     try {
       console.log('🤖 Claude API Request - Messages:', messages.length, 'Context:', !!contractContext)
+      const start = performance.now()
+      mixpanel.track('AI Prompt Sent', {
+        message_count: messages.length,
+        has_contract_context: !!contractContext,
+        force_json: !!forceJsonResponse
+      })
       
       // Prepare system message with contract context if available and strict no-emoji policy
       const baseSystemMessage = contractContext 
@@ -73,6 +80,11 @@ IMPORTANT COMMUNICATION POLICY:
           // Extract the text content from Claude's response
           const textContent = response.content.find(content => content.type === 'text')
           console.log(`✅ Successfully used model: ${model}`)
+          const duration = performance.now() - start
+          mixpanel.track('AI Response Sent', {
+            api_response_time: duration,
+            api_tokens_used: (response as any)?.usage?.output_tokens
+          })
           return textContent?.text || 'I apologize, but I was unable to generate a response.'
           
         } catch (modelError: any) {
@@ -94,6 +106,12 @@ IMPORTANT COMMUNICATION POLICY:
         message: error.message,
         error: error.error,
         headers: error.headers
+      })
+      
+      mixpanel.track('API Error', {
+        error_message: error.message,
+        error_type: 'claude_api',
+        status: error.status
       })
       
       // Better error handling for model deprecation and other API issues

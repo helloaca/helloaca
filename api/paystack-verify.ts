@@ -3,19 +3,23 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
     res.status(200).end()
     return
   }
-  if (req.method !== 'POST') {
+  const isGet = req.method === 'GET'
+  const isPost = req.method === 'POST'
+  if (!isGet && !isPost) {
     res.setHeader('Access-Control-Allow-Origin', '*')
     res.status(405).json({ error: 'Method not allowed' })
     return
   }
 
   try {
-    const { reference } = req.body as { reference?: string }
+    const { reference } = isGet 
+      ? ({ reference: (req.query?.reference as string | undefined) })
+      : (req.body as { reference?: string })
     if (!reference) {
       res.setHeader('Access-Control-Allow-Origin', '*')
       res.status(400).json({ error: 'Missing reference' })

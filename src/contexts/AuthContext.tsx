@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { AuthUser, supabase } from '../lib/supabase'
 import type { UserProfile } from '../lib/supabase'
 import { trackAuth, setUserProperties } from '../lib/analytics'
+import mixpanel from 'mixpanel-browser'
 
 interface AuthContextType {
   user: AuthUser | null
@@ -302,6 +303,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           plan: session.user.user_metadata?.plan || 'free'
         }
         setUser(authUser)
+        mixpanel.identify(authUser.id)
+        mixpanel.people.set({
+          $email: authUser.email,
+          $name: authUser.name,
+          plan: authUser.plan
+        })
+        mixpanel.register({ plan: authUser.plan })
 
         try {
           // Check if we need to fetch profile data
@@ -454,6 +462,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       // Track successful sign up
       trackAuth.signUp('email')
+      mixpanel.track('Sign Up', {
+        email,
+        signup_method: 'email'
+      })
       toast.success('Account created successfully! Please check your email to verify your account.')
       return { success: true }
     } catch (err) {
@@ -501,9 +513,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       trackAuth.signIn('email')
+      mixpanel.track('Sign In', {
+        email,
+        login_method: 'email',
+        success: true
+      })
       return { success: true }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred during sign in'
+      mixpanel.track('Sign In', {
+        email,
+        login_method: 'email',
+        success: false
+      })
       return { success: false, error: errorMessage }
     }
   }
@@ -521,9 +543,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       // Track successful Google sign in
       trackAuth.signIn('google')
+      mixpanel.track('Sign In', {
+        login_method: 'google',
+        success: true
+      })
       return { success: true }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred'
+      mixpanel.track('Sign In', {
+        login_method: 'google',
+        success: false
+      })
       return { success: false, error: errorMessage }
     }
   }

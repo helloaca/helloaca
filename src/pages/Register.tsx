@@ -18,7 +18,7 @@ const Register: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [acceptTerms, setAcceptTerms] = useState(false)
-  const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro'>('free')
+  const [selectedPlan, setSelectedPlan] = useState<'free' | 'credits'>('free')
   const [errors, setErrors] = useState<{
     firstName?: string
     lastName?: string
@@ -141,11 +141,11 @@ const Register: React.FC = () => {
       features: ['1 contract per month', 'Basic AI-powered analysis']
     },
     {
-      id: 'pro' as const,
-      name: 'Pro',
-      price: '$3',
-      period: 'month',
-      features: ['Unlimited contracts', 'Full AI analysis suite']
+      id: 'credits' as const,
+      name: 'Credits',
+      price: 'Pay as you go',
+      period: '',
+      features: ['Buy credits for more analyses', 'Includes chat with each credit']
     }
   ]
 
@@ -427,7 +427,7 @@ const Register: React.FC = () => {
                     <div className="flex-1">
                       <div className="flex items-center mb-2">
                         <h4 className="text-lg font-semibold text-gray-900">{plan.name}</h4>
-                        {plan.id === 'pro' && (
+                        {plan.id === 'credits' && (
                           <span className="ml-2 px-2 py-1 text-xs bg-[#4ECCA3] text-white rounded-full">
                             Popular
                           </span>
@@ -435,7 +435,9 @@ const Register: React.FC = () => {
                       </div>
                       <div className="flex items-baseline mb-4">
                         <span className="text-2xl font-bold text-gray-900">{plan.price}</span>
-                        <span className="ml-1 text-gray-500">/{plan.period}</span>
+                        {plan.period ? (
+                          <span className="ml-1 text-gray-500">/{plan.period}</span>
+                        ) : null}
                       </div>
                       <ul className="space-y-2">
                         {plan.features.map((feature, index) => (

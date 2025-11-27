@@ -10,7 +10,6 @@ import {
   Edit3,
   Plus,
   Crown,
-  Check,
   Loader2,
   ArrowLeft,
   X
@@ -22,6 +21,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { toast } from 'sonner'
 import Avatar from '../components/ui/Avatar'
+import { getUserCredits } from '@/lib/utils'
 
 const Settings: React.FC = () => {
   const { user, profile, updateProfile, signOut, refreshProfile } = useAuth()
@@ -70,6 +70,7 @@ const Settings: React.FC = () => {
   const [cancelComeBack, setCancelComeBack] = useState('')
   const [isCancelSubmitting, setCancelSubmitting] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+  const [creditsBalance, setCreditsBalance] = useState(0)
 
   const loadPaystackScript = useCallback(async () => {
     if ((window as any).PaystackPop) return
@@ -532,9 +533,15 @@ const Settings: React.FC = () => {
     }
   }, [user, profile])
 
+  useEffect(() => {
+    if (user?.id) {
+      setCreditsBalance(getUserCredits(user.id))
+    }
+  }, [user?.id])
+
   const tabs = [
     { id: 'profile' as const, label: 'Profile', icon: User },
-    { id: 'subscription' as const, label: 'Subscription', icon: CreditCard },
+    { id: 'subscription' as const, label: 'Credits', icon: CreditCard },
     { id: 'team' as const, label: 'Team', icon: Users },
     { id: 'notifications' as const, label: 'Notifications', icon: Bell },
     { id: 'security' as const, label: 'Security', icon: Shield }
@@ -756,16 +763,14 @@ const Settings: React.FC = () => {
   const renderSubscriptionTab = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Current Plan</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Credits &amp; Billing</h3>
         <Card className="p-5 sm:p-6 border-2 border-[#4ECCA3]">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4">
             <div className="flex items-center min-w-0">
               <Crown className="w-6 h-6 text-[#4ECCA3] mr-3" />
               <div>
-                <h4 className="text-lg sm:text-xl font-semibold text-gray-900">{String(profile?.plan || user?.plan) === 'pro' ? 'Pro Plan' : 'Free Plan'}</h4>
-                <p className="text-sm sm:text-base text-gray-600">
-                  {String(profile?.plan || user?.plan) === 'pro' ? '$3/month • Billed monthly' : 'Free forever'}
-                </p>
+                <h4 className="text-lg sm:text-xl font-semibold text-gray-900">Usage-Based Access</h4>
+                <p className="text-sm sm:text-base text-gray-600">Credits: {creditsBalance} • 1 free analysis/month • No subscription</p>
               </div>
             </div>
             <div className="text-left sm:text-right">
@@ -780,83 +785,34 @@ const Settings: React.FC = () => {
               <p className="text-xs sm:text-sm text-gray-600">Contracts this month</p>
             </div>
             <div className="text-center">
-              <p className="text-xl sm:text-2xl font-bold text-[#4ECCA3]">
-                {String(profile?.plan || user?.plan) === 'free' ? '1' : '∞'}
-              </p>
-              <p className="text-xs sm:text-sm text-gray-600">Monthly limit</p>
+              <p className="text-xl sm:text-2xl font-bold text-[#4ECCA3]">1</p>
+              <p className="text-xs sm:text-sm text-gray-600">Free monthly allowance</p>
             </div>
             <div className="text-center">
               <p className="text-xl sm:text-2xl font-bold text-[#4ECCA3]">0</p>
               <p className="text-xs sm:text-sm text-gray-600">Reports generated</p>
             </div>
             <div className="text-center">
-              <p className="text-xl sm:text-2xl font-bold text-[#4ECCA3]">
-                {String(profile?.plan || user?.plan) === 'free' ? '0' : '∞'}
-              </p>
-              <p className="text-xs sm:text-sm text-gray-600">AI chat messages</p>
+              <p className="text-xl sm:text-2xl font-bold text-[#4ECCA3]">{creditsBalance > 0 ? 'Unlimited' : 'Limited'}</p>
+              <p className="text-xs sm:text-sm text-gray-600">AI chat on credited contracts</p>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 sm:space-x-4">
-            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setMethodModalOpen(true)}>Change Plan</Button>
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => navigate('/pricing')}>Buy Credits</Button>
             <Button variant="outline" className="w-full sm:w-auto" onClick={() => setBillingHistoryOpen(true)}>View Billing History</Button>
-            {String(profile?.plan || user?.plan) !== 'free' && (
-              <Button variant="outline" className="w-full sm:w-auto text-red-600 border-red-300 hover:bg-red-50" onClick={() => setCancelFeedbackOpen(true)}>
-                Cancel Subscription
-              </Button>
-            )}
           </div>
         </Card>
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Available Plans</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            {
-              name: 'Free',
-              price: '$0',
-              period: 'month',
-              features: ['1 contract per month', 'Basic AI-powered analysis'],
-              current: String(profile?.plan || user?.plan) === 'free'
-            },
-            {
-              name: 'Pro',
-              price: '$3',
-              period: 'month',
-              features: ['Unlimited contracts', 'Full AI analysis suite'],
-              current: String(profile?.plan || user?.plan) === 'pro'
-            }
-          ].map((plan) => (
-            <Card key={plan.name} className={`p-6 ${plan.current ? 'ring-2 ring-[#4ECCA3]' : ''}`}>
-              <div className="text-center">
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">{plan.name}</h4>
-                <div className="mb-4">
-                  <span className="text-3xl font-bold text-gray-900">{plan.price}</span>
-                  <span className="text-gray-500">/{plan.period}</span>
-                </div>
-                <ul className="space-y-2 mb-6">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-center justify-center text-sm text-gray-600">
-                      <Check className="w-4 h-4 text-[#4ECCA3] mr-2" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <Button 
-                  variant={plan.current ? 'outline' : 'primary'}
-                  className="w-full"
-                  disabled={plan.current}
-                  onClick={() => {
-                    if (!plan.current && plan.name === 'Pro') setMethodModalOpen(true)
-                  }}
-                >
-                  {plan.current ? 'Current Plan' : 'Upgrade'}
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Manage Credits</h3>
+        <Card className="p-6">
+          <div className="text-center">
+            <p className="text-gray-700 mb-4">Buy credits as needed. One credit covers one full contract analysis plus chat.</p>
+            <Button className="w-full sm:w-auto" onClick={() => navigate('/pricing')}>Go to Pricing</Button>
+          </div>
+        </Card>
       </div>
     </div>
   )

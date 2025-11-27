@@ -143,29 +143,28 @@ const TermsOfService: React.FC = () => {
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Subscription and Billing</h2>
-                <h3 className="text-xl font-semibold text-gray-800 mb-3">7.1 Subscription Plans</h3>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Credits and Billing</h2>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">7.1 Usage-Based Credits</h3>
                 <ul>
-                  <li>Free Plan: Limited features and usage</li>
-                  <li>Pro Plan: $49/month for individual users</li>
-                  <li>Business Plan: $299/month for teams</li>
-                  <li>Enterprise Plan: Custom pricing</li>
+                  <li>Free access includes 1 contract analysis per month</li>
+                  <li>Additional analyses require credits purchased in bundles</li>
+                  <li>One credit covers one full analysis plus AI chat</li>
+                  <li>No subscriptions or automatic renewals</li>
                 </ul>
                 
                 <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">7.2 Billing Terms</h3>
                 <ul>
-                  <li>Subscriptions are billed monthly or annually in advance</li>
+                  <li>Credits are billed at the time of purchase</li>
                   <li>All fees are non-refundable except as required by law</li>
-                  <li>Prices may change with 30 days' notice</li>
-                  <li>Automatic renewal unless cancelled</li>
+                  <li>Prices may change with reasonable notice</li>
+                  <li>No recurring charges; credits remain until used</li>
                 </ul>
                 
-                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">7.3 Cancellation</h3>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">7.3 Account Changes</h3>
                 <ul>
-                  <li>You may cancel your subscription at any time</li>
-                  <li>Cancellation takes effect at the end of the current billing period</li>
-                  <li>No refunds for partial months</li>
-                  <li>Data may be deleted after account closure</li>
+                  <li>No subscription is required to use the Service</li>
+                  <li>You may stop purchasing credits at any time</li>
+                  <li>Account deletion removes associated personal data according to our Privacy Policy</li>
                 </ul>
               </section>
 

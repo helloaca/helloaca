@@ -10,6 +10,7 @@ import { ContractService, Contract } from '@/lib/contractService'
 import { FileProcessor } from '@/lib/fileProcessor'
 import { toast } from 'sonner'
 import { trackContracts } from '@/lib/analytics'
+import { getUserCredits, consumeUserCredit, markContractCredited } from '@/lib/utils'
 import ContractHistoryModal from '@/components/ContractHistoryModal'
 
 const Dashboard: React.FC = () => {
@@ -34,6 +35,7 @@ const Dashboard: React.FC = () => {
     avgAnalysisTime: '32s',
     risksSaved: 0
   })
+  const [creditsCount, setCreditsCount] = useState(0)
 
   // Contract history modal state
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
@@ -56,6 +58,7 @@ const Dashboard: React.FC = () => {
   // Load user contracts on component mount or when user changes
   useEffect(() => {
     if (user?.id && !authLoading) {
+      setCreditsCount(getUserCredits(user.id))
       const cached = readCachedContracts()
       if (cached && cached.length > 0) {
         setContracts(cached)
@@ -254,6 +257,25 @@ const Dashboard: React.FC = () => {
       return
     }
 
+    // Usage-based gating
+    const isFree = (profile?.plan || 'free') === 'free'
+    const now = new Date()
+    const thisMonth = now.getMonth()
+    const thisYear = now.getFullYear()
+    const thisMonthUsage = contracts.filter(c => {
+      const d = new Date(c.created_at)
+      return d.getMonth() === thisMonth && d.getFullYear() === thisYear
+    }).length
+    const freeLimit = 1
+    const credits = getUserCredits(user.id)
+    const requiresCredit = isFree && thisMonthUsage >= freeLimit
+    if (requiresCredit && credits <= 0) {
+      setUploadStatus('error')
+      setUploadMessage('Free plan limit reached. Buy credits to analyze more.')
+      setSelectedFile(null)
+      return
+    }
+
     setSelectedFile(file)
     setUploadStatus('uploading')
     setUploadProgress(0)
@@ -271,6 +293,11 @@ const Dashboard: React.FC = () => {
 
       setUploadStatus('success')
       setUploadMessage(`Contract "${file.name}" uploaded and analyzed successfully!`)
+      if (requiresCredit) {
+        consumeUserCredit(user.id)
+        markContractCredited(user.id, result.contractId)
+        setCreditsCount(getUserCredits(user.id))
+      }
       
       // Reload contracts to show the new one
       await loadUserContracts()
@@ -521,7 +548,14 @@ const Dashboard: React.FC = () => {
           <div className="lg:col-span-1">
             <Card>
               <CardHeader className="pb-4 sm:pb-6">
-                <CardTitle className="text-lg sm:text-xl">Upload New Contract</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg sm:text-xl">Upload New Contract</CardTitle>
+                  {user && (
+                    <div className="text-xs sm:text-sm text-gray-600">
+                      Credits: <span className="font-semibold">{creditsCount}</span>
+                    </div>
+                  )}
+                </div>
                 <CardDescription className="text-sm sm:text-base">
                   Drag and drop your contract file or click to browse
                 </CardDescription>
@@ -567,7 +601,7 @@ const Dashboard: React.FC = () => {
                         onClick={(e) => { e.stopPropagation(); navigate('/pricing') }}
                         className="min-h-[44px]"
                       >
-                        Upgrade to Pro
+                        Buy Credits
                       </Button>
                     </div>
                   )}
@@ -598,7 +632,7 @@ const Dashboard: React.FC = () => {
                   )}
                   
                   <p className="text-xs text-gray-500 mt-2">
-                    Supports PDF, DOCX up to 10MB
+                    Supports PDF, DOCX up to 10MB. Free includes 1 analysis/month.
                   </p>
                   
                   {selectedFile && (

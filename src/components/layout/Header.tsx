@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Menu, X, Settings, LogOut } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import { getUserCredits } from '@/lib/utils'
 import Button from '../ui/Button'
 import Avatar from '../ui/Avatar'
 import { toast } from 'sonner'
@@ -136,6 +137,7 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
                     <div className="px-4 py-2 border-b border-gray-100">
                       <p className="text-sm font-medium text-gray-900">{getDisplayName()}</p>
                       <p className="text-sm text-gray-500">{user.email || ''}</p>
+                      <p className="text-xs text-gray-600 mt-1">Credits: {user?.id ? getUserCredits(user.id) : 0}</p>
                     </div>
                     <Link
                       to="/settings"

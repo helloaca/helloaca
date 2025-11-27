@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm'
 import Header from '../components/layout/Header'
 import { useAuth } from '../contexts/AuthContext'
 import { messageService } from '../services/messageService'
+import { isContractCredited } from '@/lib/utils'
 
 interface Message {
   id: string
@@ -220,11 +221,13 @@ Please provide a helpful response based on the contract and our conversation.`
 
     if (profile?.plan === 'free') {
       const userMsgCount = await messageService.getUserMessageCount(contract.id)
-      if (userMsgCount >= 5) {
+      const freeChatLimit = 3
+      const credited = user?.id ? isContractCredited(user.id, contract.id) : false
+      if (!credited && userMsgCount >= freeChatLimit) {
         const limitMessage: Message = {
           id: 'limit-reached',
           type: 'ai',
-          content: 'You have reached the free plan limit of 5 questions for this contract. Upgrade to Pro for unlimited questions and analyses ($3/month).',
+          content: `Free plan includes ${freeChatLimit} questions per contract. Buy credits to continue chatting and unlock full analysis.`,
           timestamp: new Date()
         }
         setMessages(prev => [...prev, limitMessage])
@@ -638,7 +641,7 @@ Please provide a helpful response based on the contract and our conversation.`
                             onClick={() => navigate('/pricing')}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                           >
-                            Upgrade to Pro
+                            Buy Credits
                           </button>
                         </div>
                       )}
