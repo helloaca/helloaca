@@ -10,7 +10,7 @@ import { ContractService, Contract } from '@/lib/contractService'
 import { FileProcessor } from '@/lib/fileProcessor'
 import { toast } from 'sonner'
 import { trackContracts } from '@/lib/analytics'
-import { getUserCredits, consumeUserCredit, markContractCredited } from '@/lib/utils'
+import { getUserCredits, consumeUserCredit, markContractCredited, getMonthlyFreeUsage, canUseFreeAnalysis, markFreeAnalysisUsed } from '@/lib/utils'
 import ContractHistoryModal from '@/components/ContractHistoryModal'
 
 const Dashboard: React.FC = () => {
@@ -268,7 +268,8 @@ const Dashboard: React.FC = () => {
     }).length
     const freeLimit = 1
     const credits = getUserCredits(user.id)
-    const requiresCredit = isFree && thisMonthUsage >= freeLimit
+    const freeLedgerUsage = getMonthlyFreeUsage(user.id)
+    const requiresCredit = isFree && (thisMonthUsage >= freeLimit || freeLedgerUsage >= freeLimit || !canUseFreeAnalysis(user.id, freeLimit))
     if (requiresCredit && credits <= 0) {
       setUploadStatus('error')
       setUploadMessage('Free plan limit reached. Buy credits to analyze more.')
@@ -297,6 +298,8 @@ const Dashboard: React.FC = () => {
         consumeUserCredit(user.id)
         markContractCredited(user.id, result.contractId)
         setCreditsCount(getUserCredits(user.id))
+      } else if (isFree) {
+        markFreeAnalysisUsed(user.id)
       }
       
       // Reload contracts to show the new one

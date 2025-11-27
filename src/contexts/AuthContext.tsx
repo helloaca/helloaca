@@ -240,6 +240,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setSession(null)
             setLoading(false)
             setIsRehydrating(false)
+            // Reset Mixpanel identity on logout to prevent cross-user data mixing
+            mixpanel.reset()
           } else if (event === 'TOKEN_REFRESHED' && session) {
             setSession(session)
             // Update cached session
@@ -304,12 +306,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         setUser(authUser)
         mixpanel.identify(authUser.id)
+        // Create/update Mixpanel user profile immediately after identification
         mixpanel.people.set({
           $email: authUser.email,
           $name: authUser.name,
           plan: authUser.plan
         })
+        // Persist plan as a super property on events
         mixpanel.register({ plan: authUser.plan })
+        // Send a confirmation event so Users page shows a recent event tied to this profile
+        mixpanel.track('User Profile Set', { plan: authUser.plan })
 
         try {
           // Check if we need to fetch profile data
@@ -576,6 +582,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setProfile(null)
       setSession(null)
       clearCachedUserData()
+      // Clear Mixpanel state on explicit sign out
+      mixpanel.reset()
     }
   }
 

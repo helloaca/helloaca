@@ -56,3 +56,39 @@ export function isContractCredited(userId: string, contractId: string): boolean 
     return false
   }
 }
+
+function monthKey(): string {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  return `${y}-${m}`
+}
+
+export function getMonthlyFreeUsage(userId: string): number {
+  try {
+    const key = `free_usage_${userId}_${monthKey()}`
+    const raw = localStorage.getItem(key)
+    const n = raw ? parseInt(raw, 10) : 0
+    return Number.isFinite(n) && n >= 0 ? n : 0
+  } catch {
+    return 0
+  }
+}
+
+export function incrementMonthlyFreeUsage(userId: string): number {
+  const current = getMonthlyFreeUsage(userId)
+  const next = current + 1
+  try {
+    const key = `free_usage_${userId}_${monthKey()}`
+    localStorage.setItem(key, String(next))
+  } catch { void 0 }
+  return next
+}
+
+export function canUseFreeAnalysis(userId: string, limit: number = 1): boolean {
+  return getMonthlyFreeUsage(userId) < limit
+}
+
+export function markFreeAnalysisUsed(userId: string): void {
+  incrementMonthlyFreeUsage(userId)
+}
