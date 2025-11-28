@@ -27,7 +27,7 @@ interface Contract {
 
 const ChatInterface: React.FC = () => {
   const { contractId } = useParams<{ contractId: string }>()
-  const { user, profile, loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const [contract, setContract] = useState<Contract | null>(null)
   const [isLoadingContract, setIsLoadingContract] = useState(true)
@@ -219,20 +219,18 @@ Please provide a helpful response based on the contract and our conversation.`
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || !contract || !contract.extracted_text) return
 
-    if (profile?.plan === 'free') {
-      const userMsgCount = await messageService.getUserMessageCount(contract.id)
-      const freeChatLimit = 5
-      const credited = user?.id ? isContractCredited(user.id, contract.id) : false
-      if (!credited && userMsgCount >= freeChatLimit) {
-        const limitMessage: Message = {
-          id: 'limit-reached',
-          type: 'ai',
-          content: `Free plan includes ${freeChatLimit} questions per contract. Buy credits to continue chatting and unlock full analysis.`,
-          timestamp: new Date()
-        }
-        setMessages(prev => [...prev, limitMessage])
-        return
+    const userMsgCount = await messageService.getUserMessageCount(contract.id)
+    const freeChatLimit = 5
+    const credited = user?.id ? isContractCredited(user.id, contract.id) : false
+    if (!credited && userMsgCount >= freeChatLimit) {
+      const limitMessage: Message = {
+        id: 'limit-reached',
+        type: 'ai',
+        content: `Free tier includes ${freeChatLimit} questions per contract. Buy credits to continue chatting and unlock full analysis.`,
+        timestamp: new Date()
       }
+      setMessages(prev => [...prev, limitMessage])
+      return
     }
 
     const userMessage: Message = {

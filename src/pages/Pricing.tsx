@@ -14,7 +14,6 @@ const Pricing: React.FC = () => {
   const auth = useAuth() as any
   const user = auth.user as { id: string; email: string; plan?: 'free' | 'pro' | 'business' } | null
   const profile = auth.profile as { plan?: 'free' | 'pro' | 'business'; updated_at?: string } | null
-  const currentPlan: 'free' | 'pro' | 'business' = (profile?.plan || user?.plan || 'free')
   const [isLoading, setIsLoading] = useState(false)
   const [isMethodModalOpen, setMethodModalOpen] = useState(false)
   const [processingMethod, setProcessingMethod] = useState<null | 'card' | 'crypto'>(null)
@@ -266,7 +265,6 @@ const Pricing: React.FC = () => {
             {user && (
               <div className={'inline-flex items-center gap-3 px-4 py-2 rounded-full mb-6 bg-gray-100 text-gray-800'}>
                 <span className="font-medium">Credits: {creditBalance}</span>
-                <span className="text-sm">Plan: {currentPlan}</span>
               </div>
             )}
             

@@ -47,7 +47,7 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
   onChatWithAI
 }) => {
   const nav = useNavigate()
-  const { user, profile } = useAuth()
+  const { user } = useAuth()
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<'executive' | 'clauses' | 'risk' | 'legal' | 'export'>('executive')
   const tabs: Array<{ id: 'executive' | 'clauses' | 'risk' | 'legal' | 'export'; label: string; icon: any }> = [
@@ -88,7 +88,7 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
   }))
 
   const credited = user?.id ? isContractCredited(user.id, contract.id) : false
-  const isLocked = profile?.plan === 'free' && !credited
+  const isLocked = !credited
 
   return (
     <div className="space-y-8">

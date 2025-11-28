@@ -263,7 +263,6 @@ const Dashboard: React.FC = () => {
     }
 
     // Usage-based gating
-    const isFree = (profile?.plan || 'free') === 'free'
     const now = new Date()
     const thisMonth = now.getMonth()
     const thisYear = now.getFullYear()
@@ -275,13 +274,13 @@ const Dashboard: React.FC = () => {
     const credits = getUserCredits(user.id)
     const freeLedgerUsage = getMonthlyFreeUsage(user.id)
     const freeAvailable = (thisMonthUsage < freeLimit) && (freeLedgerUsage < freeLimit) && canUseFreeAnalysis(user.id, freeLimit)
-    if (!skipCreditsModal && isFree && credits <= 0) {
+    if (!skipCreditsModal && credits <= 0) {
       setFreeEligible(freeAvailable)
       setPendingFile(file)
       setIsCreditsModalOpen(true)
       return
     }
-    const requiresCredit = isFree && (!freeAvailable)
+    const requiresCredit = !freeAvailable
 
     setSelectedFile(file)
     setUploadStatus('uploading')
@@ -305,7 +304,7 @@ const Dashboard: React.FC = () => {
         consumeUserCredit(user.id)
         markContractCredited(user.id, result.contractId)
         setCreditsCount(getUserCredits(user.id))
-      } else if (isFree) {
+      } else {
         markFreeAnalysisUsed(user.id)
       }
       
