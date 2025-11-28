@@ -11,6 +11,8 @@ import { RiskAssessmentComponent } from '@/components/contract-analysis/RiskAsse
 import { LegalInsightsComponent } from '@/components/contract-analysis/LegalInsights'
 import { ExportCenter } from '@/components/contract-analysis/ExportCenter'
 import { SectionAnalysis, RedFlag, CheckItem } from '@/types/contractAnalysis'
+import { useAuth } from '@/contexts/AuthContext'
+import { isContractCredited } from '@/lib/utils'
 
 // Section icons mapping
 const sectionIcons = {
@@ -45,6 +47,7 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
   onChatWithAI
 }) => {
   const nav = useNavigate()
+  const { user, profile } = useAuth()
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<'executive' | 'clauses' | 'risk' | 'legal' | 'export'>('executive')
   const tabs: Array<{ id: 'executive' | 'clauses' | 'risk' | 'legal' | 'export'; label: string; icon: any }> = [
@@ -83,6 +86,9 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
     recommendations: [],
     checkItems: []
   }))
+
+  const credited = user?.id ? isContractCredited(user.id, contract.id) : false
+  const isLocked = profile?.plan === 'free' && !credited
 
   return (
     <div className="space-y-8">
@@ -141,7 +147,8 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
 
       {/* Clause Analysis Tab */}
       {activeTab === 'clauses' && (
-        <div className="space-y-4">
+        <div className="relative">
+          <div className={isLocked ? 'pointer-events-none select-none filter blur-sm space-y-4' : 'space-y-4'}>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Section-by-Section Analysis</h2>
             <div className="flex space-x-2">
@@ -318,19 +325,31 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
                 )}
               </Card>
             )
-          })
-        ) : (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Section Analysis Available</h3>
-              <p className="text-gray-600">
-                The contract analysis is using the legacy format. Please re-upload the contract for the new section-by-section analysis.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            })
+          ) : (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Section Analysis Available</h3>
+                <p className="text-gray-600">
+                  The contract analysis is using the legacy format. Please re-upload the contract for the new section-by-section analysis.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+          </div>
+          {isLocked ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-white/85 backdrop-blur-sm rounded-lg p-6 text-center">
+                <h3 className="text-lg font-semibold text-gray-900">Upgrade to unlock Clause Analysis</h3>
+                <p className="text-sm text-gray-600 mt-2">Buy credits to view detailed clause analysis.</p>
+                <div className="mt-4 flex justify-center">
+                  <Button onClick={() => nav('/pricing')} className="min-h-[44px] px-6">Upgrade</Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
       )}
 
       {activeTab === 'clauses' && analysis.analysis_data?.criticalIssues && analysis.analysis_data.criticalIssues.length > 0 && (
@@ -439,7 +458,11 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
       )}
 
       {activeTab === 'risk' && enhancedData?.risk_assessment && (
-        <RiskAssessmentComponent riskAssessment={enhancedData.risk_assessment} />
+        <RiskAssessmentComponent 
+          riskAssessment={enhancedData.risk_assessment} 
+          blurCategories={isLocked}
+          onUpgrade={() => nav('/pricing')}
+        />
       )}
 
       {activeTab === 'legal' && enhancedData?.legal_insights && (
@@ -451,6 +474,8 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
           exportData={enhancedData.export_data} 
           contractTitle={contract.title}
           analysis={enhancedData}
+          locked={isLocked}
+          onUpgrade={() => nav('/pricing')}
         />
       )}
 

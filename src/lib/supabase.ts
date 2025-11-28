@@ -35,6 +35,7 @@ export interface Database {
           role: string | null
           timezone: string | null
           avatar_seed: string | null
+          credits_balance: number | null
           created_at: string
           updated_at: string
         }
@@ -49,6 +50,7 @@ export interface Database {
           role?: string | null
           timezone?: string | null
           avatar_seed?: string | null
+          credits_balance?: number | null
           created_at?: string
           updated_at?: string
         }
@@ -63,6 +65,7 @@ export interface Database {
           role?: string | null
           timezone?: string | null
           avatar_seed?: string | null
+          credits_balance?: number | null
           created_at?: string
           updated_at?: string
         }

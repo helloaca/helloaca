@@ -221,7 +221,7 @@ Please provide a helpful response based on the contract and our conversation.`
 
     if (profile?.plan === 'free') {
       const userMsgCount = await messageService.getUserMessageCount(contract.id)
-      const freeChatLimit = 3
+      const freeChatLimit = 5
       const credited = user?.id ? isContractCredited(user.id, contract.id) : false
       if (!credited && userMsgCount >= freeChatLimit) {
         const limitMessage: Message = {

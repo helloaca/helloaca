@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { supabase } from './supabase'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -19,6 +20,14 @@ export function setUserCredits(userId: string, amount: number) {
   try {
     const safe = Math.max(0, Math.floor(amount))
     localStorage.setItem(`credits_${userId}`, String(safe))
+    ;(async () => {
+      try {
+        await supabase
+          .from('user_profiles')
+          .update({ credits_balance: safe, updated_at: new Date().toISOString() })
+          .eq('id', userId)
+      } catch { /* noop */ }
+    })()
   } catch { void 0 }
 }
 
