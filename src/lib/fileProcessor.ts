@@ -1,35 +1,15 @@
-import * as pdfjsLib from 'pdfjs-dist'
-import mammoth from 'mammoth'
-
-// Enhanced PDF.js worker configuration with fallbacks
-const setupPDFWorker = () => {
+const setupPDFWorker = (pdfjsLib: any) => {
   try {
-    // Get the current origin to ensure we use the correct port
     const currentOrigin = window.location.origin
-    // Primary: Use local worker file with correct origin
     pdfjsLib.GlobalWorkerOptions.workerSrc = `${currentOrigin}/pdf.worker.min.js`
-    console.log('📄 PDF.js worker configured with local file:', pdfjsLib.GlobalWorkerOptions.workerSrc)
-  } catch (error) {
-    console.warn('📄 Local PDF worker setup failed, trying CDN fallback:', error)
+  } catch {
     try {
-      // Fallback: Use CDN worker
       pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`
-      console.log('📄 PDF.js worker configured with CDN fallback')
-    } catch (cdnError) {
-      console.error('📄 CDN PDF worker setup also failed:', cdnError)
-      // Final fallback: Use inline worker (less efficient but works)
+    } catch {
       pdfjsLib.GlobalWorkerOptions.workerSrc = `data:application/javascript;base64,${btoa('importScripts("https://cdn.jsdelivr.net/npm/pdfjs-dist@' + pdfjsLib.version + '/build/pdf.worker.min.js");')}`
-      console.log('📄 PDF.js worker configured with inline fallback')
     }
   }
 }
-
-// Initialize PDF worker
-setupPDFWorker()
-
-// Add version logging for debugging
-console.log('📄 PDF.js API version:', pdfjsLib.version)
-console.log('📄 Worker source:', pdfjsLib.GlobalWorkerOptions.workerSrc)
 
 export interface ProcessedFile {
   text: string
@@ -149,7 +129,8 @@ export class FileProcessor {
         throw new Error('PDF file appears to be empty')
       }
       
-      // Enhanced PDF.js configuration for better compatibility
+      const pdfjsLib = await import('pdfjs-dist')
+      setupPDFWorker(pdfjsLib)
       const loadingTask = pdfjsLib.getDocument({
         data: arrayBuffer,
         cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
@@ -314,7 +295,7 @@ export class FileProcessor {
         throw new Error('DOCX file appears to be empty')
       }
       
-      // Enhanced mammoth options for better text extraction
+      const mammoth = (await import('mammoth')).default
       const options = {
         arrayBuffer,
         // Convert images to alt text if available

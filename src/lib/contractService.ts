@@ -1,12 +1,10 @@
 import { supabase } from './supabase'
 import { FileProcessor, ProcessedFile } from './fileProcessor'
-import { claudeService } from './claude'
 import { 
   EnhancedContractAnalysis, 
   validateEnhancedAnalysis,
   LegacyAnalysisData
 } from '../types/contractAnalysis'
-import jsPDF from 'jspdf'
 
 export interface Contract {
   id: string
@@ -696,6 +694,7 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
 
       console.log('🔍 Sending contract to Claude AI for comprehensive analysis...')
       
+      const { claudeService } = await import('./claude')
       const response = await claudeService.sendMessage([
         { role: 'user', content: analysisPrompt }
       ], undefined, true)
@@ -1507,6 +1506,7 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
       }
 
       const data = analysis.analysis_data as EnhancedContractAnalysis
+      const { default: jsPDF } = await import('jspdf')
       const doc = new jsPDF({ unit: 'pt', format: 'a4' })
       doc.setFillColor('#4ECCA3')
       doc.rect(0, 0, doc.internal.pageSize.getWidth(), 48, 'F')

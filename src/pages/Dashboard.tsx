@@ -6,12 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Upload, FileText, Clock, TrendingUp, Plus, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { ContractService, Contract } from '@/lib/contractService'
-import { FileProcessor } from '@/lib/fileProcessor'
+import type { Contract } from '@/lib/contractService'
 import { toast } from 'sonner'
 import { trackContracts } from '@/lib/analytics'
 import { getUserCredits, consumeUserCredit, markContractCredited, getMonthlyFreeUsage, canUseFreeAnalysis, markFreeAnalysisUsed } from '@/lib/utils'
-import ContractHistoryModal from '@/components/ContractHistoryModal'
+const ContractHistoryModal = React.lazy(() => import('@/components/ContractHistoryModal'))
 
 const Dashboard: React.FC = () => {
   const { user, profile, loading: authLoading } = useAuth()
@@ -100,11 +99,13 @@ const Dashboard: React.FC = () => {
       let userContracts: Array<Contract & { analysis?: any }> = []
       const fetchPromise = (async () => {
         try {
+          const { ContractService } = await import('@/lib/contractService')
           const full = await ContractService.getUserContractsWithAnalysis(user!.id)
           return { data: full }
         } catch (serviceError) {
           console.error('ContractService error:', serviceError)
           try {
+            const { ContractService } = await import('@/lib/contractService')
             const basic = await ContractService.getUserContracts(user!.id)
             return { data: basic.map(c => ({ ...c, analysis: undefined })) }
           } catch (fallbackError) {
@@ -248,6 +249,7 @@ const Dashboard: React.FC = () => {
       return
     }
 
+    const { FileProcessor } = await import('@/lib/fileProcessor')
     const validation = FileProcessor.validateFile(file)
     
     if (!validation.isValid) {
@@ -283,6 +285,7 @@ const Dashboard: React.FC = () => {
     setProgressStage('Starting upload...')
 
     try {
+      const { ContractService } = await import('@/lib/contractService')
       const result = await ContractService.uploadAndAnalyzeContract(
         file,
         user.id,
@@ -467,13 +470,15 @@ const Dashboard: React.FC = () => {
       <Footer />
       
       {/* Contract History Modal */}
-      <ContractHistoryModal
-        isOpen={isHistoryModalOpen}
-        onClose={() => setIsHistoryModalOpen(false)}
-        contracts={contracts}
-        onContractsUpdate={loadUserContracts}
-        userId={user?.id || ''}
-      />
+      <React.Suspense fallback={null}>
+        <ContractHistoryModal
+          isOpen={isHistoryModalOpen}
+          onClose={() => setIsHistoryModalOpen(false)}
+          contracts={contracts}
+          onContractsUpdate={loadUserContracts}
+          userId={user?.id || ''}
+        />
+      </React.Suspense>
     </div>
   )
 }
