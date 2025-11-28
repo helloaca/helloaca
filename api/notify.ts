@@ -70,11 +70,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const templates: Record<string, { subject: string; html: string }> = {
       credit_purchase: {
         subject: 'Credits purchased successfully',
-        html: `
-          <h2>Thanks for your purchase</h2>
-          <p>Your credits have been added to your balance.</p>
-          <p><a href="${base}/dashboard">View your dashboard</a></p>
-        `
+        html: (() => {
+          const credits = extra?.credits ?? ''
+          const reference = extra?.reference ?? ''
+          const receiptUrl = `${base}/api/receipt?reference=${encodeURIComponent(reference)}`
+          return `
+            <h2>Thanks for your purchase</h2>
+            <p>Your credits have been added to your balance.</p>
+            ${credits ? `<p><strong>Credits purchased:</strong> ${credits}</p>` : ''}
+            ${reference ? `<p><strong>Transaction reference:</strong> ${reference}</p>` : ''}
+            ${reference ? `<p><a href="${receiptUrl}">View receipt</a></p>` : ''}
+            <p><a href="${base}/dashboard">View your dashboard</a></p>
+          `
+        })()
       },
       analysis_complete: {
         subject: 'Contract analysis complete',
