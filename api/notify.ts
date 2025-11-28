@@ -17,7 +17,7 @@ async function sendEmail(to: string, subject: string, html: string) {
       Authorization: `Bearer ${apiKey}`
     },
     body: JSON.stringify({
-      from: process.env.EMAIL_FROM || 'HelloACA <noreply@helloaca.xyz>',
+      from: process.env.EMAIL_FROM || 'helloaca <noreply@helloaca.xyz>',
       to,
       subject,
       html
