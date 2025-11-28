@@ -91,6 +91,7 @@ export class ContractService {
     userId: string,
     onProgress?: (stage: string, progress: number) => void
   ): Promise<{ contractId: string; analysisId: string }> {
+    let currentContractId: string | null = null
     try {
       // Stage 1: Validate and process file
       onProgress?.('Validating file...', 10)
@@ -154,32 +155,54 @@ export class ContractService {
         throw new Error('Failed to save contract to database')
       }
 
-      const contractId = contractData.id
+      currentContractId = contractData.id
 
       // Stage 4: Analyze contract
       onProgress?.('Analyzing contract...', 60)
-      const analysisResult = await this.analyzeContractWithAI(processedFile.text)
+      const TIMEOUT_MS = 45000
+      const analysisResult = await Promise.race([
+        this.analyzeContractWithAI(processedFile.text),
+        new Promise<EnhancedContractAnalysis>((resolve) => {
+          setTimeout(() => {
+            resolve(this.generateLocalAnalysis(processedFile.text))
+          }, TIMEOUT_MS)
+        })
+      ])
 
       // Stage 5: Save analysis results
       onProgress?.('Saving analysis...', 80)
-      const analysisData = await this.saveAnalysisResults(contractId, userId, analysisResult)
+      if (!currentContractId) {
+        throw new Error('Contract ID is missing after insertion')
+      }
+      const analysisData = await this.saveAnalysisResults(currentContractId, userId, analysisResult)
 
       // Stage 6: Update contract status
       onProgress?.('Finalizing...', 90)
       await supabase
         .from('contracts')
         .update({ analysis_status: 'completed' })
-        .eq('id', contractId)
+        .eq('id', currentContractId)
 
       onProgress?.('Complete!', 100)
 
       return {
-        contractId: contractId,
+        contractId: currentContractId as string,
         analysisId: analysisData.id
       }
 
     } catch (error) {
       console.error('Contract upload and analysis failed:', error)
+      try {
+        if (typeof currentContractId === 'string' && currentContractId) {
+          await supabase
+            .from('contracts')
+            .update({ analysis_status: 'failed' })
+            .eq('id', currentContractId)
+        }
+      } catch (updateError) {
+        console.error('Failed to update contract status on error:', updateError)
+      }
+      onProgress?.('Failed', 100)
       throw error
     }
   }
