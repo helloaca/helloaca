@@ -429,6 +429,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               timezone: null,
               avatar_seed: session.user.id,
               credits_balance: 0,
+              notify_email_reports: false,
+              notify_analysis_complete: false,
+              notify_weekly_digest: false,
+              notify_low_credits: true,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             }

@@ -38,10 +38,10 @@ const Settings: React.FC = () => {
     language: 'English'
   })
   const [notifications, setNotifications] = useState({
-    emailReports: true,
-    analysisComplete: true,
-    weeklyDigest: false,
-    securityAlerts: true,
+    emailReports: !!profile?.notify_email_reports,
+    analysisComplete: !!profile?.notify_analysis_complete,
+    weeklyDigest: !!profile?.notify_weekly_digest,
+    securityAlerts: !!profile?.notify_low_credits,
     teamUpdates: true
   })
   const [isSigningOut, setIsSigningOut] = useState(false)
@@ -571,8 +571,17 @@ const Settings: React.FC = () => {
     setProfileData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleNotificationToggle = (setting: string) => {
-    setNotifications(prev => ({ ...prev, [setting]: !prev[setting as keyof typeof prev] }))
+  const handleNotificationToggle = async (setting: string) => {
+    const next = !notifications[setting as keyof typeof notifications]
+    setNotifications(prev => ({ ...prev, [setting]: next }))
+    try {
+      const updates: any = {}
+      if (setting === 'emailReports') updates.notify_email_reports = next
+      if (setting === 'analysisComplete') updates.notify_analysis_complete = next
+      if (setting === 'weeklyDigest') updates.notify_weekly_digest = next
+      if (setting === 'securityAlerts') updates.notify_low_credits = next
+      await updateProfile(updates)
+    } catch { /* noop */ }
   }
 
   const handleSaveProfile = async () => {
@@ -955,7 +964,7 @@ const Settings: React.FC = () => {
                     {key === 'emailReports' && 'Receive reports via email when analysis is complete'}
                     {key === 'analysisComplete' && 'Get notified when contract analysis finishes'}
                     {key === 'weeklyDigest' && 'Weekly summary of your contract analysis activity'}
-                    {key === 'securityAlerts' && 'Important security and account notifications'}
+                    {key === 'securityAlerts' && 'Low credit alerts and important account notifications'}
                     {key === 'teamUpdates' && 'Updates about team member activity and changes'}
                   </p>
                 </div>

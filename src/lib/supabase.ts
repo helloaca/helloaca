@@ -36,6 +36,10 @@ export interface Database {
           timezone: string | null
           avatar_seed: string | null
           credits_balance: number | null
+          notify_email_reports: boolean | null
+          notify_analysis_complete: boolean | null
+          notify_weekly_digest: boolean | null
+          notify_low_credits: boolean | null
           created_at: string
           updated_at: string
         }
@@ -51,6 +55,10 @@ export interface Database {
           timezone?: string | null
           avatar_seed?: string | null
           credits_balance?: number | null
+          notify_email_reports?: boolean | null
+          notify_analysis_complete?: boolean | null
+          notify_weekly_digest?: boolean | null
+          notify_low_credits?: boolean | null
           created_at?: string
           updated_at?: string
         }
@@ -66,6 +74,10 @@ export interface Database {
           timezone?: string | null
           avatar_seed?: string | null
           credits_balance?: number | null
+          notify_email_reports?: boolean | null
+          notify_analysis_complete?: boolean | null
+          notify_weekly_digest?: boolean | null
+          notify_low_credits?: boolean | null
           created_at?: string
           updated_at?: string
         }

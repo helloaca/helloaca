@@ -41,7 +41,23 @@ export function addUserCredits(userId: string, amount: number): number {
 export function consumeUserCredit(userId: string): boolean {
   const current = getUserCredits(userId)
   if (current <= 0) return false
-  setUserCredits(userId, current - 1)
+  const next = current - 1
+  setUserCredits(userId, next)
+  if (next === 0) {
+    try {
+      const baseEnv = import.meta.env.VITE_API_ORIGIN
+      const base = baseEnv && baseEnv.length > 0
+        ? baseEnv
+        : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'https://helloaca.xyz'
+            : window.location.origin)
+      fetch(`${base}/api/notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event: 'low_credit', userId })
+      }).catch(() => {})
+    } catch { /* noop */ }
+  }
   return true
 }
 

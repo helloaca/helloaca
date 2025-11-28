@@ -181,6 +181,25 @@ export class ContractService {
         .update({ analysis_status: 'completed' })
         .eq('id', currentContractId)
 
+      try {
+        const baseEnv = import.meta.env.VITE_API_ORIGIN
+        const base = baseEnv && baseEnv.length > 0
+          ? baseEnv
+          : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+              ? 'https://helloaca.xyz'
+              : window.location.origin)
+        await fetch(`${base}/api/notify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event: 'analysis_complete', userId, contractId: currentContractId })
+        })
+        await fetch(`${base}/api/notify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event: 'email_report', userId, contractId: currentContractId })
+        })
+      } catch { /* noop */ }
+
       onProgress?.('Complete!', 100)
 
       return {
