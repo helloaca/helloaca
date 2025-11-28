@@ -3,7 +3,7 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import Button from '@/components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Upload, FileText, Clock, TrendingUp, Plus, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
+import { Upload, FileText, Clock, TrendingUp, Plus, AlertCircle, CheckCircle, Loader2, MessageCircle, Download, Shield, Star } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import type { Contract } from '@/lib/contractService'
@@ -35,6 +35,9 @@ const Dashboard: React.FC = () => {
     risksSaved: 0
   })
   const [creditsCount, setCreditsCount] = useState(0)
+  const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false)
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [freeEligible, setFreeEligible] = useState(false)
 
   // Contract history modal state
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
@@ -242,7 +245,7 @@ const Dashboard: React.FC = () => {
   }
 
   // Handle file selection and upload
-  const handleFileSelect = async (file: File) => {
+  const handleFileSelect = async (file: File, skipCreditsModal?: boolean) => {
     if (!user?.id) {
       setUploadStatus('error')
       setUploadMessage('User not authenticated')
@@ -271,13 +274,14 @@ const Dashboard: React.FC = () => {
     const freeLimit = 1
     const credits = getUserCredits(user.id)
     const freeLedgerUsage = getMonthlyFreeUsage(user.id)
-    const requiresCredit = isFree && (thisMonthUsage >= freeLimit || freeLedgerUsage >= freeLimit || !canUseFreeAnalysis(user.id, freeLimit))
-    if (requiresCredit && credits <= 0) {
-      setUploadStatus('error')
-      setUploadMessage('Free plan limit reached. Buy credits to analyze more.')
-      setSelectedFile(null)
+    const freeAvailable = (thisMonthUsage < freeLimit) && (freeLedgerUsage < freeLimit) && canUseFreeAnalysis(user.id, freeLimit)
+    if (!skipCreditsModal && isFree && credits <= 0) {
+      setFreeEligible(freeAvailable)
+      setPendingFile(file)
+      setIsCreditsModalOpen(true)
       return
     }
+    const requiresCredit = isFree && (!freeAvailable)
 
     setSelectedFile(file)
     setUploadStatus('uploading')
@@ -767,6 +771,39 @@ const Dashboard: React.FC = () => {
         onContractsUpdate={loadUserContracts}
         userId={user?.id || ''}
       />
+
+      {isCreditsModalOpen && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={() => { if (!uploadStatus || uploadStatus === 'idle') setIsCreditsModalOpen(false) }}>
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No credits available</h3>
+            <p className="text-sm text-gray-600 mb-4">Buy credits to unlock full analysis and features, or continue with the free plan.</p>
+            <div className="space-y-3 mb-5">
+              <div className="flex items-start gap-3">
+                <Shield className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                <p className="text-sm text-gray-700">Full analysis access with no blurred sections</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <MessageCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                <p className="text-sm text-gray-700">Extended chat beyond free limit per contract</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <Download className="h-5 w-5 text-purple-600 flex-shrink-0" />
+                <p className="text-sm text-gray-700">Unlock all Export Center options (PDF, Word, data)</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <Star className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                <p className="text-sm text-gray-700">Analyze more contracts beyond monthly free</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Button onClick={() => { setIsCreditsModalOpen(false); navigate('/pricing') }} className="min-h-[44px]">Get Credits</Button>
+              <Button variant="outline" disabled={!freeEligible || !pendingFile} onClick={() => { const f = pendingFile; setIsCreditsModalOpen(false); if (f) handleFileSelect(f, true) }} className="min-h-[44px]">
+                {freeEligible ? 'Continue Free' : 'Free Used This Month'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
