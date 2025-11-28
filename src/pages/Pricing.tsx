@@ -13,7 +13,6 @@ const Pricing: React.FC = () => {
   
   const auth = useAuth() as any
   const user = auth.user as { id: string; email: string; plan?: 'free' | 'pro' | 'business' } | null
-  const profile = auth.profile as { plan?: 'free' | 'pro' | 'business'; updated_at?: string } | null
   const [isLoading, setIsLoading] = useState(false)
   const [isMethodModalOpen, setMethodModalOpen] = useState(false)
   const [processingMethod, setProcessingMethod] = useState<null | 'card' | 'crypto'>(null)
