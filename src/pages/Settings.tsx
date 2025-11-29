@@ -329,7 +329,10 @@ const Settings: React.FC = () => {
         toast.error('No user email found')
         return
       }
-      const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
+      const baseEnv = import.meta.env.VITE_API_ORIGIN
+      const base = baseEnv && baseEnv.length > 0
+        ? baseEnv
+        : window.location.origin
       const [cardRes, cryptoRes] = await Promise.all([
         fetch(`${base}/api/paystack-history?email=${encodeURIComponent(String(user.email))}`),
         fetch(`${base}/api/coinbase-list-charges?email=${encodeURIComponent(String(user.email))}`)
@@ -486,14 +489,15 @@ const Settings: React.FC = () => {
       const res = await fetch(`${base}/api/delete-account`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-        body: JSON.stringify({ userId: user.id, email: user.email })
+        body: JSON.stringify({ userId: user.id, email: user.email, token: session?.access_token })
       })
       if (res.ok) {
         toast.success('Account deleted')
         await signOut()
         navigate('/')
       } else {
-        toast.error('Failed to delete account')
+        const msg = await res.json().catch(() => null)
+        toast.error(typeof msg?.error === 'string' ? msg.error : 'Failed to delete account')
       }
     } catch {
       toast.error('Failed to delete account')

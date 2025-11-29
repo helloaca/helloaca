@@ -10,17 +10,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!supabaseUrl || !serviceKey) {
-      res.status(500).json({ error: 'Supabase not configured' })
+    if (!supabaseUrl) {
+      res.status(500).json({ error: 'Missing SUPABASE_URL' })
+      return
+    }
+    if (!serviceKey) {
+      res.status(500).json({ error: 'Missing SUPABASE_SERVICE_ROLE_KEY' })
       return
     }
 
     const admin = createClient(supabaseUrl, serviceKey)
 
     const authHeader = req.headers['authorization'] || req.headers['Authorization']
-    const token = typeof authHeader === 'string' && authHeader.startsWith('Bearer ')
+    let token = typeof authHeader === 'string' && authHeader.startsWith('Bearer ')
       ? authHeader.slice('Bearer '.length)
       : undefined
+    if (!token && req.body && typeof req.body.token === 'string') {
+      token = req.body.token
+    }
 
     if (!token) {
       res.status(401).json({ error: 'Unauthorized' })
@@ -28,8 +35,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const { data: userData, error: userErr } = await admin.auth.getUser(token)
-    if (userErr || !userData?.user?.id) {
-      res.status(401).json({ error: 'Invalid token' })
+    if (userErr) {
+      res.status(401).json({ error: 'Invalid token', details: userErr.message })
+      return
+    }
+    if (!userData?.user?.id) {
+      res.status(401).json({ error: 'Invalid token', details: 'No user in token' })
       return
     }
     const userId = userData.user.id
