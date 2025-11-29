@@ -24,7 +24,7 @@ import Avatar from '../components/ui/Avatar'
 import { getUserCredits } from '@/lib/utils'
 
 const Settings: React.FC = () => {
-  const { user, profile, updateProfile, signOut, refreshProfile } = useAuth()
+  const { user, profile, updateProfile, signOut, refreshProfile, session } = useAuth()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'profile' | 'subscription' | 'team' | 'notifications' | 'security'>('profile')
   const [loading, setLoading] = useState(false)
@@ -485,7 +485,7 @@ const Settings: React.FC = () => {
       const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
       const res = await fetch(`${base}/api/delete-account`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
         body: JSON.stringify({ userId: user.id, email: user.email })
       })
       if (res.ok) {
