@@ -413,16 +413,24 @@ const Dashboard: React.FC = () => {
       hasStructuredSummary: !!contract.analysis?.analysis_data?.structuredAnalysis?.summary
     })
     
-    // First check: Look for summary at the root level of analysis_data (correct location)
-    if (contract.analysis?.analysis_data?.summary) {
-      const fullSummary = contract.analysis.analysis_data.summary
+    // Preferred: Enhanced model summary under executive_summary
+    if (contract.analysis?.analysis_data?.executive_summary?.summary) {
+      const fullSummary = contract.analysis.analysis_data.executive_summary.summary
       console.log('✅ Found summary at root level:', fullSummary.substring(0, 100) + '...')
       // Extract first sentence or first 100 characters
       const firstSentence = fullSummary.split('.')[0] + '.'
       return firstSentence.length > 100 ? fullSummary.substring(0, 100) + '...' : firstSentence
     }
-    
-    // Second check: Look for summary in structuredAnalysis (backward compatibility)
+
+    // Legacy: root-level summary used by older adapters
+    if (contract.analysis?.analysis_data?.summary) {
+      const fullSummary = contract.analysis.analysis_data.summary
+      console.log('✅ Found legacy summary at root:', fullSummary.substring(0, 100) + '...')
+      const firstSentence = fullSummary.split('.')[0] + '.'
+      return firstSentence.length > 100 ? fullSummary.substring(0, 100) + '...' : firstSentence
+    }
+
+    // Backward compatibility: structuredAnalysis.summary
     if (contract.analysis?.analysis_data?.structuredAnalysis?.summary) {
       const fullSummary = contract.analysis.analysis_data.structuredAnalysis.summary
       console.log('✅ Found summary in structuredAnalysis (legacy):', fullSummary.substring(0, 100) + '...')

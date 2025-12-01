@@ -163,7 +163,7 @@ export class ContractService {
         const base = baseEnv && baseEnv.length > 0
           ? baseEnv
           : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-              ? 'https://helloaca.xyz'
+              ? 'https://preview.helloaca.xyz'
               : window.location.origin)
         await fetch(`${base}/api/notify`, {
           method: 'POST',
@@ -1173,7 +1173,7 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
       const contractIds = contracts.map(c => c.id)
       const { data: analyses, error: analysesError } = await supabase
         .from('reports')
-        .select('id,contract_id,user_id,risk_score,created_at,updated_at')
+        .select('id,contract_id,user_id,analysis_data,risk_score,created_at,updated_at')
         .in('contract_id', contractIds)
 
       if (analysesError) {
@@ -1635,6 +1635,13 @@ function toLegacyAnalysis(analysis: EnhancedContractAnalysis): LegacyAnalysisDat
     overall_risk_level,
     riskScore: analysis.executive_summary.key_metrics.risk_score,
     executiveSummary: analysis.executive_summary.contract_overview?.purpose_summary,
+    // Provide legacy root-level summary for components expecting it
+    // Prefer explicit executive_summary.summary if available; otherwise fall back to purpose_summary
+    ...(analysis.executive_summary.summary
+      ? { summary: analysis.executive_summary.summary }
+      : analysis.executive_summary.contract_overview?.purpose_summary
+        ? { summary: analysis.executive_summary.contract_overview.purpose_summary }
+        : {}),
     criticalIssues,
     missingClauses,
     overallRecommendations,
