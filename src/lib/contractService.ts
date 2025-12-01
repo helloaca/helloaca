@@ -947,11 +947,11 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
         contract_id: contractId,
         user_id: userId,
         analysis_data: { ...analysisResult, ...legacy },
-        risk_score: analysisResult.executive_summary.key_metrics.risk_score,
-        key_clauses: analysisResult.clause_analysis.missing_clauses.map(clause => clause.clauseType),
+        risk_score: (analysisResult.executive_summary?.key_metrics?.risk_score ?? analysisResult.risk_assessment?.overall_score ?? 0),
+        key_clauses: (analysisResult.clause_analysis?.missing_clauses || []).map(clause => clause.clauseType),
         recommendations: [
-          ...analysisResult.legal_insights.action_items.map(item => item.description),
-          ...analysisResult.legal_insights.contextual_recommendations.map(rec => rec.description)
+          ...(analysisResult.legal_insights?.action_items || []).map(item => item.description),
+          ...(analysisResult.legal_insights?.contextual_recommendations || []).map(rec => rec.description)
         ]
       })
       .select()
@@ -1395,8 +1395,8 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
 // Legacy adapter: map EnhancedContractAnalysis to legacy analysis_data shape used by UI
 function toLegacyAnalysis(analysis: EnhancedContractAnalysis): LegacyAnalysisData {
   const overall_risk_level = (() => {
-    const score = analysis.risk_assessment?.overall_score ?? analysis.executive_summary.key_metrics.risk_score
-    const safety = analysis.executive_summary.key_metrics.safety_rating
+    const score = analysis.risk_assessment?.overall_score ?? analysis.executive_summary?.key_metrics?.risk_score ?? 0
+    const safety = analysis.executive_summary?.key_metrics?.safety_rating || 'Moderate'
     if (safety === 'Dangerous' || score >= 80) return 'Critical'
     if (safety === 'Risky' || score >= 60) return 'High'
     if (safety === 'Moderate' || score >= 40) return 'Medium'
@@ -1427,11 +1427,11 @@ function toLegacyAnalysis(analysis: EnhancedContractAnalysis): LegacyAnalysisDat
   const sections = (analysis.clause_analysis?.clauses_by_section || []).reduce((acc: any, section) => {
     acc[section.section_name] = {
       keyFindings: section.summary ? [section.summary] : [],
-      recommendations: section.clauses.flatMap(c => {
+      recommendations: (section.clauses || []).flatMap(c => {
         const recs = c.recommendations || []
         return recs.map((r: any) => typeof r === 'string' ? r : r.description)
       }),
-      redFlags: section.clauses
+      redFlags: (section.clauses || [])
         .filter(c => c.risk_level === 'High' || c.risk_level === 'Critical')
         .map(c => {
           const firstRec = (c.recommendations || [])[0] as any
@@ -1446,11 +1446,11 @@ function toLegacyAnalysis(analysis: EnhancedContractAnalysis): LegacyAnalysisDat
 
   return {
     overall_risk_level,
-    riskScore: analysis.executive_summary.key_metrics.risk_score,
-    executiveSummary: analysis.executive_summary.contract_overview?.purpose_summary,
-    ...(analysis.executive_summary.summary
+    riskScore: (analysis.executive_summary?.key_metrics?.risk_score ?? analysis.risk_assessment?.overall_score ?? 0),
+    executiveSummary: analysis.executive_summary?.contract_overview?.purpose_summary,
+    ...(analysis.executive_summary?.summary
       ? { summary: analysis.executive_summary.summary }
-      : analysis.executive_summary.contract_overview?.purpose_summary
+      : analysis.executive_summary?.contract_overview?.purpose_summary
         ? { summary: analysis.executive_summary.contract_overview.purpose_summary }
         : {}),
     criticalIssues,

@@ -47,10 +47,16 @@ IMPORTANT COMMUNICATION POLICY:
 - Maintain a formal, business-appropriate tone at all times`
 
       // Try multiple model names to find the correct one
-      const models = [
-        'claude-3-5-sonnet-latest',
-        'claude-3-5-haiku-latest'
-      ]
+      const envModelsRaw = (import.meta.env.VITE_CLAUDE_MODELS || '')
+        .split(',')
+        .map((m: string) => m.trim())
+        .filter((m: string) => !!m)
+      const models = envModelsRaw.length > 0
+        ? envModelsRaw
+        : [
+            'claude-3-5-sonnet',
+            'claude-3-5-haiku'
+          ]
       
       let lastError: any = null
       
