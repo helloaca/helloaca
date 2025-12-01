@@ -201,6 +201,24 @@ export class ContractService {
     }
   }
 
+  static async markContractPaid(contractId: string, userId: string): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('reports')
+        .select('id,analysis_data')
+        .eq('contract_id', contractId)
+        .eq('user_id', userId)
+        .single()
+      if (error || !data) return
+      const analysis_data = data.analysis_data || {}
+      const patched = { ...analysis_data, paid_analysis: true }
+      await supabase
+        .from('reports')
+        .update({ analysis_data: patched })
+        .eq('id', data.id)
+    } catch { /* noop */ }
+  }
+
   /**
    * Analyze contract using Claude AI with 11-section professional framework
    */

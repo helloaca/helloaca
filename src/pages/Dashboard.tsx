@@ -303,6 +303,10 @@ const Dashboard: React.FC = () => {
       if (requiresCredit) {
         consumeUserCredit(user.id)
         markContractCredited(user.id, result.contractId)
+        try {
+          const { ContractService } = await import('@/lib/contractService')
+          await ContractService.markContractPaid(result.contractId, user.id)
+        } catch { /* noop */ }
         setCreditsCount(getUserCredits(user.id))
       } else {
         markFreeAnalysisUsed(user.id)

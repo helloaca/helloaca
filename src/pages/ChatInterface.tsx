@@ -35,6 +35,7 @@ const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [creditedDb, setCreditedDb] = useState<boolean>(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
   const [messageCount, setMessageCount] = useState(0)
@@ -113,6 +114,25 @@ const ChatInterface: React.FC = () => {
 
     loadChatHistory()
   }, [contract, user, isLoadingContract])
+
+  // Check DB-paid flag to keep contract unlocked after site data clear
+  useEffect(() => {
+    const checkPaid = async () => {
+      try {
+        if (!contract || !user) return
+        const { supabase } = await import('../lib/supabase')
+        const { data } = await supabase
+          .from('reports')
+          .select('analysis_data')
+          .eq('contract_id', contract.id)
+          .eq('user_id', user.id)
+          .single()
+        const paid = !!(data?.analysis_data?.paid_analysis || data?.analysis_data?.paid || data?.analysis_data?.credited_contract)
+        setCreditedDb(paid)
+      } catch { /* noop */ }
+    }
+    checkPaid()
+  }, [contract?.id, user?.id])
 
   // Initialize welcome message based on contract state
   const initializeWelcomeMessage = () => {
@@ -221,7 +241,8 @@ Please provide a helpful response based on the contract and our conversation.`
 
     const userMsgCount = await messageService.getUserMessageCount(contract.id)
     const freeChatLimit = 5
-    const credited = user?.id ? isContractCredited(user.id, contract.id) : false
+    const creditedLocal = user?.id ? isContractCredited(user.id, contract.id) : false
+    const credited = creditedLocal || creditedDb
     if (!credited && userMsgCount >= freeChatLimit) {
       const limitMessage: Message = {
         id: 'limit-reached',

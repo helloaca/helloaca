@@ -87,7 +87,9 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
     checkItems: []
   }))
 
-  const credited = user?.id ? isContractCredited(user.id, contract.id) : false
+  const creditedLocal = user?.id ? isContractCredited(user.id, contract.id) : false
+  const creditedDb = !!((analysis?.analysis_data as any)?.paid_analysis || (analysis?.analysis_data as any)?.paid || (analysis?.analysis_data as any)?.credited_contract)
+  const credited = creditedLocal || creditedDb
   const isLocked = !credited
 
   return (
