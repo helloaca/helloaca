@@ -54,8 +54,9 @@ IMPORTANT COMMUNICATION POLICY:
       const models = envModelsRaw.length > 0
         ? envModelsRaw
         : [
-            'claude-3-5-sonnet',
-            'claude-3-5-haiku'
+            'claude-sonnet-4-20250514',
+            'claude-haiku-4-20250119',
+            'claude-3-5-sonnet-20241022'
           ]
       
       let lastError: any = null
