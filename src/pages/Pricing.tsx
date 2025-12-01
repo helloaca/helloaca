@@ -4,7 +4,7 @@ import Header from '../components/layout/Header'
 import { Footer } from '../components/layout/Footer'
 import { Check, Star, Zap, Shield, ArrowLeft, X } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { getUserCredits, addUserCredits } from '@/lib/utils'
+import { getUserCredits } from '@/lib/utils'
 import { toast } from 'sonner'
 import mixpanel from 'mixpanel-browser'
 
@@ -131,9 +131,9 @@ const Pricing: React.FC = () => {
               const res = await fetch(url)
               const data = await res.json()
               if (data?.status === 'success') {
-                if (user?.id) {
-                  const next = addUserCredits(user.id, selectedBundle.credits)
-                  setCreditBalance(next)
+                if (auth?.refreshProfile && user?.id) {
+                  await auth.refreshProfile()
+                  setCreditBalance(getUserCredits(user.id))
                 }
                 try {
                   const baseEnv = import.meta.env.VITE_API_ORIGIN

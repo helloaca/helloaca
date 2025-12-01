@@ -42,6 +42,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const verifyJson = await verifyRes.json()
 
     if (verifyRes.ok && verifyJson?.data?.status === 'success') {
+      const data = verifyJson.data
+      const email = (data?.customer?.email as string) || ''
+      const creditsMeta = (data?.metadata?.credits as number) || 0
+      let credits = Number.isFinite(creditsMeta) ? Math.floor(creditsMeta) : 0
+      if (!credits && typeof data?.reference === 'string') {
+        const m = String(data.reference).match(/^CREDITS-(\d+)-/)
+        if (m) credits = parseInt(m[1], 10)
+      }
+
+      try {
+        const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+        if (supabaseUrl && serviceRoleKey && email && credits > 0) {
+          const { createClient } = await import('@supabase/supabase-js')
+          const supabase = createClient(supabaseUrl, serviceRoleKey)
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('id, credits_balance')
+            .eq('email', email)
+            .single()
+          if (profile?.id) {
+            const current = typeof profile.credits_balance === 'number' ? profile.credits_balance : 0
+            await supabase
+              .from('user_profiles')
+              .update({ credits_balance: current + credits })
+              .eq('id', profile.id)
+          }
+        }
+      } catch (e) {
+        // Swallow DB errors to not block verification response
+      }
+
       res.setHeader('Access-Control-Allow-Origin', '*')
       res.status(200).json({ status: 'success', data: verifyJson.data })
       return

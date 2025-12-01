@@ -118,17 +118,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-  // If this is a credit purchase, increment credits_balance using service role
-  if (event === 'credit_purchase') {
-    const credits = Number.isFinite(extra?.credits) ? Math.floor(extra.credits) : 0
-    if (credits > 0) {
-      const current = typeof profile.credits_balance === 'number' ? profile.credits_balance : 0
-      await supabase
-        .from('user_profiles')
-        .update({ credits_balance: current + credits })
-        .eq('id', userId)
-    }
-  }
+  // Do not modify credits here; this endpoint only sends emails
 
   const tpl = templates[event]
     if (!tpl) {
