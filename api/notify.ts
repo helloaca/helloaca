@@ -42,18 +42,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Missing event or userId' })
     }
 
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .eq('id', userId)
+    .single()
 
     if (!profile || !profile.email) {
       return res.status(404).json({ error: 'User profile not found' })
     }
 
-    const email = profile.email as string
-    const base = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || 'https://helloaca.xyz'
+  const email = profile.email as string
+  const base = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || 'https://helloaca.xyz'
 
     const checks: Record<string, boolean> = {
       analysis_complete: !!profile.notify_analysis_complete,
@@ -118,7 +118,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    const tpl = templates[event]
+  // If this is a credit purchase, increment credits_balance using service role
+  if (event === 'credit_purchase') {
+    const credits = Number.isFinite(extra?.credits) ? Math.floor(extra.credits) : 0
+    if (credits > 0) {
+      const current = typeof profile.credits_balance === 'number' ? profile.credits_balance : 0
+      await supabase
+        .from('user_profiles')
+        .update({ credits_balance: current + credits })
+        .eq('id', userId)
+    }
+  }
+
+  const tpl = templates[event]
     if (!tpl) {
       return res.status(400).json({ error: 'Unknown event' })
     }

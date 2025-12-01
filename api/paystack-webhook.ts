@@ -58,6 +58,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .from('user_profiles')
           .update({ plan: 'pro' })
           .eq('id', profile.id)
+
+        const creditsMeta = (data?.metadata?.credits as number) || 0
+        let credits = Number.isFinite(creditsMeta) ? Math.floor(creditsMeta) : 0
+        if (!credits && typeof data?.reference === 'string') {
+          const m = data.reference.match(/^CREDITS-(\d+)-/) // e.g., CREDITS-10-1699999999999
+          if (m) credits = parseInt(m[1], 10)
+        }
+        if (credits > 0) {
+          const { data: existing } = await supabase
+            .from('user_profiles')
+            .select('credits_balance')
+            .eq('id', profile.id)
+            .single()
+          const current = typeof existing?.credits_balance === 'number' ? existing.credits_balance : 0
+          await supabase
+            .from('user_profiles')
+            .update({ credits_balance: current + credits })
+            .eq('id', profile.id)
+        }
       }
 
       res.status(200).json({ received: true })
