@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import Button from '@/components/ui/Button'
+import Modal from '@/components/ui/Modal'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Upload, FileText, Clock, TrendingUp, Plus, AlertCircle, CheckCircle, Loader2, MessageCircle, Download, Shield, Star } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
@@ -41,6 +42,33 @@ const Dashboard: React.FC = () => {
 
   // Contract history modal state
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
+
+  const currentPlan: 'free' | 'pro' | 'team' | 'business' | 'enterprise' = (profile?.plan || user?.plan || 'free') as any
+
+  const aggregateRiskDistribution = () => {
+    const totals: Record<string, number> = { Critical: 0, High: 0, Moderate: 0, Low: 0, Safe: 0 }
+    try {
+      contracts.forEach(c => {
+        const dist = c.analysis?.analysis_data?.risk_assessment?.risk_distribution
+        if (dist && typeof dist === 'object') {
+          Object.keys(totals).forEach(k => {
+            const v = Number((dist as any)[k])
+            if (Number.isFinite(v)) totals[k] += v
+          })
+        }
+      })
+    } catch {}
+    const total = Object.values(totals).reduce((a, b) => a + b, 0)
+    return { totals, total }
+  }
+
+  const [isSsoModalOpen, setIsSsoModalOpen] = useState(false)
+  const [orgName, setOrgName] = useState('')
+  const [domain, setDomain] = useState('')
+  const [seats, setSeats] = useState<number>(5)
+  const [contactEmail, setContactEmail] = useState<string>(user?.email || '')
+  const [notes, setNotes] = useState('')
+  const [isSubmittingSso, setIsSubmittingSso] = useState(false)
 
   const getCacheKey = () => `contracts_cache_${user?.id || 'anon'}`
   const readCachedContracts = (): Array<Contract & { analysis?: any }> => {
@@ -563,6 +591,119 @@ const Dashboard: React.FC = () => {
           </Card>
         </div>
 
+        {/* Plan Badge */}
+        <div className="mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700">
+            <span className="text-xs font-semibold">Plan</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-black text-white">{currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)}</span>
+            <button onClick={() => navigate('/pricing')} className="text-xs underline">Manage</button>
+          </div>
+        </div>
+
+        {/* Team/Business/Enterprise features */}
+        {(currentPlan === 'team' || currentPlan === 'business' || currentPlan === 'enterprise') && (
+          <div className="grid md:grid-cols-2 gap-6 sm:gap-8 mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Team Dashboard</CardTitle>
+                <CardDescription>Shared library and team analytics</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-lg border p-4">
+                    <p className="text-sm text-gray-600">Contracts this month</p>
+                    <p className="text-2xl font-bold">{stats.thisMonth}</p>
+                  </div>
+                  <div className="rounded-lg border p-4">
+                    <p className="text-sm text-gray-600">Total in library</p>
+                    <p className="text-2xl font-bold">{stats.totalContracts}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Risk Distribution</CardTitle>
+                <CardDescription>Aggregate across team analyses</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  const { totals, total } = aggregateRiskDistribution()
+                  const bars = Object.entries(totals)
+                  return (
+                    <div className="space-y-3">
+                      {bars.map(([k, v]) => (
+                        <div key={k} className="flex items-center justify-between gap-3">
+                          <span className="text-sm text-gray-700 w-24">{k}</span>
+                          <div className="flex-1 bg-gray-200 rounded-full h-2">
+                            <div className={`h-2 rounded-full ${k==='Critical' ? 'bg-red-500' : k==='High' ? 'bg-orange-500' : k==='Moderate' ? 'bg-yellow-500' : k==='Low' ? 'bg-blue-500' : 'bg-green-500'}`} style={{ width: `${total>0 ? Math.round((v/total)*100) : 0}%` }} />
+                          </div>
+                          <span className="text-sm text-gray-700 w-10 text-right">{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })()}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Business/Enterprise advanced features */}
+        {(currentPlan === 'business' || currentPlan === 'enterprise') && (
+          <div className="grid md:grid-cols-2 gap-6 sm:gap-8 mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Approval Workflows</CardTitle>
+                <CardDescription>Draft → review → approve</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-700 mb-4">Configure reviewers and approvers for contract stages.</p>
+                <Button variant="outline" onClick={() => toast.info('Workflows setup coming soon')}>Set up</Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Templates & Versioning</CardTitle>
+                <CardDescription>Custom templates and change tracking</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-700 mb-4">Create reusable templates and compare revisions.</p>
+                <Button variant="outline" onClick={() => toast.info('Templates & versioning coming soon')}>Manage</Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Enterprise extras */}
+        {currentPlan === 'enterprise' && (
+          <div className="grid md:grid-cols-2 gap-6 sm:gap-8 mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>SSO / SAML</CardTitle>
+                <CardDescription>Organization single sign‑on</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-700 mb-4">Contact support to provision SSO. We will guide domain verification and metadata exchange.</p>
+                <Button variant="outline" onClick={() => setIsSsoModalOpen(true)}>Request setup</Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>API Access</CardTitle>
+                <CardDescription>Integrate HelloACA into your systems</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-700 mb-4">Use our API to upload contracts and retrieve analyses programmatically.</p>
+                <Button variant="outline" onClick={() => toast.info('API keys will be available from Settings soon')}>View docs</Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Upload Widget */}
           <div className="lg:col-span-1">
@@ -811,6 +952,63 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {isSsoModalOpen && (
+        <Modal isOpen={isSsoModalOpen} onClose={() => { if (!isSubmittingSso) setIsSsoModalOpen(false) }} title="Request SSO Setup" size="md">
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault()
+              if (!user?.id) { toast.error('Sign in to request SSO'); return }
+              if (!orgName || !domain || !contactEmail) { toast.error('Fill all required fields'); return }
+              setIsSubmittingSso(true)
+              try {
+                const baseEnv = import.meta.env.VITE_API_ORIGIN
+                const base = baseEnv && baseEnv.length > 0 ? baseEnv : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://helloaca.xyz' : window.location.origin)
+                const res = await fetch(`${base}/api/notify`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ event: 'enterprise_sso_request', userId: user.id, extra: { orgName, domain, seats, contactEmail, notes } })
+                })
+                const data = await res.json().catch(() => null)
+                if (res.ok) { toast.success('SSO request submitted'); setIsSsoModalOpen(false); setOrgName(''); setDomain(''); setSeats(5); setContactEmail(user.email || ''); setNotes('') }
+                else { toast.error(typeof data?.error === 'string' ? data.error : 'Failed to submit request') }
+              } catch {
+                toast.error('Network error')
+              } finally {
+                setIsSubmittingSso(false)
+              }
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Organization Name</label>
+              <input value={orgName} onChange={(e) => setOrgName(e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="Acme Corp" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Domain</label>
+              <input value={domain} onChange={(e) => setDomain(e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="acme.com" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Seats</label>
+                <input type="number" min={1} value={seats} onChange={(e) => setSeats(parseInt(e.target.value || '1', 10))} className="w-full border rounded-lg px-3 py-2" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
+                <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full border rounded-lg px-3 py-2 min-h-[100px]" placeholder="Anything we should know" />
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="outline" onClick={() => setIsSsoModalOpen(false)} disabled={isSubmittingSso}>Cancel</Button>
+              <Button type="submit" disabled={isSubmittingSso}>{isSubmittingSso ? 'Submitting…' : 'Submit'}</Button>
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   )

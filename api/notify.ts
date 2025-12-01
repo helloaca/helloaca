@@ -115,6 +115,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           <p>Your credit balance has reached zero. Buy credits to unlock full analysis and exports.</p>
           <p><a href="${base}/pricing">Buy credits</a></p>
         `
+      },
+      enterprise_sso_request: {
+        subject: 'New Enterprise SSO Request',
+        html: (() => {
+          const o = extra?.orgName || ''
+          const d = extra?.domain || ''
+          const s = extra?.seats || ''
+          const ce = extra?.contactEmail || ''
+          const n = extra?.notes || ''
+          return `
+            <h2>Enterprise SSO Setup Request</h2>
+            <p><strong>User:</strong> ${email}</p>
+            ${o ? `<p><strong>Organization:</strong> ${o}</p>` : ''}
+            ${d ? `<p><strong>Domain:</strong> ${d}</p>` : ''}
+            ${s ? `<p><strong>Seats:</strong> ${s}</p>` : ''}
+            ${ce ? `<p><strong>Contact Email:</strong> ${ce}</p>` : ''}
+            ${n ? `<p><strong>Notes:</strong> ${n}</p>` : ''}
+            <p><a href="${base}/dashboard">Open Dashboard</a></p>
+          `
+        })()
       }
     }
 
@@ -124,7 +144,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!tpl) {
       return res.status(400).json({ error: 'Unknown event' })
     }
-    const result = await sendEmail(email, tpl.subject, tpl.html)
+    const recipient = event === 'enterprise_sso_request' 
+      ? (process.env.SUPPORT_EMAIL || 'support@helloaca.xyz') 
+      : email
+    const result = await sendEmail(recipient, tpl.subject, tpl.html)
     return res.status(200).json({ status: 'sent', result })
   } catch (err) {
     console.error('Notify handler error', err)
