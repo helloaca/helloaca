@@ -143,27 +143,31 @@ const TermsOfService: React.FC = () => {
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Credits and Billing</h2>
-                <h3 className="text-xl font-semibold text-gray-800 mb-3">7.1 Usage-Based Credits</h3>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Credits, Plans and Billing</h2>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">7.1 Pay‑Per‑Use Credits</h3>
                 <ul>
                   <li>Free access includes 1 contract analysis per month</li>
-                  <li>Additional analyses require credits purchased in bundles</li>
+                  <li>Additional analyses require credits purchased in bundles or custom amounts</li>
                   <li>One credit covers one full analysis plus AI chat</li>
-                  <li>No subscriptions or automatic renewals</li>
+                  <li>Credits do not expire</li>
                 </ul>
-                
-                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">7.2 Billing Terms</h3>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">7.2 Subscription Plans</h3>
                 <ul>
-                  <li>Credits are billed at the time of purchase</li>
-                  <li>All fees are non-refundable except as required by law</li>
+                  <li>Pro: $24/month, includes 5 credits per month; unused credits roll over up to 10</li>
+                  <li>Team: $79/month, includes 5 seats and 30 analyses/month (team‑wide pool)</li>
+                  <li>Business: $199/month, includes 15 seats and 100 analyses/month (team‑wide pool)</li>
+                  <li>Enterprise: $499/month, includes 50 seats and 500 analyses/month with additional enterprise features</li>
+                </ul>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">7.3 Billing Terms</h3>
+                <ul>
+                  <li>Charges are billed at the time of purchase or renewal</li>
+                  <li>All fees are non‑refundable except as required by law</li>
                   <li>Prices may change with reasonable notice</li>
-                  <li>No recurring charges; credits remain until used</li>
+                  <li>Additional seat and contract packs are billed separately where applicable</li>
                 </ul>
-                
-                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">7.3 Account Changes</h3>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">7.4 Account Changes</h3>
                 <ul>
-                  <li>No subscription is required to use the Service</li>
-                  <li>You may stop purchasing credits at any time</li>
+                  <li>You may switch plans at any time; changes take effect at next billing period unless stated otherwise</li>
                   <li>Account deletion removes associated personal data according to our Privacy Policy</li>
                 </ul>
               </section>

@@ -354,7 +354,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   email: session.user.email!,
                   first_name: firstName,
                   last_name: lastName,
-                  plan: plan as 'free' | 'pro' | 'business',
+                  plan: plan as 'free' | 'pro' | 'team' | 'business' | 'enterprise',
                   company: null,
                   role: null,
                   timezone: null,
@@ -422,7 +422,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               first_name: session.user.user_metadata?.firstName || null,
               last_name: session.user.user_metadata?.lastName || null,
               email: session.user.email!,
-              plan: (session.user.user_metadata?.plan || 'free') as 'free' | 'pro' | 'business',
+              plan: (session.user.user_metadata?.plan || 'free') as 'free' | 'pro' | 'team' | 'business' | 'enterprise',
               plan_expires_at: null,
               company: null,
               role: null,
@@ -657,7 +657,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try { setUserCredits(existingProfile.id, existingProfile.credits_balance ?? 0) } catch { /* noop */ }
         setUser({
           ...user,
-          plan: existingProfile.plan as 'free' | 'pro' | 'business'
+          plan: existingProfile.plan as 'free' | 'pro' | 'team' | 'business' | 'enterprise'
         })
         setUserProperties({
           user_id: existingProfile.id,

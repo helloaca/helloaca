@@ -183,8 +183,8 @@ const PrivacyPolicy: React.FC = () => {
 
                 <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">6.3 Team and Organization Sharing</h3>
                 <ul>
-                  <li>Business and Enterprise plans allow document sharing within your organization</li>
-                  <li>Administrators can manage user access and permissions</li>
+                  <li>Team, Business and Enterprise plans allow document sharing within your organization</li>
+                  <li>Administrators can manage user access, seats, and permissions</li>
                   <li>Shared documents remain under your organization's control</li>
                 </ul>
               </section>

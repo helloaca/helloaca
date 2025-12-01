@@ -100,7 +100,7 @@ const LandingPage: React.FC = () => {
               Try Free
             </Button>
             <Button variant="secondary" size="lg" className="text-base sm:text-lg px-8 py-4 min-h-[48px]" onClick={() => navigate('/pricing')}>
-              Buy Credits
+              Compare Plans
             </Button>
           </div>
           </AnimateOnScroll>
@@ -460,8 +460,7 @@ const LandingPage: React.FC = () => {
                   </li>
                 </ul>
                 <Button 
-                  variant="outline" 
-                  className="w-full min-h-[48px] text-base"
+                  className="w-full min-h-[48px] text-base bg-[#5ACEA8] text-white hover:bg-[#49C89A]"
                   onClick={() => {
                     trackPricing.selectPlan('free')
                     navigate('/register')
@@ -476,8 +475,8 @@ const LandingPage: React.FC = () => {
             {/* Credits */}
             <AnimateOnScroll delay={100}>
             <Card className="border-2 border-primary relative">
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <span className="bg-primary text-white px-3 sm:px-4 py-1 rounded-full text-xs sm:text-sm font-medium">
+              <div className="absolute -top-3 right-4">
+                <span className="bg-[#5ACEA8] text-white px-3 sm:px-4 py-1 rounded-full text-xs sm:text-sm font-medium shadow">
                   Most Popular
                 </span>
               </div>
@@ -502,7 +501,7 @@ const LandingPage: React.FC = () => {
                   </li>
                 </ul>
                 <Button 
-                  className="w-full min-h-[48px] text-base"
+                  className="w-full min-h-[48px] text-base bg-transparent border border-[#5ACEA8] text-[#5ACEA8] hover:bg-[#5ACEA8]/10"
                   onClick={() => {
                     trackPricing.selectPlan('credits')
                     navigate('/pricing')

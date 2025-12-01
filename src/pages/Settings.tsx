@@ -93,7 +93,7 @@ const Settings: React.FC = () => {
         navigate('/login')
         return
       }
-      if (String(user?.plan) === 'pro' || String(profile?.plan) === 'pro') {
+      if (['pro','team','business','enterprise'].includes(String(user?.plan)) || ['pro','team','business','enterprise'].includes(String(profile?.plan))) {
         toast.info('You already have an active Pro plan')
         return
       }

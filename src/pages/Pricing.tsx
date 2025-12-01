@@ -2,7 +2,7 @@ import React, { useCallback, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/layout/Header'
 import { Footer } from '../components/layout/Footer'
-import { Check, Star, Zap, Shield, ArrowLeft, X } from 'lucide-react'
+import { Check, ArrowLeft, X } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { getUserCredits } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -12,13 +12,17 @@ const Pricing: React.FC = () => {
   const navigate = useNavigate()
   
   const auth = useAuth() as any
-  const user = auth.user as { id: string; email: string; plan?: 'free' | 'pro' | 'business' } | null
+  const user = auth.user as { id: string; email: string; plan?: 'free' | 'pro' | 'team' | 'business' | 'enterprise' } | null
   const [isLoading, setIsLoading] = useState(false)
   const [isMethodModalOpen, setMethodModalOpen] = useState(false)
   const [processingMethod, setProcessingMethod] = useState<null | 'card' | 'crypto'>(null)
   const [selectedBundle, setSelectedBundle] = useState<{ credits: number; priceUSD: number } | null>(null)
   const [creditBalance, setCreditBalance] = useState<number>(0)
-  const [customCredits, setCustomCredits] = useState<number>(1)
+  // Removed: customCredits; using predefined bundles in modal
+  const [isSubModalOpen, setSubModalOpen] = useState(false)
+  const [selectedPlan, setSelectedPlan] = useState<{ plan: 'pro'|'team'|'business'|'enterprise'; period: 'monthly'|'yearly'; priceUSD: number } | null>(null)
+  const [billingPeriod, setBillingPeriod] = useState<'monthly'|'yearly'>('monthly')
+  const [isBundleModalOpen, setBundleModalOpen] = useState(false)
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -42,13 +46,8 @@ const Pricing: React.FC = () => {
     { credits: 10, priceUSD: 55, popular: false as const }
   ]
 
-  const computePriceUSD = (credits: number) => {
-    if (!Number.isFinite(credits) || credits < 1) return 0
-    if (credits >= 10) return +(credits * 5.5).toFixed(2)
-    if (credits >= 5) return +(credits * 6).toFixed(2)
-    return +(credits * 7).toFixed(2)
-  }
-  const customPriceUSD = computePriceUSD(customCredits)
+  // Removed: custom pricing calculator; using fixed bundles
+  // Removed inline custom credits UI; modal uses predefined bundles
 
   const loadPaystackScript = useCallback(async () => {
     if ((window as any).PaystackPop) return
@@ -61,6 +60,98 @@ const Pricing: React.FC = () => {
       document.body.appendChild(script)
     })
   }, [])
+
+  const handleSubscribePlan = useCallback(async (method: 'card'|'crypto') => {
+    try {
+      if (!user || !selectedPlan) {
+        toast.error('Please sign in and select a plan')
+        navigate('/login')
+        return
+      }
+      const base = import.meta.env.VITE_API_ORIGIN || window.location.origin
+      if (method === 'crypto') {
+        setIsLoading(true)
+        setProcessingMethod('crypto')
+        const controller = new AbortController()
+        const timer = setTimeout(() => controller.abort(), 10000)
+        try {
+          const res = await fetch(`${base}/api/coinbase-create-charge`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, email: user.email, amount_usd: selectedPlan.priceUSD, plan: selectedPlan.plan, period: selectedPlan.period }),
+            signal: controller.signal
+          })
+          const data = await res.json().catch(() => null)
+          clearTimeout(timer)
+          const url = data?.hosted_url
+          if (res.ok && url) {
+            setSubModalOpen(false)
+            window.location.href = url
+            return
+          }
+          toast.error(typeof data?.error === 'string' ? data.error : 'Failed to start crypto payment')
+        } catch {
+          clearTimeout(timer)
+          toast.error('Network error starting crypto payment')
+        } finally {
+          setIsLoading(false)
+          setProcessingMethod(null)
+        }
+        return
+      }
+
+      const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY
+      if (!publicKey) {
+        toast.error('Payment is not configured')
+        return
+      }
+
+      setIsLoading(true)
+      setProcessingMethod('card')
+      try { await loadPaystackScript() } catch { setIsLoading(false); setProcessingMethod(null); toast.error('Network error loading payment library'); return }
+      const PaystackPop = (window as any).PaystackPop
+      if (!PaystackPop || typeof PaystackPop.setup !== 'function') { setIsLoading(false); setProcessingMethod(null); toast.error('Payment library failed to load'); return }
+      let amountKobo: number = 0
+      try {
+        const rateRes = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=NGN')
+        const rateJson = await rateRes.json().catch(() => null)
+        const rate = typeof rateJson?.rates?.NGN === 'number' ? rateJson.rates.NGN : null
+        const ngn = Math.round(((rate || 1500) * selectedPlan.priceUSD))
+        amountKobo = ngn * 100
+      } catch { amountKobo = 1500 * selectedPlan.priceUSD * 100 }
+
+      const handler = PaystackPop.setup({
+        key: publicKey,
+        email: String(user.email),
+        amount: amountKobo,
+        currency: 'NGN',
+        reference: `${selectedPlan.plan.toUpperCase()}-${selectedPlan.period}-${Date.now()}`,
+        channels: ['card'],
+        metadata: { plan: selectedPlan.plan, period: selectedPlan.period },
+        callback: (response: any) => {
+          (async () => {
+            try {
+              const res = await fetch(`${base}/api/paystack-verify`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reference: response.reference }) })
+              const data = await res.json()
+              if (data?.status === 'success') {
+                const planUpdate = { plan: selectedPlan.plan }
+                const result = await auth.updateProfile(planUpdate)
+                if (result.success) { await auth.refreshProfile(); toast.success('Subscription activated') } else { toast.error(result.error || 'Failed to update plan') }
+              } else { toast.error('Payment verification failed') }
+            } catch { toast.error('Could not verify payment') }
+            finally { setIsLoading(false); setProcessingMethod(null) }
+          })()
+        },
+        onClose: function () { setIsLoading(false); setProcessingMethod(null); toast.info('Payment canceled') }
+      })
+      setSubModalOpen(false)
+      handler.openIframe()
+    } catch (err) {
+      setIsLoading(false)
+      setProcessingMethod(null)
+      toast.error(err instanceof Error ? err.message : 'Payment initialization failed')
+    }
+  }, [user, selectedPlan, navigate, loadPaystackScript])
 
   const handleBuyCredits = useCallback(async () => {
     try {
@@ -255,10 +346,10 @@ const Pricing: React.FC = () => {
           {/* Hero Section */}
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Usage-Based Pricing
+              Pricing & Plans
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-              Pay per contract. Buy credits that include analysis and chat.
+              Choose pay‑per‑use credits or a subscription plan that fits your team.
             </p>
 
             {user && (
@@ -283,139 +374,125 @@ const Pricing: React.FC = () => {
             </div>
           </div>
 
-          {/* Credit Bundles */}
-          <div className="grid lg:grid-cols-3 gap-8 mb-16">
-            {bundles.map((bundle, index) => (
-              <div
-                key={index}
-                className={`relative bg-white rounded-2xl shadow-xl p-8 ${
-                  bundle.popular ? 'ring-2 ring-blue-500 scale-105' : ''
-                }`}
+          {/* Plans Side-by-Side */}
+          <div className="text-center mb-8">
+            <div className="inline-flex bg-gray-100 rounded-full p-1">
+              <button
+                onClick={() => setBillingPeriod('monthly')}
+                className={`px-4 py-2 rounded-full text-sm font-medium ${billingPeriod==='monthly' ? 'bg-white shadow' : ''}`}
               >
-                {bundle.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <div className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-medium flex items-center gap-1">
-                      <Star className="h-4 w-4" />
-                      Best Value
-                    </div>
-                  </div>
-                )}
+                Monthly
+              </button>
+              <button
+                onClick={() => setBillingPeriod('yearly')}
+                className={`px-4 py-2 rounded-full text-sm font-medium ${billingPeriod==='yearly' ? 'bg-white shadow' : ''}`}
+              >
+                Annually
+              </button>
+            </div>
+          </div>
 
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{bundle.credits} Credit{bundle.credits > 1 ? 's' : ''}</h3>
-                  <p className="text-gray-600 mb-4">Includes full analysis and chat</p>
-                  <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-4xl font-bold text-gray-900">${bundle.priceUSD}</span>
+          <div className="grid lg:grid-cols-5 gap-6 mb-16 items-stretch">
+            <div className="bg-white rounded-2xl shadow-xl p-8 h-full flex flex-col relative">
+              <div className="mb-4">
+                <h3 className="text-2xl font-bold text-gray-900">Pay‑Per‑Use</h3>
+                <p className="text-gray-600">Buy credits as needed</p>
+              </div>
+            
+              <ul className="space-y-2 text-sm mb-6">
+                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />One credit = one analysis + chat</li>
+                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />No subscription</li>
+                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />Personal contract library</li>
+                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />PDF export</li>
+              </ul>
+              <div className="mt-auto">
+                <button
+                  onClick={() => setBundleModalOpen(true)}
+                  className="w-full py-3 px-6 rounded-lg font-medium bg-transparent border border-[#5ACEA8] text-[#5ACEA8] hover:bg-[#5ACEA8]/10"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Processing…' : 'Buy credits'}
+                </button>
+              </div>
+            </div>
+
+            {([
+              { plan: 'pro' as const, title: 'Pro', monthly: 24, features: ['5 credits/month','1 seat','Full analysis','Chat with contract','Negotiation playbook','PDF export','Rollover up to 10'] },
+              { plan: 'team' as const, title: 'Team', monthly: 79, features: ['30 analyses/month (team)','5 seats','Shared library','Team dashboard','Basic analytics','Centralized billing'] },
+              { plan: 'business' as const, title: 'Business', monthly: 199, features: ['100 analyses/month (team)','15 seats','Approval workflows','Advanced analytics','Custom templates','Version comparison','White‑label reports','Priority support'] },
+              { plan: 'enterprise' as const, title: 'Enterprise', monthly: 499, features: ['500 analyses/month (team)','50 seats','Custom risk frameworks','API access','SSO/SAML','Integrations','Audit trail','SLA 99.9%','Account manager'] }
+            ]).map((p) => (
+              <div key={p.plan} className="bg-white rounded-2xl shadow-xl p-8 h-full flex flex-col relative">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900">{p.title}</h3>
+                    <p className="text-gray-600">{billingPeriod==='monthly' ? `$${p.monthly}/month` : `$${p.monthly*12}/year`}</p>
                   </div>
+                  {p.plan==='business' && (
+                    <span className="absolute -top-3 right-4 text-xs px-2 py-1 rounded-full bg-gray-900 text-white shadow">Most popular</span>
+                  )}
                 </div>
-
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700">One credit = one contract analysis + chat</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700">No monthly commitment</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700">Use credits anytime</span>
-                  </li>
+                <ul className="space-y-2 text-sm mb-6">
+                  {p.features.map((f) => (
+                    <li key={f} className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />{f}</li>
+                  ))}
                 </ul>
-                <div className="space-y-3">
+                <div className="mt-auto">
                   <button
-                    onClick={() => { setSelectedBundle(bundle); setMethodModalOpen(true); setCreditBalance(user?.id ? getUserCredits(user.id) : 0) }}
-                    disabled={isLoading}
-                    className={`w-full py-3 px-6 rounded-lg font-medium text-center block transition-colors ${
-                      'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
-                    }`}
+                    onClick={() => { setSelectedPlan({ plan: p.plan, period: billingPeriod, priceUSD: billingPeriod==='monthly' ? p.monthly : p.monthly*12 }); setSubModalOpen(true) }}
+                    className="w-full py-3 px-6 rounded-lg font-medium bg-[#5ACEA8] text-white hover:bg-[#49C89A]"
                   >
-                    {isLoading ? 'Processing…' : 'Buy Credits'}
+                    Get started
                   </button>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Custom Credits */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 mb-16">
-            <div className="grid md:grid-cols-2 gap-8 items-end">
-              <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Custom Credits</h3>
-                <p className="text-gray-600 mb-4">Choose any number of credits. Automatic volume discounts apply.</p>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="number"
-                    min={1}
-                    value={customCredits}
-                    onChange={(e) => {
-                      const v = parseInt(e.target.value || '1', 10)
-                      setCustomCredits(Number.isFinite(v) && v >= 1 ? v : 1)
-                    }}
-                    className="w-32 h-12 rounded-lg border border-gray-300 bg-white px-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <span className="text-gray-700">credits</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-gray-600 mb-2">Price</div>
-                <div className="text-4xl font-bold text-gray-900 mb-4">${customPriceUSD}</div>
-                <button
-                  onClick={() => {
-                    const bundle = { credits: customCredits, priceUSD: customPriceUSD }
-                    setSelectedBundle(bundle)
-                    setMethodModalOpen(true)
-                  }}
-                  disabled={isLoading || customPriceUSD <= 0}
-                  className={`py-3 px-6 rounded-lg font-medium text-center transition-colors ${
-                    'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
-                  }`}
-                >
-                  {isLoading ? 'Processing…' : 'Buy Custom Credits'}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Features Comparison */}
+          {/* Plan Comparison */}
           <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
-              Why Usage-Based Works
-            </h2>
-            
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="text-center">
-                <div className="bg-blue-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                  <Zap className="h-8 w-8 text-blue-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Lightning Fast</h3>
-                <p className="text-gray-600">
-                  Analyze contracts in seconds, not hours. Our AI processes documents 
-                  instantly to give you immediate insights.
-                </p>
-              </div>
-
-              <div className="text-center">
-                <div className="bg-green-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                  <Shield className="h-8 w-8 text-green-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Bank-Level Security</h3>
-                <p className="text-gray-600">
-                  Your documents are protected with enterprise-grade encryption and 
-                  security measures that exceed industry standards.
-                </p>
-              </div>
-
-              <div className="text-center">
-                <div className="bg-purple-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                  <Star className="h-8 w-8 text-purple-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Fair, Sustainable Pricing</h3>
-                <p className="text-gray-600">
-                  Pay when you get value. No unlimited plans that incentivize heavy usage to bankrupt the product.
-                </p>
-              </div>
+            <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">Compare Plans</h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-full table-fixed divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Feature</th>
+                    {['Pay‑Per‑Use','$24/mo Pro','$79/mo Team','$199/mo Business','$499/mo Enterprise'].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200 text-sm">
+                  {[
+                    ['Credits/Analyses','Buy as needed','5/month','30/month (team)','100/month (team)','500/month (team)'],
+                    ['Seats','1','1','5','15','50'],
+                    ['Contract Library','Personal','Personal','Shared','Shared','Shared'],
+                    ['Chat with Contract','✓','✓','✓','✓','✓'],
+                    ['Negotiation Playbook','✓','✓','✓','✓','✓'],
+                    ['PDF Export','✓','✓','✓','✓','✓'],
+                    ['Team Dashboard','—','—','Basic','Advanced','Custom'],
+                    ['Analytics','—','—','Basic','Advanced','Custom'],
+                    ['Approval Workflows','—','—','—','✓','✓'],
+                    ['Custom Templates','—','—','—','✓','✓'],
+                    ['Version Comparison','—','—','—','✓','✓'],
+                    ['White‑Label Reports','—','—','—','✓','✓'],
+                    ['Custom Risk Frameworks','—','—','—','—','✓'],
+                    ['API Access','—','—','—','—','✓'],
+                    ['SSO/SAML','—','—','—','—','✓'],
+                    ['Integrations','—','—','—','—','✓'],
+                    ['Audit Trail','—','—','—','—','✓'],
+                    ['Dedicated Support','—','—','Email','Priority','Account Manager'],
+                    ['SLA','—','—','—','24 hours','99.9%'],
+                    ['Support Response','5 days','3 days','48 hours','24 hours','4 hours']
+                  ].map((row, idx) => (
+                    <tr key={idx}>
+                      {row.map((cell, cidx) => (
+                        <td key={cidx} className="px-4 py-2 text-gray-900">{cell}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -465,7 +542,7 @@ const Pricing: React.FC = () => {
 
       <Footer />
 
-      {isMethodModalOpen && selectedBundle && (
+  {isMethodModalOpen && selectedBundle && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
           onClick={() => {
@@ -505,6 +582,49 @@ const Pricing: React.FC = () => {
               >
                 Coming Soon
               </button>
+            </div>
+          </div>
+        </div>
+  )}
+
+  {isBundleModalOpen && (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { if (!isLoading) setBundleModalOpen(false) }}>
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 sm:p-8" onClick={(e) => e.stopPropagation()}>
+        <button aria-label="Close" onClick={() => setBundleModalOpen(false)} disabled={isLoading} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+          <X className="w-5 h-5" />
+        </button>
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">Select credits</h3>
+        <p className="text-gray-600 mb-6">Choose a bundle. You can pay with card or crypto.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {bundles.map((b) => (
+            <button
+              key={`bundle-${b.credits}`}
+              onClick={() => { setSelectedBundle(b); setBundleModalOpen(false); setMethodModalOpen(true) }}
+              className={`relative text-left rounded-2xl border ${b.popular ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'} bg-white hover:bg-gray-50 p-5 pt-7 transition-shadow`}
+            >
+              {b.popular && (
+                <span className="absolute -top-3 right-3 text-xs px-2 py-1 rounded-full bg-blue-600 text-white shadow">Best value</span>
+              )}
+              <div className="text-2xl font-bold text-gray-900 mb-1">${b.priceUSD}</div>
+              <div className="text-sm text-gray-600">{b.credits} credit{b.credits>1?'s':''}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )}
+
+      {isSubModalOpen && selectedPlan && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { if (!isLoading) setSubModalOpen(false) }}>
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-4 sm:p-6 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <button aria-label="Close" onClick={() => setSubModalOpen(false)} disabled={isLoading} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Subscribe to {selectedPlan.plan} ({selectedPlan.period})</h3>
+            <p className="text-gray-600 mb-4">Total: ${selectedPlan.priceUSD}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={async () => { await handleSubscribePlan('card') }} disabled={isLoading} className="py-3 px-6 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">Card</button>
+              <button onClick={async () => { await handleSubscribePlan('crypto') }} disabled={isLoading} className="py-3 px-6 rounded-lg font-medium bg-gray-900 text-white hover:bg-black disabled:opacity-50">Crypto</button>
             </div>
           </div>
         </div>
