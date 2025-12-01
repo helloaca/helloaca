@@ -1,10 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk'
 import mixpanel from 'mixpanel-browser'
 
-const claudeApiKey = import.meta.env.VITE_CLAUDE_API_KEY
+const claudeApiKey = import.meta.env.VITE_CLAUDE_API_KEY || import.meta.env.VITE_ANTHROPIC_API_KEY
 
 if (!claudeApiKey) {
-  throw new Error('VITE_CLAUDE_API_KEY is not set in environment variables')
+  throw new Error('Claude API key not found. Set VITE_CLAUDE_API_KEY or VITE_ANTHROPIC_API_KEY')
 }
 
 const anthropic = new Anthropic({
@@ -30,8 +30,8 @@ export const claudeService = {
       
       // Prepare system message with contract context if available and strict no-emoji policy
       const baseSystemMessage = contractContext 
-        ? `You are an AI assistant specialized in contract analysis. You have access to the following contract content: ${contractContext}. Please provide helpful, accurate responses about the contract terms, obligations, and any questions the user might have.`
-        : 'You are an AI assistant specialized in contract analysis. Please provide helpful responses about contract-related questions.'
+        ? `You are an AI assistant specialized in contract analysis. You have access to the following contract content: ${contractContext}. Provide helpful, accurate responses about the contract.`
+        : 'You are an AI assistant specialized in contract analysis. Provide helpful responses about contract-related questions.'
       
       // Add strict no-emoji policy to system message with rich formatting allowed
       const systemMessage = `${baseSystemMessage}
@@ -60,14 +60,13 @@ IMPORTANT COMMUNICATION POLICY:
           
           const requestOptions: any = {
             model: model,
-            max_tokens: 4000, // Reduced to avoid token limit issues
+            max_tokens: 2000,
             system: systemMessage,
-            messages: messages,
+            messages: messages.map(m => ({ role: m.role, content: [{ type: 'text', text: m.content }] })),
             temperature: 0.1
           }
 
           if (forceJsonResponse) {
-            requestOptions.response_format = { type: 'json' }
             requestOptions.system = systemMessage + '\n\nYou MUST return ONLY valid JSON. No explanations. No Markdown. No commentary. If you cannot produce valid JSON, return {}.'
           }
 
