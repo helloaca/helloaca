@@ -5,6 +5,7 @@ import {
   validateEnhancedAnalysis,
   LegacyAnalysisData
 } from '../types/contractAnalysis'
+import { addUserCredits, unmarkContractCredited } from './utils'
 
 export interface Contract {
   id: string
@@ -192,6 +193,34 @@ export class ContractService {
             .from('contracts')
             .update({ analysis_status: 'failed' })
             .eq('id', currentContractId)
+          try {
+            const { data: report } = await supabase
+              .from('reports')
+              .select('id,user_id,analysis_data')
+              .eq('contract_id', currentContractId)
+              .single()
+            const paid = !!(report?.analysis_data?.paid_analysis || report?.analysis_data?.paid || report?.analysis_data?.credited_contract)
+            if (paid) {
+              const rid = report!.id
+              const auid = report!.user_id || userId
+              const patched = { ...(report!.analysis_data || {}), paid_analysis: false }
+              await supabase.from('reports').update({ analysis_data: patched }).eq('id', rid)
+              try {
+                const { data: profile } = await supabase
+                  .from('user_profiles')
+                  .select('id,credits_balance')
+                  .eq('id', auid)
+                  .single()
+                const current = typeof profile?.credits_balance === 'number' ? profile!.credits_balance : 0
+                await supabase
+                  .from('user_profiles')
+                  .update({ credits_balance: current + 1 })
+                  .eq('id', auid)
+                try { unmarkContractCredited(auid, currentContractId) } catch { /* noop */ }
+                try { addUserCredits(auid, 1) } catch { /* noop */ }
+              } catch { /* noop */ }
+            }
+          } catch { /* noop */ }
         }
       } catch (updateError) {
         console.error('Failed to update contract status on error:', updateError)

@@ -71,6 +71,25 @@ export function markContractCredited(userId: string, contractId: string) {
   } catch { void 0 }
 }
 
+export function unmarkContractCredited(userId: string, contractId: string) {
+  try {
+    const key = `credited_contracts_${userId}`
+    const raw = localStorage.getItem(key)
+    const arr: string[] = raw ? JSON.parse(raw) : []
+    const next = arr.filter(id => id !== contractId)
+    localStorage.setItem(key, JSON.stringify(next))
+  } catch { void 0 }
+}
+
+export function refundUserCredit(userId: string, contractId?: string) {
+  try {
+    if (contractId) unmarkContractCredited(userId, contractId)
+  } catch { void 0 }
+  try {
+    addUserCredits(userId, 1)
+  } catch { void 0 }
+}
+
 export function isContractCredited(userId: string, contractId: string): boolean {
   try {
     const key = `credited_contracts_${userId}`
