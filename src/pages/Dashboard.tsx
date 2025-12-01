@@ -280,7 +280,7 @@ const Dashboard: React.FC = () => {
       setIsCreditsModalOpen(true)
       return
     }
-    const requiresCredit = !freeAvailable
+    const requiresCredit = credits > 0 ? true : !freeAvailable
 
     setSelectedFile(file)
     setUploadStatus('uploading')
@@ -413,7 +413,6 @@ const Dashboard: React.FC = () => {
       hasStructuredSummary: !!contract.analysis?.analysis_data?.structuredAnalysis?.summary
     })
     
-    // Preferred: Enhanced model summary under executive_summary
     if (contract.analysis?.analysis_data?.executive_summary?.summary) {
       const fullSummary = contract.analysis.analysis_data.executive_summary.summary
       console.log('✅ Found summary at root level:', fullSummary.substring(0, 100) + '...')
@@ -422,7 +421,6 @@ const Dashboard: React.FC = () => {
       return firstSentence.length > 100 ? fullSummary.substring(0, 100) + '...' : firstSentence
     }
 
-    // Legacy: root-level summary used by older adapters
     if (contract.analysis?.analysis_data?.summary) {
       const fullSummary = contract.analysis.analysis_data.summary
       console.log('✅ Found legacy summary at root:', fullSummary.substring(0, 100) + '...')
@@ -430,7 +428,6 @@ const Dashboard: React.FC = () => {
       return firstSentence.length > 100 ? fullSummary.substring(0, 100) + '...' : firstSentence
     }
 
-    // Backward compatibility: structuredAnalysis.summary
     if (contract.analysis?.analysis_data?.structuredAnalysis?.summary) {
       const fullSummary = contract.analysis.analysis_data.structuredAnalysis.summary
       console.log('✅ Found summary in structuredAnalysis (legacy):', fullSummary.substring(0, 100) + '...')

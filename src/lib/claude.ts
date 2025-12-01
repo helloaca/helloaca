@@ -48,10 +48,8 @@ IMPORTANT COMMUNICATION POLICY:
 
       // Try multiple model names to find the correct one
       const models = [
-        'claude-3-sonnet-20240229',
-        'claude-3-sonnet-20241022',
-        'claude-3-haiku-20240307',
-        'claude-3-opus-20240229'
+        'claude-3-5-sonnet-latest',
+        'claude-3-5-haiku-latest'
       ]
       
       let lastError: any = null
@@ -68,11 +66,9 @@ IMPORTANT COMMUNICATION POLICY:
             temperature: 0.1
           }
 
-          // Add response_format for JSON-only responses when requested
           if (forceJsonResponse) {
-            // Note: Anthropic Claude doesn't support response_format like OpenAI
-            // But we can enforce JSON through system prompts
-            requestOptions.system = systemMessage + '\n\nCRITICAL: You must respond ONLY with valid JSON. Do not include any text outside the JSON object. Your response must start with { and end with } with no additional text, markdown formatting, or code blocks.'
+            requestOptions.response_format = { type: 'json' }
+            requestOptions.system = systemMessage + '\n\nYou MUST return ONLY valid JSON. No explanations. No Markdown. No commentary. If you cannot produce valid JSON, return {}.'
           }
 
           const response = await anthropic.messages.create(requestOptions)

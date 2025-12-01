@@ -697,66 +697,14 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
 
       console.log('📝 Received comprehensive analysis from Claude AI')
       
-      // Parse the JSON response with robust error handling
       let enhancedAnalysis: EnhancedContractAnalysis
       try {
-        console.log('🧹 Starting JSON parsing with enhanced error handling...')
-        
-        // Step 1: Clean the response
-        let cleanResponse = this.sanitizeJsonResponse(response)
-        console.log('✅ Initial response sanitization completed')
-        
-        // Step 2: Attempt to parse JSON
-        try {
-          enhancedAnalysis = JSON.parse(cleanResponse)
-          console.log('✅ Successfully parsed comprehensive AI analysis result')
-        } catch (initialParseError) {
-          console.warn('⚠️ Initial JSON parse failed, attempting repair...', initialParseError)
-          
-          // Step 3: Attempt JSON repair
-          const repairedJson = this.repairMalformedJson(cleanResponse)
-          if (repairedJson) {
-            try {
-              enhancedAnalysis = JSON.parse(repairedJson)
-              console.log('✅ Successfully parsed repaired JSON')
-            } catch (repairParseError) {
-              console.error('❌ JSON repair failed:', repairParseError)
-              throw repairParseError
-            }
-          } else {
-            throw initialParseError
-          }
-        }
-        
-      } catch (parseError: any) {
-        console.error('❌ All JSON parsing attempts failed:', parseError)
-        console.log('📊 Error details:', {
-          message: parseError?.message || 'Unknown error',
-          position: parseError?.message?.match(/position (\d+)/)?.[1],
-          line: parseError?.message?.match(/line (\d+)/)?.[1],
-          column: parseError?.message?.match(/column (\d+)/)?.[1]
-        })
-        
-        // Enhanced logging for debugging
-        const errorPosition = parseError?.message?.match(/position (\d+)/)?.[1]
-        if (errorPosition) {
-          const pos = parseInt(errorPosition)
-          const context = response.substring(Math.max(0, pos - 100), pos + 100)
-          console.log('🔍 Error context around position', pos, ':', context)
-        }
-        
-        console.log('📄 Raw response preview (first 1000 chars):', response.substring(0, 1000))
-        console.log('📄 Raw response preview (last 500 chars):', response.substring(Math.max(0, response.length - 500)))
-        
-        // Fallback to local analysis if JSON parsing fails
-        console.log('🔄 Falling back to local analysis due to JSON parsing error')
+        enhancedAnalysis = JSON.parse(response)
+      } catch {
         return this.generateLocalAnalysis(contractText)
       }
 
-      // Validate the structure using the comprehensive validation function
       if (!validateEnhancedAnalysis(enhancedAnalysis)) {
-        console.error('❌ AI response structure validation failed')
-        console.log('🔄 Falling back to local analysis due to structure validation error')
         return this.generateLocalAnalysis(contractText)
       }
 
@@ -777,141 +725,6 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
     }
   }
 
-  /**
-   * Sanitize AI response to extract clean JSON
-   */
-  private static sanitizeJsonResponse(response: string): string {
-    let cleanResponse = response.trim()
-    
-    // Remove markdown code blocks (```json ... ```)
-    if (cleanResponse.startsWith('```json')) {
-      const startIndex = cleanResponse.indexOf('{')
-      const lastBraceIndex = cleanResponse.lastIndexOf('}')
-      if (startIndex !== -1 && lastBraceIndex !== -1) {
-        cleanResponse = cleanResponse.substring(startIndex, lastBraceIndex + 1)
-      }
-    } else if (cleanResponse.startsWith('```')) {
-      // Handle generic code blocks
-      const lines = cleanResponse.split('\n')
-      lines.shift() // Remove first line with ```
-      if (lines[lines.length - 1].trim() === '```') {
-        lines.pop() // Remove last line with ```
-      }
-      cleanResponse = lines.join('\n').trim()
-    }
-    
-    // Additional cleanup for common formatting issues
-    cleanResponse = cleanResponse
-      .replace(/^```json\s*/i, '') // Remove ```json at start
-      .replace(/\s*```\s*$/i, '')  // Remove ``` at end
-      .replace(/^\s*json\s*/i, '') // Remove standalone 'json' at start
-      .trim()
-    
-    // Find the JSON object boundaries more reliably
-    const firstBrace = cleanResponse.indexOf('{')
-    const lastBrace = cleanResponse.lastIndexOf('}')
-    
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      cleanResponse = cleanResponse.substring(firstBrace, lastBrace + 1)
-    }
-    
-    return cleanResponse
-  }
-
-  /**
-   * Attempt to repair common JSON formatting issues
-   */
-  private static repairMalformedJson(jsonString: string): string | null {
-    try {
-      console.log('🔧 Attempting JSON repair...')
-      
-      let repaired = jsonString
-      
-      // Common repairs
-      const repairs = [
-        // Fix missing commas in arrays
-        { pattern: /(\])\s*(\[)/g, replacement: '$1,$2' },
-        { pattern: /(\})\s*(\{)/g, replacement: '$1,$2' },
-        { pattern: /(\})\s*(\[)/g, replacement: '$1,$2' },
-        { pattern: /(\])\s*(\{)/g, replacement: '$1,$2' },
-        
-        // Fix missing commas after string values
-        { pattern: /(")\s*\n\s*(")/g, replacement: '$1,$2' },
-        { pattern: /(true|false|null|\d+)\s*\n\s*"/g, replacement: '$1,"' },
-        
-        // Fix trailing commas
-        { pattern: /,(\s*[\}\]])/g, replacement: '$1' },
-        
-        // Fix unescaped quotes in strings
-        { pattern: /(?<!\\)"(?=.*".*:)/g, replacement: '\\"' },
-        
-        // Fix missing quotes around property names
-        { pattern: /([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, replacement: '$1"$2":' },
-        
-        // Fix single quotes to double quotes
-        { pattern: /'/g, replacement: '"' },
-        
-        // Fix missing closing brackets/braces (basic attempt)
-        { pattern: /(\{[^}]*$)/, replacement: '$1}' },
-        { pattern: /(\[[^\]]*$)/, replacement: '$1]' }
-      ]
-      
-      // Apply repairs
-      for (const repair of repairs) {
-        const before = repaired
-        repaired = repaired.replace(repair.pattern, repair.replacement)
-        if (before !== repaired) {
-          console.log('🔧 Applied repair:', repair.pattern.toString())
-        }
-      }
-      
-      // Try to balance braces and brackets
-      const openBraces = (repaired.match(/\{/g) || []).length
-      const closeBraces = (repaired.match(/\}/g) || []).length
-      const openBrackets = (repaired.match(/\[/g) || []).length
-      const closeBrackets = (repaired.match(/\]/g) || []).length
-      
-      // Add missing closing braces
-      if (openBraces > closeBraces) {
-        repaired += '}'.repeat(openBraces - closeBraces)
-        console.log('🔧 Added missing closing braces:', openBraces - closeBraces)
-      }
-      
-      // Add missing closing brackets
-      if (openBrackets > closeBrackets) {
-        repaired += ']'.repeat(openBrackets - closeBrackets)
-        console.log('🔧 Added missing closing brackets:', openBrackets - closeBrackets)
-      }
-      
-      // Validate the repair by attempting to parse
-      try {
-        JSON.parse(repaired)
-        console.log('✅ JSON repair successful')
-        return repaired
-      } catch (testError: any) {
-         console.log('❌ JSON repair validation failed:', testError?.message || 'Unknown error')
-         
-         // Try a more aggressive approach: extract just the main object
-         const mainObjectMatch = repaired.match(/\{[\s\S]*\}/);
-         if (mainObjectMatch) {
-           const mainObject = mainObjectMatch[0];
-           try {
-             JSON.parse(mainObject);
-             console.log('✅ Extracted main object successfully');
-             return mainObject;
-           } catch (extractError: any) {
-             console.log('❌ Main object extraction failed:', extractError?.message || 'Unknown error');
-           }
-         }
-        
-        return null
-      }
-      
-    } catch (error) {
-      console.error('❌ JSON repair process failed:', error)
-      return null
-    }
-  }
 
   /**
    * Convert enhanced 11-section analysis to legacy format for backward compatibility
@@ -1635,8 +1448,6 @@ function toLegacyAnalysis(analysis: EnhancedContractAnalysis): LegacyAnalysisDat
     overall_risk_level,
     riskScore: analysis.executive_summary.key_metrics.risk_score,
     executiveSummary: analysis.executive_summary.contract_overview?.purpose_summary,
-    // Provide legacy root-level summary for components expecting it
-    // Prefer explicit executive_summary.summary if available; otherwise fall back to purpose_summary
     ...(analysis.executive_summary.summary
       ? { summary: analysis.executive_summary.summary }
       : analysis.executive_summary.contract_overview?.purpose_summary
