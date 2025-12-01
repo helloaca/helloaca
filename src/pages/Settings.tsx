@@ -60,6 +60,8 @@ const Settings: React.FC = () => {
   const [totpCode, setTotpCode] = useState('')
   const [isEnrolling2FA, setEnrolling2FA] = useState(false)
   const [isVerifying2FA, setVerifying2FA] = useState(false)
+  const [totpEnabled, setTotpEnabled] = useState(false)
+  const [totpFactorId, setTotpFactorId] = useState<string | null>(null)
   const [isDeleteStep1Open, setDeleteStep1Open] = useState(false)
   const [isDeleteStep2Open, setDeleteStep2Open] = useState(false)
   const [deletePhrase, setDeletePhrase] = useState('')
@@ -291,16 +293,6 @@ const Settings: React.FC = () => {
         return
       }
       const timeout = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), 8000))
-      const challengePromise = (supabase as any).auth.mfa.challenge({ factorId })
-      const challengeResult: any = await Promise.race([challengePromise, timeout])
-      if ('timedOut' in challengeResult) {
-        toast.error('Network timeout initiating verification. Please try again.')
-        return
-      }
-      if (challengeResult?.error) {
-        toast.error('Failed to challenge 2FA')
-        return
-      }
       const verifyPromise = (supabase as any).auth.mfa.verify({ factorId, code: totpCode })
       const verifyResult: any = await Promise.race([verifyPromise, timeout])
       if ('timedOut' in verifyResult) {
@@ -320,6 +312,47 @@ const Settings: React.FC = () => {
       toast.error('Failed to enable 2FA')
     } finally {
       setVerifying2FA(false)
+    }
+  }
+
+  const loadMfaStatus = useCallback(async () => {
+    try {
+      const timeout = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), 6000))
+      const listPromise = (supabase as any).auth.mfa.listFactors()
+      const result: any = await Promise.race([listPromise, timeout])
+      if ('timedOut' in result) return
+      const totp = Array.isArray(result?.data) ? result.data.find((f: any) => f.factorType === 'totp') : null
+      setTotpEnabled(!!totp)
+      setTotpFactorId(totp?.id || null)
+    } catch { /* noop */ }
+  }, [])
+
+  useEffect(() => {
+    loadMfaStatus()
+  }, [loadMfaStatus])
+
+  const disable2FA = async () => {
+    try {
+      if (!totpFactorId) {
+        toast.error('No TOTP factor found')
+        return
+      }
+      const timeout = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), 8000))
+      const unenrollPromise = (supabase as any).auth.mfa.unenroll({ factorId: totpFactorId })
+      const res: any = await Promise.race([unenrollPromise, timeout])
+      if ('timedOut' in res) {
+        toast.error('Network timeout disabling 2FA. Please try again.')
+        return
+      }
+      if (res?.error) {
+        toast.error('Failed to disable 2FA')
+        return
+      }
+      setTotpEnabled(false)
+      setTotpFactorId(null)
+      toast.success('2FA disabled')
+    } catch {
+      toast.error('Failed to disable 2FA')
     }
   }
 
@@ -1006,11 +1039,23 @@ const Settings: React.FC = () => {
               <div>
                 <p className="font-medium text-gray-900">Two-Factor Authentication</p>
                 <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${totpEnabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {totpEnabled ? 'Enabled' : 'Disabled'}
+                  </span>
+                  {totpEnabled && <span className="text-xs text-gray-500">Authenticator: TOTP</span>}
+                </div>
               </div>
-              <Button variant="outline" className="w-full sm:w-auto" onClick={startEnable2FA} disabled={isEnrolling2FA}>
-                {isEnrolling2FA ? (<Loader2 className="w-4 h-4 mr-2 animate-spin" />) : null}
-                Enable 2FA
-              </Button>
+              {totpEnabled ? (
+                <Button variant="outline" className="w-full sm:w-auto" onClick={disable2FA} disabled={isVerifying2FA}>
+                  Disable 2FA
+                </Button>
+              ) : (
+                <Button variant="outline" className="w-full sm:w-auto" onClick={startEnable2FA} disabled={isEnrolling2FA}>
+                  {isEnrolling2FA ? (<Loader2 className="w-4 h-4 mr-2 animate-spin" />) : null}
+                  Enable 2FA
+                </Button>
+              )}
             </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
