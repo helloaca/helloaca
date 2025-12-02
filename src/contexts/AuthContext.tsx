@@ -692,6 +692,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to refresh profile'
       console.error('Error refreshing profile:', err)
+      try {
+        const planMeta = (session.user.user_metadata?.plan as 'free' | 'pro' | 'team' | 'business' | 'enterprise' | undefined)
+        if (planMeta) {
+          setUser({ ...user, plan: planMeta })
+          cacheUserData({ ...user, plan: planMeta }, profile || null as any, session)
+        }
+      } catch { /* noop */ }
       return { success: false, error: errorMessage }
     }
   }

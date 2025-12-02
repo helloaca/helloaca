@@ -1,368 +1,267 @@
-installHook.js:1 initEternlDomAPI: domId 741280-49701-277143 false
+installHook.js:1 initEternlDomAPI: domId 313169-439681-929018 false
 overrideMethod @ installHook.js:1
-initEternlDomAPI @ dom.js?token=247359-299987-571580:893
-(anonymous) @ dom.js?token=247359-299987-571580:932
-(anonymous) @ dom.js?token=247359-299987-571580:934
-installHook.js:1 initEternlDomAPI: href https://preview.helloaca.xyz/dashboard
+initEternlDomAPI @ dom.js?token=176439-85644-237216:893
+(anonymous) @ dom.js?token=176439-85644-237216:932
+(anonymous) @ dom.js?token=176439-85644-237216:934
+installHook.js:1 initEternlDomAPI: href https://preview.helloaca.xyz/pricing
 overrideMethod @ installHook.js:1
-initEternlDomAPI @ dom.js?token=247359-299987-571580:894
-(anonymous) @ dom.js?token=247359-299987-571580:932
-(anonymous) @ dom.js?token=247359-299987-571580:934
-index-CcW2aw5G.js:176 🔄 Initializing authentication...
-index-CcW2aw5G.js:170 ❌ No active session
-index-CcW2aw5G.js:170 🔄 Auth state changed: INITIAL_SESSION undefined
-index-CcW2aw5G.js:170 🔄 Auth state changed: SIGNED_IN nokthelegend@gmail.com
-index-CcW2aw5G.js:170 🔄 Handling auth state change for user: nokthelegend@gmail.com
-index-CcW2aw5G.js:170 🔄 Fetching fresh profile data
-index-CcW2aw5G.js:170 Starting contract load for user: ab94ba1a-14d1-4845-86c9-c1ddd3217b42 (retry: 0)
-index-CcW2aw5G.js:170 Loading contracts for user: ab94ba1a-14d1-4845-86c9-c1ddd3217b42
-index-CcW2aw5G.js:170 Contract loading completed successfully
-index-CcW2aw5G.js:170 Contract loading process completed
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ❌ No summary found in analysis data, using fallback based on title
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ❌ No summary found in analysis data, using fallback based on title
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ❌ No summary found in analysis data, using fallback based on title
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ❌ No summary found in analysis data, using fallback based on title
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
-index-CcW2aw5G.js:170 🔄 Processing file: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs.pdf Type: application/pdf Size: 98232
-index-CcW2aw5G.js:170 📄 Processing as PDF...
-index-CcW2aw5G.js:170 📄 Starting PDF processing for file: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs.pdf Size: 98232 Type: application/pdf
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ❌ No summary found in analysis data, using fallback based on title
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ❌ No summary found in analysis data, using fallback based on title
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
-index-CcW2aw5G.js:170 📄 ArrayBuffer created, size: 98232
-index-CcW2aw5G.js:170 📄 PDF loaded successfully, pages: 10
-index-CcW2aw5G.js:170 📄 Processing page 1/10
-index-CcW2aw5G.js:170 📄 Page 1 has 91 text items
-index-CcW2aw5G.js:170 📄 Page 1 extracted 1102 characters
-index-CcW2aw5G.js:170 📄 Processing page 2/10
-index-CcW2aw5G.js:170 📄 Page 2 has 108 text items
-index-CcW2aw5G.js:170 📄 Page 2 extracted 1159 characters
-index-CcW2aw5G.js:170 📄 Processing page 3/10
-index-CcW2aw5G.js:170 📄 Page 3 has 68 text items
-index-CcW2aw5G.js:170 📄 Page 3 extracted 1329 characters
-index-CcW2aw5G.js:170 📄 Processing page 4/10
-index-CcW2aw5G.js:170 📄 Page 4 has 69 text items
-index-CcW2aw5G.js:170 📄 Page 4 extracted 1233 characters
-index-CcW2aw5G.js:170 📄 Processing page 5/10
-index-CcW2aw5G.js:170 📄 Page 5 has 75 text items
-index-CcW2aw5G.js:170 📄 Page 5 extracted 1298 characters
-index-CcW2aw5G.js:170 📄 Processing page 6/10
-index-CcW2aw5G.js:170 📄 Page 6 has 74 text items
-index-CcW2aw5G.js:170 📄 Page 6 extracted 1159 characters
-index-CcW2aw5G.js:170 📄 Processing page 7/10
-index-CcW2aw5G.js:170 📄 Page 7 has 93 text items
-index-CcW2aw5G.js:170 📄 Page 7 extracted 1277 characters
-index-CcW2aw5G.js:170 📄 Processing page 8/10
-index-CcW2aw5G.js:170 📄 Page 8 has 88 text items
-index-CcW2aw5G.js:170 📄 Page 8 extracted 1312 characters
-index-CcW2aw5G.js:170 📄 Processing page 9/10
-index-CcW2aw5G.js:170 📄 Page 9 has 47 text items
-index-CcW2aw5G.js:170 📄 Page 9 extracted 1022 characters
-index-CcW2aw5G.js:170 📄 Processing page 10/10
-index-CcW2aw5G.js:170 📄 Page 10 has 15 text items
-index-CcW2aw5G.js:170 📄 Page 10 extracted 283 characters
-index-CcW2aw5G.js:170 📄 PDF processing complete. Total text length: 11183
-index-CcW2aw5G.js:170 📄 Total characters extracted: 11174
-index-CcW2aw5G.js:170 📄 First 200 characters: FREELANCE SERVICE AGREEMENT Effective Date: November 1, 2025 Between: ● Client: Digital Innovations Corp, a Delaware corporation with principal place of business at 123 Tech Street, San Francisco, CA 
-index-CcW2aw5G.js:170 📄 Last 200 characters: XHIBITS Exhibit A: Technical Specifications [Detailed technical requirements, wireframes, design specs] Exhibit B: Service Level Agreement [Maintenance response times, uptime guarantees if applicable]
-index-CcW2aw5G.js:170 ✅ File processed successfully: {fileName: 'FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs.pdf', originalType: 'application/pdf', detectedType: 'application/pdf', textLength: 11183, wordCount: 1625, …}
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ❌ No summary found in analysis data, using fallback based on title
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ❌ No summary found in analysis data, using fallback based on title
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
-index-CcW2aw5G.js:170 🤖 Starting 11-section professional contract analysis...
-index-CcW2aw5G.js:170 📄 Contract text length: 11183 characters
-index-CcW2aw5G.js:170 🔍 Sending contract to Claude AI for comprehensive analysis...
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ❌ No summary found in analysis data, using fallback based on title
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ❌ No summary found in analysis data, using fallback based on title
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
-index-CcW2aw5G.js:170 🤖 Claude API Request - Messages: 1 Context: false
-index-CcW2aw5G.js:170 🔄 Trying model: claude-3-5-sonnet
-claude-BEUQsgke.js:18  POST https://api.anthropic.com/v1/messages 404 (Not Found)
-fetchWithTimeout @ claude-BEUQsgke.js:18
-makeRequest @ claude-BEUQsgke.js:18
-await in makeRequest
-request @ claude-BEUQsgke.js:18
-methodRequest @ claude-BEUQsgke.js:18
-post @ claude-BEUQsgke.js:18
-create @ claude-BEUQsgke.js:11
-sendMessage @ claude-BEUQsgke.js:30
-analyzeContractWithAI @ index-CcW2aw5G.js:949
-await in analyzeContractWithAI
-uploadAndAnalyzeContract @ index-CcW2aw5G.js:473
-await in uploadAndAnalyzeContract
-R @ index-CcW2aw5G.js:472
-await in R
-I @ index-CcW2aw5G.js:472
-B8 @ index-CcW2aw5G.js:37
-z8 @ index-CcW2aw5G.js:37
-q8 @ index-CcW2aw5G.js:37
-US @ index-CcW2aw5G.js:37
-rE @ index-CcW2aw5G.js:37
-(anonymous) @ index-CcW2aw5G.js:37
-V2 @ index-CcW2aw5G.js:40
-Cj @ index-CcW2aw5G.js:37
-Kv @ index-CcW2aw5G.js:37
-b2 @ index-CcW2aw5G.js:37
-sR @ index-CcW2aw5G.js:37
-index-CcW2aw5G.js:170 ❌ Model claude-3-5-sonnet failed: 404 {"type":"error","error":{"type":"not_found_error","message":"model: claude-3-5-sonnet"},"request_id":"req_011CVg43w4cdzftAcEP3ZGQV"}
-index-CcW2aw5G.js:170 🔄 Trying model: claude-3-5-haiku
-claude-BEUQsgke.js:18  POST https://api.anthropic.com/v1/messages 404 (Not Found)
-fetchWithTimeout @ claude-BEUQsgke.js:18
-makeRequest @ claude-BEUQsgke.js:18
-await in makeRequest
-request @ claude-BEUQsgke.js:18
-methodRequest @ claude-BEUQsgke.js:18
-post @ claude-BEUQsgke.js:18
-create @ claude-BEUQsgke.js:11
-sendMessage @ claude-BEUQsgke.js:30
-await in sendMessage
-analyzeContractWithAI @ index-CcW2aw5G.js:949
-await in analyzeContractWithAI
-uploadAndAnalyzeContract @ index-CcW2aw5G.js:473
-await in uploadAndAnalyzeContract
-R @ index-CcW2aw5G.js:472
-await in R
-I @ index-CcW2aw5G.js:472
-B8 @ index-CcW2aw5G.js:37
-z8 @ index-CcW2aw5G.js:37
-q8 @ index-CcW2aw5G.js:37
-US @ index-CcW2aw5G.js:37
-rE @ index-CcW2aw5G.js:37
-(anonymous) @ index-CcW2aw5G.js:37
-V2 @ index-CcW2aw5G.js:40
-Cj @ index-CcW2aw5G.js:37
-Kv @ index-CcW2aw5G.js:37
-b2 @ index-CcW2aw5G.js:37
-sR @ index-CcW2aw5G.js:37
-index-CcW2aw5G.js:170 ❌ Model claude-3-5-haiku failed: 404 {"type":"error","error":{"type":"not_found_error","message":"model: claude-3-5-haiku"},"request_id":"req_011CVg43xUwvi4BH9PuEeQc1"}
-installHook.js:1 ❌ All Claude models failed
+initEternlDomAPI @ dom.js?token=176439-85644-237216:894
+(anonymous) @ dom.js?token=176439-85644-237216:932
+(anonymous) @ dom.js?token=176439-85644-237216:934
+[Violation] Forced reflow while executing JavaScript took 42ms
+index-CznOs-Sc.js:176 🔄 Initializing authentication...
+index-CznOs-Sc.js:176 📦 Using cached auth data
+index-CznOs-Sc.js:176 🔄 Auth state changed: SIGNED_IN nokthelegend@gmail.com
+index-CznOs-Sc.js:176 🔄 Handling auth state change for user: nokthelegend@gmail.com
+index-CznOs-Sc.js:176 📦 Using cached profile data
+index-CznOs-Sc.js:176 🔄 Fetching fresh profile data
+index-CznOs-Sc.js:170 initEternlDomAPI: domId 224658-778380-532315 true
+(anonymous) @ index-CznOs-Sc.js:170
+initEternlDomAPI @ dom.js?token=126948-519044-535549:893
+(anonymous) @ dom.js?token=126948-519044-535549:932
+(anonymous) @ dom.js?token=126948-519044-535549:934
+index-CznOs-Sc.js:170 initEternlDomAPI: href https://preview.helloaca.xyz/pricing
+(anonymous) @ index-CznOs-Sc.js:170
+initEternlDomAPI @ dom.js?token=126948-519044-535549:894
+(anonymous) @ dom.js?token=126948-519044-535549:932
+(anonymous) @ dom.js?token=126948-519044-535549:934
+popup:1  GET https://www.googletagmanager.com/gtag/js?id=G-0WCTF5FP66 net::ERR_SSL_PROTOCOL_ERROR
+dom.js?token=432598-961118-49549:893 initEternlDomAPI: domId 415493-100415-163339 true
+initEternlDomAPI @ dom.js?token=432598-961118-49549:893
+(anonymous) @ dom.js?token=432598-961118-49549:932
+(anonymous) @ dom.js?token=432598-961118-49549:934
+dom.js?token=432598-961118-49549:894 initEternlDomAPI: href https://checkout.paystack.com/popup
+initEternlDomAPI @ dom.js?token=432598-961118-49549:894
+(anonymous) @ dom.js?token=432598-961118-49549:932
+(anonymous) @ dom.js?token=432598-961118-49549:934
+vendor-C31BE1_7.js:1 Datadog Browser SDK: No storage available for session. We will not send any data.
+h @ vendor-C31BE1_7.js:1
+init @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:1
+Ti @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:1
+(anonymous) @ index-D3C1ACEk.js:37
+dom.js?token=582447-8133-591615:893 initEternlDomAPI: domId 510744-226950-440878 true
+initEternlDomAPI @ dom.js?token=582447-8133-591615:893
+(anonymous) @ dom.js?token=582447-8133-591615:932
+(anonymous) @ dom.js?token=582447-8133-591615:934
+dom.js?token=582447-8133-591615:894 initEternlDomAPI: href about:blank
+initEternlDomAPI @ dom.js?token=582447-8133-591615:894
+(anonymous) @ dom.js?token=582447-8133-591615:932
+(anonymous) @ dom.js?token=582447-8133-591615:934
+vendor-C31BE1_7.js:1 [Violation] 'setTimeout' handler took 85ms
+[Violation] Forced reflow while executing JavaScript took 79ms
+vendor-C31BE1_7.js:1 ba {message: 'Network Error', name: 'AxiosError', code: 'ERR_NETWORK', config: {…}, request: XMLHttpRequest, …}
+C.w.<computed> @ vendor-C31BE1_7.js:1
+setupTransaction @ index-D3C1ACEk.js:37
+await in setupTransaction
+(anonymous) @ index-D3C1ACEk.js:37
+(anonymous) @ index-D3C1ACEk.js:37
+vendor-C31BE1_7.js:1  POST https://api.paystack.co/checkout/request_inline net::ERR_SSL_PROTOCOL_ERROR
+(anonymous) @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:1
+PU @ vendor-C31BE1_7.js:1
+P0 @ vendor-C31BE1_7.js:1
+ia.request @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:1
+wj @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:26
+d @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:1
+cm @ vendor-C31BE1_7.js:1
+o @ vendor-C31BE1_7.js:1
+Promise.then
+cm @ vendor-C31BE1_7.js:1
+o @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:1
+request @ vendor-C31BE1_7.js:26
+requestTransaction @ index-D3C1ACEk.js:37
+setupTransaction @ index-D3C1ACEk.js:37
+(anonymous) @ index-D3C1ACEk.js:37
+(anonymous) @ index-D3C1ACEk.js:37
+index-CznOs-Sc.js:170 Starting contract load for user: ab94ba1a-14d1-4845-86c9-c1ddd3217b42 (retry: 0)
+index-CznOs-Sc.js:170 Loading contracts for user: ab94ba1a-14d1-4845-86c9-c1ddd3217b42
+installHook.js:1 Contract loading timeout after 12s on retry 0 - using cache if available
 overrideMethod @ installHook.js:1
-(anonymous) @ index-CcW2aw5G.js:170
-sendMessage @ claude-BEUQsgke.js:30
-await in sendMessage
-analyzeContractWithAI @ index-CcW2aw5G.js:949
-await in analyzeContractWithAI
-uploadAndAnalyzeContract @ index-CcW2aw5G.js:473
-await in uploadAndAnalyzeContract
-R @ index-CcW2aw5G.js:472
-await in R
-I @ index-CcW2aw5G.js:472
-B8 @ index-CcW2aw5G.js:37
-z8 @ index-CcW2aw5G.js:37
-q8 @ index-CcW2aw5G.js:37
-US @ index-CcW2aw5G.js:37
-rE @ index-CcW2aw5G.js:37
-(anonymous) @ index-CcW2aw5G.js:37
-V2 @ index-CcW2aw5G.js:40
-Cj @ index-CcW2aw5G.js:37
-Kv @ index-CcW2aw5G.js:37
-b2 @ index-CcW2aw5G.js:37
-sR @ index-CcW2aw5G.js:37
-installHook.js:1 Claude API Error: Jt: 404 {"type":"error","error":{"type":"not_found_error","message":"model: claude-3-5-haiku"},"request_id":"req_011CVg43xUwvi4BH9PuEeQc1"}
-    at b.generate (claude-BEUQsgke.js:1:1932)
-    at me.makeStatusError (claude-BEUQsgke.js:18:2061)
-    at me.makeRequest (claude-BEUQsgke.js:18:5311)
-    at async Object.sendMessage (claude-BEUQsgke.js:30:134)
-    at async cd.analyzeContractWithAI (index-CcW2aw5G.js:949:363)
-    at async cd.uploadAndAnalyzeContract (index-CcW2aw5G.js:473:5806)
-    at async R (index-CcW2aw5G.js:472:42636)
+(anonymous) @ index-CznOs-Sc.js:170
+E @ index-CznOs-Sc.js:532
+await in E
+(anonymous) @ index-CznOs-Sc.js:532
+k0 @ index-CznOs-Sc.js:40
+ad @ index-CznOs-Sc.js:40
+(anonymous) @ index-CznOs-Sc.js:40
+C @ index-CznOs-Sc.js:25
+T @ index-CznOs-Sc.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+$ @ index-CznOs-Sc.js:25
+T @ index-CznOs-Sc.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+$ @ index-CznOs-Sc.js:25
+K @ index-CznOs-Sc.js:25
+e.unstable_scheduleCallback @ index-CznOs-Sc.js:25
+hE @ index-CznOs-Sc.js:40
+ls @ index-CznOs-Sc.js:40
+EM @ index-CznOs-Sc.js:40
+Promise.then
+lS @ index-CznOs-Sc.js:40
+aE @ index-CznOs-Sc.js:40
+sE @ index-CznOs-Sc.js:40
+C @ index-CznOs-Sc.js:25
+T @ index-CznOs-Sc.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+$ @ index-CznOs-Sc.js:25
+T @ index-CznOs-Sc.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+$ @ index-CznOs-Sc.js:25
+T @ index-CznOs-Sc.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+$ @ index-CznOs-Sc.js:25
+K @ index-CznOs-Sc.js:25
+e.unstable_scheduleCallback @ index-CznOs-Sc.js:25
+hE @ index-CznOs-Sc.js:40
+ls @ index-CznOs-Sc.js:40
+ma @ index-CznOs-Sc.js:40
+dM @ index-CznOs-Sc.js:38
+(anonymous) @ index-CznOs-Sc.js:67
+nr.startTransition @ index-CznOs-Sc.js:9
+(anonymous) @ index-CznOs-Sc.js:67
+p @ index-CznOs-Sc.js:49
+(anonymous) @ index-CznOs-Sc.js:58
+(anonymous) @ index-CznOs-Sc.js:67
+w @ index-CznOs-Sc.js:67
+G8 @ index-CznOs-Sc.js:37
+Y8 @ index-CznOs-Sc.js:37
+J8 @ index-CznOs-Sc.js:37
+Vk @ index-CznOs-Sc.js:37
+dA @ index-CznOs-Sc.js:37
+(anonymous) @ index-CznOs-Sc.js:37
+Y2 @ index-CznOs-Sc.js:40
+R3 @ index-CznOs-Sc.js:37
+Jv @ index-CznOs-Sc.js:37
+k2 @ index-CznOs-Sc.js:37
+hR @ index-CznOs-Sc.js:37
+index-CznOs-Sc.js:170 Contract loading process completed
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ❌ No summary found in analysis data, using fallback based on title
+index-D3C1ACEk.js:37 Uncaught TypeError: Cannot destructure property 'language' of 'object null' as it is null.
+    at index-D3C1ACEk.js:37:883030
+    at index-D3C1ACEk.js:37:37052
+(anonymous) @ index-D3C1ACEk.js:37
+(anonymous) @ index-D3C1ACEk.js:37
+index-CznOs-Sc.js:170 Starting contract load for user: ab94ba1a-14d1-4845-86c9-c1ddd3217b42 (retry: 0)
+index-CznOs-Sc.js:170 Loading contracts for user: ab94ba1a-14d1-4845-86c9-c1ddd3217b42
+installHook.js:1 Contract loading timeout after 12s on retry 0 - using cache if available
 overrideMethod @ installHook.js:1
-(anonymous) @ index-CcW2aw5G.js:170
-sendMessage @ claude-BEUQsgke.js:30
-await in sendMessage
-analyzeContractWithAI @ index-CcW2aw5G.js:949
-await in analyzeContractWithAI
-uploadAndAnalyzeContract @ index-CcW2aw5G.js:473
-await in uploadAndAnalyzeContract
-R @ index-CcW2aw5G.js:472
-await in R
-I @ index-CcW2aw5G.js:472
-B8 @ index-CcW2aw5G.js:37
-z8 @ index-CcW2aw5G.js:37
-q8 @ index-CcW2aw5G.js:37
-US @ index-CcW2aw5G.js:37
-rE @ index-CcW2aw5G.js:37
-(anonymous) @ index-CcW2aw5G.js:37
-V2 @ index-CcW2aw5G.js:40
-Cj @ index-CcW2aw5G.js:37
-Kv @ index-CcW2aw5G.js:37
-b2 @ index-CcW2aw5G.js:37
-sR @ index-CcW2aw5G.js:37
-installHook.js:1 Error details: {status: 404, statusText: undefined, message: '404 {"type":"error","error":{"type":"not_found_err…ku"},"request_id":"req_011CVg43xUwvi4BH9PuEeQc1"}', error: {…}, headers: Headers}
-overrideMethod @ installHook.js:1
-(anonymous) @ index-CcW2aw5G.js:170
-sendMessage @ claude-BEUQsgke.js:30
-await in sendMessage
-analyzeContractWithAI @ index-CcW2aw5G.js:949
-await in analyzeContractWithAI
-uploadAndAnalyzeContract @ index-CcW2aw5G.js:473
-await in uploadAndAnalyzeContract
-R @ index-CcW2aw5G.js:472
-await in R
-I @ index-CcW2aw5G.js:472
-B8 @ index-CcW2aw5G.js:37
-z8 @ index-CcW2aw5G.js:37
-q8 @ index-CcW2aw5G.js:37
-US @ index-CcW2aw5G.js:37
-rE @ index-CcW2aw5G.js:37
-(anonymous) @ index-CcW2aw5G.js:37
-V2 @ index-CcW2aw5G.js:40
-Cj @ index-CcW2aw5G.js:37
-Kv @ index-CcW2aw5G.js:37
-b2 @ index-CcW2aw5G.js:37
-sR @ index-CcW2aw5G.js:37
-installHook.js:1 ❌ AI analysis failed: Error: AI model is not available. All attempted models failed. Please contact support to update the system.
-    at Object.sendMessage (claude-BEUQsgke.js:30:928)
-    at async cd.analyzeContractWithAI (index-CcW2aw5G.js:949:363)
-    at async cd.uploadAndAnalyzeContract (index-CcW2aw5G.js:473:5806)
-    at async R (index-CcW2aw5G.js:472:42636)
-overrideMethod @ installHook.js:1
-(anonymous) @ index-CcW2aw5G.js:170
-analyzeContractWithAI @ index-CcW2aw5G.js:949
-await in analyzeContractWithAI
-uploadAndAnalyzeContract @ index-CcW2aw5G.js:473
-await in uploadAndAnalyzeContract
-R @ index-CcW2aw5G.js:472
-await in R
-I @ index-CcW2aw5G.js:472
-B8 @ index-CcW2aw5G.js:37
-z8 @ index-CcW2aw5G.js:37
-q8 @ index-CcW2aw5G.js:37
-US @ index-CcW2aw5G.js:37
-rE @ index-CcW2aw5G.js:37
-(anonymous) @ index-CcW2aw5G.js:37
-V2 @ index-CcW2aw5G.js:40
-Cj @ index-CcW2aw5G.js:37
-Kv @ index-CcW2aw5G.js:37
-b2 @ index-CcW2aw5G.js:37
-sR @ index-CcW2aw5G.js:37
-index-CcW2aw5G.js:170 🔄 Falling back to local analysis due to AI error
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ❌ No summary found in analysis data, using fallback based on title
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ❌ No summary found in analysis data, using fallback based on title
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ❌ No summary found in analysis data, using fallback based on title
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ❌ No summary found in analysis data, using fallback based on title
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
-index-CcW2aw5G.js:170 Starting contract load for user: ab94ba1a-14d1-4845-86c9-c1ddd3217b42 (retry: 0)
-index-CcW2aw5G.js:170 Loading contracts for user: ab94ba1a-14d1-4845-86c9-c1ddd3217b42
-index-CcW2aw5G.js:170 Contract loading completed successfully
-index-CcW2aw5G.js:170 Contract loading process completed
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ❌ No summary found in analysis data, using fallback based on title
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ❌ No summary found in analysis data, using fallback based on title
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
-index-CcW2aw5G.js:170 Starting contract load for user: ab94ba1a-14d1-4845-86c9-c1ddd3217b42 (retry: 0)
-index-CcW2aw5G.js:170 Loading contracts for user: ab94ba1a-14d1-4845-86c9-c1ddd3217b42
-index-CcW2aw5G.js:170 Contract loading completed successfully
-index-CcW2aw5G.js:170 Contract loading process completed
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ❌ No summary found in analysis data, using fallback based on title
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ❌ No summary found in analysis data, using fallback based on title
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
-index-CcW2aw5G.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
-index-CcW2aw5G.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
-index-CcW2aw5G.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
+(anonymous) @ index-CznOs-Sc.js:170
+E @ index-CznOs-Sc.js:532
+await in E
+(anonymous) @ index-CznOs-Sc.js:532
+k0 @ index-CznOs-Sc.js:40
+ad @ index-CznOs-Sc.js:40
+(anonymous) @ index-CznOs-Sc.js:40
+C @ index-CznOs-Sc.js:25
+T @ index-CznOs-Sc.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+$ @ index-CznOs-Sc.js:25
+T @ index-CznOs-Sc.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+$ @ index-CznOs-Sc.js:25
+T @ index-CznOs-Sc.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+$ @ index-CznOs-Sc.js:25
+K @ index-CznOs-Sc.js:25
+e.unstable_scheduleCallback @ index-CznOs-Sc.js:25
+hE @ index-CznOs-Sc.js:40
+ls @ index-CznOs-Sc.js:40
+ma @ index-CznOs-Sc.js:40
+dM @ index-CznOs-Sc.js:38
+(anonymous) @ index-CznOs-Sc.js:67
+nr.startTransition @ index-CznOs-Sc.js:9
+(anonymous) @ index-CznOs-Sc.js:67
+p @ index-CznOs-Sc.js:49
+(anonymous) @ index-CznOs-Sc.js:58
+(anonymous) @ index-CznOs-Sc.js:67
+w @ index-CznOs-Sc.js:67
+G8 @ index-CznOs-Sc.js:37
+Y8 @ index-CznOs-Sc.js:37
+J8 @ index-CznOs-Sc.js:37
+Vk @ index-CznOs-Sc.js:37
+dA @ index-CznOs-Sc.js:37
+(anonymous) @ index-CznOs-Sc.js:37
+Y2 @ index-CznOs-Sc.js:40
+R3 @ index-CznOs-Sc.js:37
+Jv @ index-CznOs-Sc.js:37
+k2 @ index-CznOs-Sc.js:37
+hR @ index-CznOs-Sc.js:37
+index-CznOs-Sc.js:170 Contract loading process completed
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ❌ No summary found in analysis data, using fallback based on title

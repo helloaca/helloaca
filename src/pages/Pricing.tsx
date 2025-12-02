@@ -70,7 +70,9 @@ const Pricing: React.FC = () => {
         return
       }
       const testMode = String(import.meta.env.VITE_PAYSTACK_TEST_MODE || '')
-      if (testMode === 'mock') {
+      const hostname = window.location.hostname
+      const shouldMock = testMode === 'mock' || hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('preview')
+      if (shouldMock) {
         try {
           const planUpdate = { plan: selectedPlan.plan }
           const result = await auth.updateProfile(planUpdate)
@@ -127,7 +129,29 @@ const Pricing: React.FC = () => {
 
       setIsLoading(true)
       setProcessingMethod('card')
-      try { await loadPaystackScript() } catch { setIsLoading(false); setProcessingMethod(null); toast.error('Network error loading payment library'); return }
+      try { await loadPaystackScript() } catch { 
+        setIsLoading(false); 
+        setProcessingMethod(null); 
+        if (shouldMock) {
+          try {
+            const planUpdate = { plan: selectedPlan.plan }
+            const result = await auth.updateProfile(planUpdate)
+            if (!result.success) {
+              await supabase.auth.updateUser({ data: { plan: selectedPlan.plan } })
+            }
+            await auth.refreshProfile()
+            refreshMonthlyCreditsForPlan(user.id, selectedPlan.plan)
+            setSubModalOpen(false)
+            toast.success('Subscription activated (mock)')
+            return
+          } catch {
+            toast.error('Mock activation failed')
+            return
+          }
+        }
+        toast.error('Network error loading payment library')
+        return 
+      }
       const PaystackPop = (window as any).PaystackPop
       if (!PaystackPop || typeof PaystackPop.setup !== 'function') { setIsLoading(false); setProcessingMethod(null); toast.error('Payment library failed to load'); return }
       let amountKobo: number = 0
@@ -223,6 +247,21 @@ const Pricing: React.FC = () => {
       } catch {
         setIsLoading(false)
         setProcessingMethod(null)
+        const hostname = window.location.hostname
+        const shouldMock = String(import.meta.env.VITE_PAYSTACK_TEST_MODE || '') === 'mock' || hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('preview')
+        if (shouldMock) {
+          try {
+            if (!user || !selectedBundle) { toast.error('No bundle selected'); return }
+            addUserCredits(user.id, selectedBundle.credits)
+            setCreditBalance(getUserCredits(user.id))
+            setMethodModalOpen(false)
+            toast.success(`Added ${selectedBundle.credits} credits (mock)`) 
+            return
+          } catch {
+            toast.error('Mock credit purchase failed')
+            return
+          }
+        }
         toast.error('Network error loading payment library')
         return
       }
