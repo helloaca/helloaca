@@ -2,9 +2,8 @@ import React, { useState, useRef, useEffect } from 'react'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import Button from '@/components/ui/Button'
-import Modal from '@/components/ui/Modal'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Upload, FileText, Clock, TrendingUp, Plus, AlertCircle, CheckCircle, Loader2, MessageCircle, Download, Shield, Star } from 'lucide-react'
+import { Upload, FileText, Clock, TrendingUp, Plus, AlertCircle, CheckCircle, Loader2, MessageCircle, Download, Shield, Star, LayoutDashboard, Folder, Users, BarChart3, CreditCard, GitCompare, FileSpreadsheet, BadgeCheck, Activity, Key, Plug, List, ShieldCheck, Fingerprint, Sliders } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import type { Contract } from '@/lib/contractService'
@@ -42,33 +41,8 @@ const Dashboard: React.FC = () => {
 
   // Contract history modal state
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
-
-  const currentPlan: 'free' | 'pro' | 'team' | 'business' | 'enterprise' = (profile?.plan || user?.plan || 'free') as any
-
-  const aggregateRiskDistribution = () => {
-    const totals: Record<string, number> = { Critical: 0, High: 0, Moderate: 0, Low: 0, Safe: 0 }
-    try {
-      contracts.forEach(c => {
-        const dist = c.analysis?.analysis_data?.risk_assessment?.risk_distribution
-        if (dist && typeof dist === 'object') {
-          Object.keys(totals).forEach(k => {
-            const v = Number((dist as any)[k])
-            if (Number.isFinite(v)) totals[k] += v
-          })
-        }
-      })
-    } catch {}
-    const total = Object.values(totals).reduce((a, b) => a + b, 0)
-    return { totals, total }
-  }
-
-  const [isSsoModalOpen, setIsSsoModalOpen] = useState(false)
-  const [orgName, setOrgName] = useState('')
-  const [domain, setDomain] = useState('')
-  const [seats, setSeats] = useState<number>(5)
-  const [contactEmail, setContactEmail] = useState<string>(user?.email || '')
-  const [notes, setNotes] = useState('')
-  const [isSubmittingSso, setIsSubmittingSso] = useState(false)
+  type Section = 'dashboard'|'contracts'|'team'|'library'|'analytics'|'billing'|'approvals'|'versions'|'templates'|'branding'|'advanced_analytics'|'user_mgmt'|'api_keys'|'integrations'|'audit_log'|'sso'|'risk_framework'
+  const [activeSection, setActiveSection] = useState<Section>('dashboard')
 
   const getCacheKey = () => `contracts_cache_${user?.id || 'anon'}`
   const readCachedContracts = (): Array<Contract & { analysis?: any }> => {
@@ -523,6 +497,572 @@ const Dashboard: React.FC = () => {
   )
 }
 
+  const isTeamPlan = ['team','business','enterprise'].includes(String(profile?.plan || user?.plan || 'free'))
+  const isBusinessPlan = ['business','enterprise'].includes(String(profile?.plan || user?.plan || 'free'))
+  const isEnterprisePlan = ['enterprise'].includes(String(profile?.plan || user?.plan || 'free'))
+
+  if (isTeamPlan) {
+    const now = new Date()
+    const thisMonth = now.getMonth()
+    const thisYear = now.getFullYear()
+    const monthContracts = contracts.filter(c => {
+      const d = new Date(c.created_at)
+      return d.getMonth() === thisMonth && d.getFullYear() === thisYear
+    })
+    const attention = contracts.filter(c => {
+      const score = (c.analysis?.analysis_data?.executive_summary?.key_metrics?.risk_score ?? c.analysis?.analysis_data?.risk_assessment?.overall_score ?? 0)
+      return score >= 60
+    }).slice(0, 5)
+    const riskLevels = ['Critical','High','Medium','Low']
+    const riskSummaryCounts = riskLevels.reduce((acc: Record<string, number>, lvl) => ({ ...acc, [lvl]: 0 }), {})
+    contracts.forEach(c => {
+      const score = (c.analysis?.analysis_data?.executive_summary?.key_metrics?.risk_score ?? c.analysis?.analysis_data?.risk_assessment?.overall_score ?? 0)
+      let lvl = 'Low'
+      if (score >= 80) lvl = 'Critical'; else if (score >= 60) lvl = 'High'; else if (score >= 40) lvl = 'Medium'
+      riskSummaryCounts[lvl] = (riskSummaryCounts[lvl] || 0) + 1
+    })
+
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header showAuth={true} />
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 py-6 sm:py-8">
+          <div className="grid grid-cols-12 gap-6">
+            <aside className="col-span-12 md:col-span-3 lg:col-span-2">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div className="font-space-grotesk font-bold text-black mb-4">Team Workspace</div>
+                <nav className="space-y-2">
+                  <button onClick={() => setActiveSection('dashboard')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${activeSection==='dashboard'?'bg-gray-900 text-white':'text-gray-800 hover:bg-gray-100'}`}><LayoutDashboard className="w-4 h-4" />Dashboard</button>
+                  <button onClick={() => setActiveSection('contracts')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${activeSection==='contracts'?'bg-gray-900 text-white':'text-gray-800 hover:bg-gray-100'}`}><Folder className="w-4 h-4" />Contracts</button>
+                  <button onClick={() => setActiveSection('team')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${activeSection==='team'?'bg-gray-900 text-white':'text-gray-800 hover:bg-gray-100'}`}><Users className="w-4 h-4" />Team members</button>
+                  <button onClick={() => setActiveSection('library')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${activeSection==='library'?'bg-gray-900 text-white':'text-gray-800 hover:bg-gray-100'}`}><Folder className="w-4 h-4" />Library</button>
+                  <button onClick={() => setActiveSection('analytics')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${activeSection==='analytics'?'bg-gray-900 text-white':'text-gray-800 hover:bg-gray-100'}`}><BarChart3 className="w-4 h-4" />Analytics</button>
+                  <button onClick={() => setActiveSection('billing')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${activeSection==='billing'?'bg-gray-900 text-white':'text-gray-800 hover:bg-gray-100'}`}><CreditCard className="w-4 h-4" />Billing</button>
+                  {isBusinessPlan && (
+                    <>
+                      <button onClick={() => setActiveSection('approvals')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${activeSection==='approvals'?'bg-gray-900 text-white':'text-gray-800 hover:bg-gray-100'}`}><Shield className="w-4 h-4" />Approval workflows</button>
+                      <button onClick={() => setActiveSection('versions')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${activeSection==='versions'?'bg-gray-900 text-white':'text-gray-800 hover:bg-gray-100'}`}><GitCompare className="w-4 h-4" />Version comparison</button>
+                      <button onClick={() => setActiveSection('templates')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${activeSection==='templates'?'bg-gray-900 text-white':'text-gray-800 hover:bg-gray-100'}`}><FileSpreadsheet className="w-4 h-4" />Templates</button>
+                      <button onClick={() => setActiveSection('branding')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${activeSection==='branding'?'bg-gray-900 text-white':'text-gray-800 hover:bg-gray-100'}`}><BadgeCheck className="w-4 h-4" />White‑label exports</button>
+                      <button onClick={() => setActiveSection('advanced_analytics')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${activeSection==='advanced_analytics'?'bg-gray-900 text-white':'text-gray-800 hover:bg-gray-100'}`}><Activity className="w-4 h-4" />Advanced analytics</button>
+                    </>
+                  )}
+                  {isEnterprisePlan && (
+                    <>
+                      <button onClick={() => setActiveSection('user_mgmt')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${activeSection==='user_mgmt'?'bg-gray-900 text-white':'text-gray-800 hover:bg-gray-100'}`}><ShieldCheck className="w-4 h-4" />User management</button>
+                      <button onClick={() => setActiveSection('api_keys')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${activeSection==='api_keys'?'bg-gray-900 text-white':'text-gray-800 hover:bg-gray-100'}`}><Key className="w-4 h-4" />API keys</button>
+                      <button onClick={() => setActiveSection('integrations')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${activeSection==='integrations'?'bg-gray-900 text-white':'text-gray-800 hover:bg-gray-100'}`}><Plug className="w-4 h-4" />Integrations</button>
+                      <button onClick={() => setActiveSection('audit_log')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${activeSection==='audit_log'?'bg-gray-900 text-white':'text-gray-800 hover:bg-gray-100'}`}><List className="w-4 h-4" />Audit log</button>
+                      <button onClick={() => setActiveSection('sso')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${activeSection==='sso'?'bg-gray-900 text-white':'text-gray-800 hover:bg-gray-100'}`}><Fingerprint className="w-4 h-4" />SSO settings</button>
+                      <button onClick={() => setActiveSection('risk_framework')} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${activeSection==='risk_framework'?'bg-gray-900 text-white':'text-gray-800 hover:bg-gray-100'}`}><Sliders className="w-4 h-4" />Custom risk framework</button>
+                    </>
+                  )}
+                </nav>
+              </div>
+            </aside>
+
+            <main className="col-span-12 md:col-span-9 lg:col-span-10">
+              {activeSection === 'dashboard' && (
+                <div className="space-y-6">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h1 className="font-space-grotesk text-2xl sm:text-3xl font-bold text-black">{isEnterprisePlan ? 'Enterprise Dashboard' : isBusinessPlan ? 'Business Dashboard' : 'Team Dashboard'}</h1>
+                      <p className="text-gray-600">Overview across the team</p>
+                    </div>
+                    <button onClick={() => navigate('/settings')} className="px-4 py-2 rounded-lg bg-[#5ACEA8] text-white hover:bg-[#49C89A]">Invite users</button>
+                  </div>
+                  <div className="grid md:grid-cols-4 gap-4">
+                    <Card><CardContent className="pt-4"><div className="flex items-center"><FileText className="w-6 h-6 text-primary" /><div className="ml-3"><p className="text-2xl font-bold">{monthContracts.length}</p><p className="text-sm text-gray-600">Contracts this month</p></div></div></CardContent></Card>
+                    <Card><CardContent className="pt-4"><div className="flex items-center"><AlertCircle className="w-6 h-6 text-red-500" /><div className="ml-3"><p className="text-2xl font-bold">{attention.length}</p><p className="text-sm text-gray-600">Needs attention</p></div></div></CardContent></Card>
+                    <Card><CardContent className="pt-4"><div className="flex items-center"><BarChart3 className="w-6 h-6 text-blue-600" /><div className="ml-3"><p className="text-2xl font-bold">{stats.totalContracts}</p><p className="text-sm text-gray-600">Total contracts</p></div></div></CardContent></Card>
+                    <Card><CardContent className="pt-4"><div className="flex items-center"><Users className="w-6 h-6 text-green-600" /><div className="ml-3"><p className="text-2xl font-bold">1</p><p className="text-sm text-gray-600">Members</p></div></div></CardContent></Card>
+                  </div>
+                  {isEnterprisePlan && (
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader><CardTitle>Compliance status</CardTitle><CardDescription>Risk thresholds</CardDescription></CardHeader>
+                        <CardContent>
+                          {(() => {
+                            const compliant = contracts.filter(c => {
+                              const s = (c.analysis?.analysis_data?.executive_summary?.key_metrics?.risk_score ?? c.analysis?.analysis_data?.risk_assessment?.overall_score ?? 0)
+                              return s < 40
+                            }).length
+                            const total = contracts.length || 1
+                            const pct = Math.round((compliant/total)*100)
+                            return <p className="text-gray-900"><span className="text-2xl font-bold">{pct}%</span> compliant • {compliant}/{total}</p>
+                          })()}
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader><CardTitle>Integration health</CardTitle><CardDescription>Slack • Drive • DocuSign</CardDescription></CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between"><div className="flex items-center gap-2"><Plug className="w-4 h-4 text-[#5ACEA8]" /><span>Slack</span></div><span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">Not connected</span></div>
+                            <div className="flex items-center justify-between"><div className="flex items-center gap-2"><Plug className="w-4 h-4 text-[#5ACEA8]" /><span>Google Drive</span></div><span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">Not connected</span></div>
+                            <div className="flex items-center justify-between"><div className="flex items-center gap-2"><Plug className="w-4 h-4 text-[#5ACEA8]" /><span>DocuSign</span></div><span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">Not connected</span></div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+                  {isBusinessPlan && (
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader><CardTitle>Contracts needing approval</CardTitle><CardDescription>Pending review</CardDescription></CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {attention.map(c => (
+                              <div key={c.id} className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-medium text-gray-900">{getDisplayTitle(c.file_name || c.title)}</p>
+                                  <p className="text-sm text-gray-600">Uploaded {new Date(c.created_at).toLocaleDateString()}</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button className="px-3 py-1 rounded-md bg-gray-900 text-white" onClick={() => handleContractView(c.id)}>Approve</button>
+                                  <button className="px-3 py-1 rounded-md border border-gray-300" onClick={() => handleContractView(c.id)}>Request changes</button>
+                                </div>
+                              </div>
+                            ))}
+                            {attention.length === 0 && <p className="text-gray-600">None pending.</p>}
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader><CardTitle>Bottlenecks</CardTitle><CardDescription>Slow reviewers</CardDescription></CardHeader>
+                        <CardContent>
+                          <p className="text-gray-600">Reviewer stats appear as the team grows.</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader><CardTitle>Top risks</CardTitle><CardDescription>Across all contracts</CardDescription></CardHeader>
+                        <CardContent>
+                          {(['Critical','High','Medium','Low'] as const).map(l => {
+                            const count = riskSummaryCounts[l] || 0
+                            const total = contracts.length || 1
+                            const pct = Math.round((count/total)*100)
+                            return (
+                              <div key={`top-${l}`} className="flex items-center justify-between mb-3">
+                                <span className="text-sm font-medium">{l}</span>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-40 bg-gray-200 rounded-full h-2">
+                                    <div className={`h-2 rounded-full ${l==='Critical'?'bg-red-500':l==='High'?'bg-orange-500':l==='Medium'?'bg-yellow-500':'bg-green-500'}`} style={{ width: `${pct}%` }} />
+                                  </div>
+                                  <span className="text-sm text-gray-600 w-10 text-right">{count}</span>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader><CardTitle>Month comparison</CardTitle><CardDescription>Trend vs previous</CardDescription></CardHeader>
+                        <CardContent>
+                          {(() => {
+                            const prevMonth = (thisMonth - 1 + 12) % 12
+                            const prevYear = prevMonth === 11 ? thisYear - 1 : thisYear
+                            const prevCount = contracts.filter(c => {
+                              const d = new Date(c.created_at)
+                              return d.getMonth() === prevMonth && d.getFullYear() === prevYear
+                            }).length
+                            const diff = monthContracts.length - prevCount
+                            const sign = diff >= 0 ? '+' : ''
+                            return <p className="text-gray-900"><span className="text-2xl font-bold">{monthContracts.length}</span> this month • {sign}{diff} vs last month</p>
+                          })()}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <Card>
+                      <CardHeader><CardTitle>Team activity</CardTitle><CardDescription>Recent uploads</CardDescription></CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {contracts.slice(0,6).map(c => (
+                            <div key={c.id} className="flex items-center justify-between">
+                              <div>
+                                <p className="font-medium text-gray-900">{getDisplayTitle(c.file_name || c.title)}</p>
+                                <p className="text-sm text-gray-600">Uploaded by you • {new Date(c.created_at).toLocaleDateString()}</p>
+                              </div>
+                              <button className="text-[#5ACEA8]" onClick={() => handleContractView(c.id)}>View</button>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader><CardTitle>Risk summary</CardTitle><CardDescription>Across contracts</CardDescription></CardHeader>
+                      <CardContent>
+                        {(['Critical','High','Medium','Low'] as const).map(l => {
+                          const count = riskSummaryCounts[l] || 0
+                          const total = contracts.length || 1
+                          const pct = Math.round((count/total)*100)
+                          return (
+                            <div key={l} className="flex items-center justify-between mb-3">
+                              <span className="text-sm font-medium">{l}</span>
+                              <div className="flex items-center gap-2">
+                                <div className="w-40 bg-gray-200 rounded-full h-2">
+                                  <div className={`h-2 rounded-full ${l==='Critical'?'bg-red-500':l==='High'?'bg-orange-500':l==='Medium'?'bg-yellow-500':'bg-green-500'}`} style={{ width: `${pct}%` }} />
+                                </div>
+                                <span className="text-sm text-gray-600 w-10 text-right">{count}</span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </CardContent>
+                    </Card>
+                  </div>
+                  <Card>
+                    <CardHeader><CardTitle>Contracts requiring attention</CardTitle></CardHeader>
+                    <CardContent>
+                      {attention.length === 0 ? (
+                        <p className="text-gray-600">No high‑risk contracts.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {attention.map(c => (
+                            <div key={c.id} className="flex items-center justify-between">
+                              <div>
+                                <p className="font-medium text-gray-900">{getDisplayTitle(c.file_name || c.title)}</p>
+                                <p className="text-sm text-gray-600">Risk score {(c.analysis?.analysis_data?.executive_summary?.key_metrics?.risk_score ?? c.analysis?.analysis_data?.risk_assessment?.overall_score ?? 0)}</p>
+                              </div>
+                              <button className="text-[#5ACEA8]" onClick={() => handleContractView(c.id)}>Review</button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {activeSection === 'contracts' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-bold">Contracts</h2>
+                    <button onClick={handleChooseFileClick} className="px-4 py-2 rounded-lg bg-[#5ACEA8] text-white hover:bg-[#49C89A]">Upload</button>
+                  </div>
+                  <input type="file" ref={fileInputRef} onChange={handleFileInputChange} hidden />
+                  <div className="bg-white rounded-xl border border-gray-200">
+                    <div className="divide-y">
+                      {contracts.map(c => (
+                        <div key={c.id} className="flex items-center justify-between p-4">
+                          <div>
+                            <p className="font-medium text-gray-900">{getDisplayTitle(c.file_name || c.title)}</p>
+                            <p className="text-sm text-gray-600">Uploaded by you • {new Date(c.created_at).toLocaleString()}</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <button className="text-[#5ACEA8]" onClick={() => handleContractView(c.id)}>Open</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeSection === 'team' && (
+                <div className="space-y-6">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h2 className="text-xl font-bold">Team members</h2>
+                      <p className="text-gray-600">Manage seats and invites</p>
+                    </div>
+                    <button onClick={() => navigate('/settings')} className="px-4 py-2 rounded-lg bg-[#5ACEA8] text-white hover:bg-[#49C89A]">Invite users</button>
+                  </div>
+                  <Card>
+                    <CardContent>
+                      <p className="text-gray-600">Team management connects seats and shared libraries. Invite users from Settings.</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {activeSection === 'library' && (
+                <div className="space-y-4">
+                  <h2 className="text-xl font-bold">Shared library</h2>
+                  <div className="bg-white rounded-xl border border-gray-200">
+                    <div className="divide-y">
+                      {contracts.map(c => (
+                        <div key={c.id} className="flex items-center justify-between p-4">
+                          <div>
+                            <p className="font-medium text-gray-900">{getDisplayTitle(c.file_name || c.title)}</p>
+                            <p className="text-sm text-gray-600">Last updated {new Date(c.updated_at || c.created_at).toLocaleString()}</p>
+                          </div>
+                          <button className="text-[#5ACEA8]" onClick={() => handleContractView(c.id)}>View</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeSection === 'analytics' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold">Analytics</h2>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <Card><CardContent className="pt-4"><p className="text-sm text-gray-600">Total contracts</p><p className="text-2xl font-bold">{stats.totalContracts}</p></CardContent></Card>
+                    <Card><CardContent className="pt-4"><p className="text-sm text-gray-600">This month</p><p className="text-2xl font-bold">{monthContracts.length}</p></CardContent></Card>
+                    <Card><CardContent className="pt-4"><p className="text-sm text-gray-600">High risk</p><p className="text-2xl font-bold">{attention.length}</p></CardContent></Card>
+                  </div>
+                </div>
+              )}
+
+              {isBusinessPlan && activeSection === 'approvals' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold">Approval workflows</h2>
+                  <Card>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {attention.map(c => (
+                          <div key={`appr-${c.id}`} className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-gray-900">{getDisplayTitle(c.file_name || c.title)}</p>
+                              <p className="text-sm text-gray-600">Risk {(c.analysis?.analysis_data?.executive_summary?.key_metrics?.risk_score ?? c.analysis?.analysis_data?.risk_assessment?.overall_score ?? 0)}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button className="px-3 py-1 rounded-md bg-gray-900 text-white" onClick={() => handleContractView(c.id)}>Approve</button>
+                              <button className="px-3 py-1 rounded-md border border-gray-300" onClick={() => handleContractView(c.id)}>Reject</button>
+                            </div>
+                          </div>
+                        ))}
+                        {attention.length === 0 && <p className="text-gray-600">Nothing pending right now.</p>}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {isBusinessPlan && activeSection === 'versions' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold">Version comparison</h2>
+                  <Card>
+                    <CardContent>
+                      <p className="text-gray-600">Select two contracts to compare differences.</p>
+                      <div className="grid md:grid-cols-2 gap-3 mt-3">
+                        <select className="border rounded-lg px-3 py-2">
+                          {contracts.map(c => <option key={`v1-${c.id}`} value={c.id}>{getDisplayTitle(c.file_name || c.title)}</option>)}
+                        </select>
+                        <select className="border rounded-lg px-3 py-2">
+                          {contracts.map(c => <option key={`v2-${c.id}`} value={c.id}>{getDisplayTitle(c.file_name || c.title)}</option>)}
+                        </select>
+                      </div>
+                      <div className="mt-4">
+                        <button className="px-4 py-2 rounded-lg bg-[#5ACEA8] text-white hover:bg-[#49C89A]">Compare</button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {isBusinessPlan && activeSection === 'templates' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold">Templates</h2>
+                  <Card>
+                    <CardContent>
+                      <div className="flex items-center gap-3 mb-4">
+                        <button className="px-4 py-2 rounded-lg bg-[#5ACEA8] text-white hover:bg-[#49C89A]">Create template</button>
+                        <button className="px-4 py-2 rounded-lg border border-gray-300">Use template</button>
+                      </div>
+                      <p className="text-gray-600">Template usage stats will appear here.</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {isBusinessPlan && activeSection === 'branding' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold">White‑label exports</h2>
+                  <Card>
+                    <CardContent>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm text-gray-700 mb-1">Brand name</label>
+                          <input className="w-full border rounded-lg px-3 py-2" placeholder="Your agency" />
+                        </div>
+                        <div>
+                          <label className="block text-sm text-gray-700 mb-1">Logo URL</label>
+                          <input className="w-full border rounded-lg px-3 py-2" placeholder="https://..." />
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <button className="px-4 py-2 rounded-lg bg-[#5ACEA8] text-white hover:bg-[#49C89A]">Apply branding to exports</button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {isBusinessPlan && activeSection === 'advanced_analytics' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold">Advanced analytics</h2>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <Card>
+                      <CardHeader><CardTitle>Top risks across contracts</CardTitle></CardHeader>
+                      <CardContent>
+                        {(['Critical','High','Medium','Low'] as const).map(l => {
+                          const count = riskSummaryCounts[l] || 0
+                          const total = contracts.length || 1
+                          const pct = Math.round((count/total)*100)
+                          return (
+                            <div key={`adv-${l}`} className="flex items-center justify-between mb-3">
+                              <span className="text-sm font-medium">{l}</span>
+                              <div className="flex items-center gap-2">
+                                <div className="w-40 bg-gray-200 rounded-full h-2">
+                                  <div className={`h-2 rounded-full ${l==='Critical'?'bg-red-500':l==='High'?'bg-orange-500':l==='Medium'?'bg-yellow-500':'bg-green-500'}`} style={{ width: `${pct}%` }} />
+                                </div>
+                                <span className="text-sm text-gray-600 w-10 text-right">{count}</span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader><CardTitle>Templates usage</CardTitle></CardHeader>
+                      <CardContent>
+                        <p className="text-gray-600">Usage data populates as templates are created.</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              )}
+
+              {isEnterprisePlan && activeSection === 'user_mgmt' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold">User management</h2>
+                  <Card>
+                    <CardContent>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full text-sm">
+                          <thead>
+                            <tr className="text-left text-gray-600">
+                              <th className="p-2">Role</th>
+                              <th className="p-2">Upload</th>
+                              <th className="p-2">Review</th>
+                              <th className="p-2">Approve</th>
+                              <th className="p-2">Billing</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y">
+                            {['Admin','Reviewer','Uploader'].map(r => (
+                              <tr key={`role-${r}`}> 
+                                <td className="p-2 font-medium text-gray-900">{r}</td>
+                                {['Upload','Review','Approve','Billing'].map(k => (
+                                  <td key={`perm-${r}-${k}`} className="p-2"><input type="checkbox" className="w-4 h-4" defaultChecked={r==='Admin'} disabled={r!=='Admin'} /></td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="mt-4"><button onClick={() => navigate('/settings')} className="px-4 py-2 rounded-lg bg-[#5ACEA8] text-white hover:bg-[#49C89A]">Manage users</button></div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {isEnterprisePlan && activeSection === 'api_keys' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold">API keys</h2>
+                  <Card>
+                    <CardContent>
+                      <div className="flex items-center gap-3">
+                        <Key className="w-5 h-5 text-gray-900" />
+                        <input className="flex-1 border rounded-lg px-3 py-2" value="sk_live_****************" readOnly />
+                        <button className="px-3 py-2 rounded-lg border border-gray-300" onClick={() => navigator.clipboard.writeText('sk_live_****************')}>Copy</button>
+                        <button className="px-3 py-2 rounded-lg bg-gray-900 text-white">Regenerate</button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {isEnterprisePlan && activeSection === 'integrations' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold">Integrations</h2>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    {['Slack','Google Drive','DocuSign'].map(name => (
+                      <Card key={`int-${name}`}>
+                        <CardContent className="pt-4">
+                          <div className="flex items-center justify-between mb-3"><div className="flex items-center gap-2"><Plug className="w-4 h-4" /><span>{name}</span></div><span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">Not connected</span></div>
+                          <button onClick={() => navigate('/settings')} className="px-3 py-2 rounded-lg bg-[#5ACEA8] text-white hover:bg-[#49C89A] w-full">Connect</button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {isEnterprisePlan && activeSection === 'audit_log' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold">Audit log</h2>
+                  <Card>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {contracts.slice(0,10).map(c => (
+                          <div key={`audit-${c.id}`} className="flex items-center justify-between">
+                            <div className="flex items-center gap-2"><List className="w-4 h-4 text-gray-500" /><span className="text-sm text-gray-800">Uploaded {getDisplayTitle(c.file_name || c.title)}</span></div>
+                            <span className="text-xs text-gray-500">{new Date(c.created_at).toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {isEnterprisePlan && activeSection === 'sso' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold">SSO settings</h2>
+                  <Card>
+                    <CardContent>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm text-gray-700 mb-1">Identity Provider</label>
+                          <select className="w-full border rounded-lg px-3 py-2"><option>Okta</option><option>Auth0</option><option>Azure AD</option></select>
+                        </div>
+                        <div>
+                          <label className="block text-sm text-gray-700 mb-1">SAML metadata URL</label>
+                          <input className="w-full border rounded-lg px-3 py-2" placeholder="https://idp.example.com/metadata.xml" />
+                        </div>
+                      </div>
+                      <div className="mt-4"><button className="px-4 py-2 rounded-lg bg-[#5ACEA8] text-white hover:bg-[#49C89A]">Save</button></div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {isEnterprisePlan && activeSection === 'risk_framework' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold">Custom risk framework</h2>
+                  <Card>
+                    <CardContent>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {['Critical','High','Medium','Low'].map(l => (
+                          <div key={`rf-${l}`}> 
+                            <label className="block text-sm text-gray-700 mb-1">{l} threshold</label>
+                            <input type="number" className="w-full border rounded-lg px-3 py-2" defaultValue={l==='Critical'?80:l==='High'?60:l==='Medium'?40:20} min={0} max={100} />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4"><button className="px-4 py-2 rounded-lg bg-[#5ACEA8] text-white hover:bg-[#49C89A]">Save framework</button></div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {activeSection === 'billing' && (
+                <div className="space-y-4">
+                  <h2 className="text-xl font-bold">Billing</h2>
+                  <Card><CardContent><p className="text-gray-600">Plan: {String(profile?.plan || user?.plan)}</p></CardContent></Card>
+                </div>
+              )}
+            </main>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header showAuth={true} />
@@ -590,119 +1130,6 @@ const Dashboard: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-
-        {/* Plan Badge */}
-        <div className="mb-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700">
-            <span className="text-xs font-semibold">Plan</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-black text-white">{currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)}</span>
-            <button onClick={() => navigate('/pricing')} className="text-xs underline">Manage</button>
-          </div>
-        </div>
-
-        {/* Team/Business/Enterprise features */}
-        {(currentPlan === 'team' || currentPlan === 'business' || currentPlan === 'enterprise') && (
-          <div className="grid md:grid-cols-2 gap-6 sm:gap-8 mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Team Dashboard</CardTitle>
-                <CardDescription>Shared library and team analytics</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-lg border p-4">
-                    <p className="text-sm text-gray-600">Contracts this month</p>
-                    <p className="text-2xl font-bold">{stats.thisMonth}</p>
-                  </div>
-                  <div className="rounded-lg border p-4">
-                    <p className="text-sm text-gray-600">Total in library</p>
-                    <p className="text-2xl font-bold">{stats.totalContracts}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Risk Distribution</CardTitle>
-                <CardDescription>Aggregate across team analyses</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {(() => {
-                  const { totals, total } = aggregateRiskDistribution()
-                  const bars = Object.entries(totals)
-                  return (
-                    <div className="space-y-3">
-                      {bars.map(([k, v]) => (
-                        <div key={k} className="flex items-center justify-between gap-3">
-                          <span className="text-sm text-gray-700 w-24">{k}</span>
-                          <div className="flex-1 bg-gray-200 rounded-full h-2">
-                            <div className={`h-2 rounded-full ${k==='Critical' ? 'bg-red-500' : k==='High' ? 'bg-orange-500' : k==='Moderate' ? 'bg-yellow-500' : k==='Low' ? 'bg-blue-500' : 'bg-green-500'}`} style={{ width: `${total>0 ? Math.round((v/total)*100) : 0}%` }} />
-                          </div>
-                          <span className="text-sm text-gray-700 w-10 text-right">{v}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )
-                })()}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Business/Enterprise advanced features */}
-        {(currentPlan === 'business' || currentPlan === 'enterprise') && (
-          <div className="grid md:grid-cols-2 gap-6 sm:gap-8 mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Approval Workflows</CardTitle>
-                <CardDescription>Draft → review → approve</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-700 mb-4">Configure reviewers and approvers for contract stages.</p>
-                <Button variant="outline" onClick={() => toast.info('Workflows setup coming soon')}>Set up</Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Templates & Versioning</CardTitle>
-                <CardDescription>Custom templates and change tracking</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-700 mb-4">Create reusable templates and compare revisions.</p>
-                <Button variant="outline" onClick={() => toast.info('Templates & versioning coming soon')}>Manage</Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Enterprise extras */}
-        {currentPlan === 'enterprise' && (
-          <div className="grid md:grid-cols-2 gap-6 sm:gap-8 mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>SSO / SAML</CardTitle>
-                <CardDescription>Organization single sign‑on</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-700 mb-4">Contact support to provision SSO. We will guide domain verification and metadata exchange.</p>
-                <Button variant="outline" onClick={() => setIsSsoModalOpen(true)}>Request setup</Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>API Access</CardTitle>
-                <CardDescription>Integrate HelloACA into your systems</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-700 mb-4">Use our API to upload contracts and retrieve analyses programmatically.</p>
-                <Button variant="outline" onClick={() => toast.info('API keys will be available from Settings soon')}>View docs</Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Upload Widget */}
@@ -952,63 +1379,6 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
-
-      {isSsoModalOpen && (
-        <Modal isOpen={isSsoModalOpen} onClose={() => { if (!isSubmittingSso) setIsSsoModalOpen(false) }} title="Request SSO Setup" size="md">
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault()
-              if (!user?.id) { toast.error('Sign in to request SSO'); return }
-              if (!orgName || !domain || !contactEmail) { toast.error('Fill all required fields'); return }
-              setIsSubmittingSso(true)
-              try {
-                const baseEnv = import.meta.env.VITE_API_ORIGIN
-                const base = baseEnv && baseEnv.length > 0 ? baseEnv : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://helloaca.xyz' : window.location.origin)
-                const res = await fetch(`${base}/api/notify`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ event: 'enterprise_sso_request', userId: user.id, extra: { orgName, domain, seats, contactEmail, notes } })
-                })
-                const data = await res.json().catch(() => null)
-                if (res.ok) { toast.success('SSO request submitted'); setIsSsoModalOpen(false); setOrgName(''); setDomain(''); setSeats(5); setContactEmail(user.email || ''); setNotes('') }
-                else { toast.error(typeof data?.error === 'string' ? data.error : 'Failed to submit request') }
-              } catch {
-                toast.error('Network error')
-              } finally {
-                setIsSubmittingSso(false)
-              }
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Organization Name</label>
-              <input value={orgName} onChange={(e) => setOrgName(e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="Acme Corp" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Domain</label>
-              <input value={domain} onChange={(e) => setDomain(e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="acme.com" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Seats</label>
-                <input type="number" min={1} value={seats} onChange={(e) => setSeats(parseInt(e.target.value || '1', 10))} className="w-full border rounded-lg px-3 py-2" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
-                <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="w-full border rounded-lg px-3 py-2" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full border rounded-lg px-3 py-2 min-h-[100px]" placeholder="Anything we should know" />
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <Button variant="outline" onClick={() => setIsSsoModalOpen(false)} disabled={isSubmittingSso}>Cancel</Button>
-              <Button type="submit" disabled={isSubmittingSso}>{isSubmittingSso ? 'Submitting…' : 'Submit'}</Button>
-            </div>
-          </form>
-        </Modal>
       )}
     </div>
   )

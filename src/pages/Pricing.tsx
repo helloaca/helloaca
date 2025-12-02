@@ -4,7 +4,7 @@ import Header from '../components/layout/Header'
 import { Footer } from '../components/layout/Footer'
 import { Check, ArrowLeft, X } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { getUserCredits, addUserCredits } from '@/lib/utils'
+import { getUserCredits } from '@/lib/utils'
 import { toast } from 'sonner'
 import mixpanel from 'mixpanel-browser'
 
@@ -68,7 +68,6 @@ const Pricing: React.FC = () => {
         navigate('/login')
         return
       }
-      const testMode = String(import.meta.env.VITE_PAYSTACK_TEST_MODE || '').toLowerCase() === 'mock'
       const base = import.meta.env.VITE_API_ORIGIN || window.location.origin
       if (method === 'crypto') {
         setIsLoading(true)
@@ -101,26 +100,6 @@ const Pricing: React.FC = () => {
         return
       }
 
-      if (testMode) {
-        setIsLoading(true)
-        setProcessingMethod('card')
-        try {
-          const result = await auth.updateProfile({ plan: selectedPlan.plan })
-          if (result.success) {
-            await auth.refreshProfile()
-            setSubModalOpen(false)
-            toast.success('Subscription activated (mock)')
-          } else {
-            toast.error(result.error || 'Failed to update plan')
-          }
-        } catch {
-          toast.error('Mock subscription failed')
-        } finally {
-          setIsLoading(false)
-          setProcessingMethod(null)
-        }
-        return
-      }
       const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY
       if (!publicKey) {
         toast.error('Payment is not configured')
@@ -185,38 +164,8 @@ const Pricing: React.FC = () => {
         toast.error('No bundle selected')
         return
       }
-      const testMode = String(import.meta.env.VITE_PAYSTACK_TEST_MODE || '').toLowerCase() === 'mock'
+
       const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY
-      if (testMode) {
-        setIsLoading(true)
-        setProcessingMethod('card')
-        try {
-          const baseEnv = import.meta.env.VITE_API_ORIGIN
-          const base = baseEnv && baseEnv.length > 0
-            ? baseEnv
-            : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-                ? 'https://helloaca.xyz'
-                : window.location.origin)
-          const reference = `MOCK-${Date.now()}`
-          addUserCredits(user.id, selectedBundle.credits)
-          setCreditBalance(getUserCredits(user.id))
-          try {
-            await fetch(`${base}/api/notify`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ event: 'credit_purchase', userId: user.id, extra: { credits: selectedBundle.credits, reference } })
-            })
-          } catch { /* noop */ }
-          toast.success(`Added ${selectedBundle.credits} credits (mock)`) 
-          setMethodModalOpen(false)
-        } catch {
-          toast.error('Mock payment failed')
-        } finally {
-          setIsLoading(false)
-          setProcessingMethod(null)
-        }
-        return
-      }
       if (!publicKey) {
         toast.error('Payment is not configured')
         return
