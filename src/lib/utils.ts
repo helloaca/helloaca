@@ -136,3 +136,24 @@ export function canUseFreeAnalysis(userId: string, limit: number = 1): boolean {
 export function markFreeAnalysisUsed(userId: string): void {
   incrementMonthlyFreeUsage(userId)
 }
+
+function creditRefreshKey(userId: string): string {
+  return `credits_refresh_${userId}_${monthKey()}`
+}
+
+export function refreshMonthlyCreditsForPlan(userId: string, plan: 'free'|'pro'|'team'|'business'|'enterprise'): number {
+  try {
+    const key = creditRefreshKey(userId)
+    const done = localStorage.getItem(key)
+    if (done) return getUserCredits(userId)
+    if (plan === 'pro') {
+      const current = getUserCredits(userId)
+      const next = Math.min(10, current + 5)
+      setUserCredits(userId, next)
+    }
+    localStorage.setItem(key, '1')
+    return getUserCredits(userId)
+  } catch {
+    return getUserCredits(userId)
+  }
+}

@@ -4,7 +4,7 @@ import Header from '../components/layout/Header'
 import { Footer } from '../components/layout/Footer'
 import { Check, ArrowLeft, X } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { getUserCredits } from '@/lib/utils'
+import { getUserCredits, refreshMonthlyCreditsForPlan } from '@/lib/utils'
 import { toast } from 'sonner'
 import mixpanel from 'mixpanel-browser'
 
@@ -136,7 +136,7 @@ const Pricing: React.FC = () => {
               if (data?.status === 'success') {
                 const planUpdate = { plan: selectedPlan.plan }
                 const result = await auth.updateProfile(planUpdate)
-                if (result.success) { await auth.refreshProfile(); toast.success('Subscription activated') } else { toast.error(result.error || 'Failed to update plan') }
+                if (result.success) { await auth.refreshProfile(); try { refreshMonthlyCreditsForPlan(user.id, selectedPlan.plan) } catch {} ; toast.success('Subscription activated') } else { toast.error(result.error || 'Failed to update plan') }
               } else { toast.error('Payment verification failed') }
             } catch { toast.error('Could not verify payment') }
             finally { setIsLoading(false); setProcessingMethod(null) }

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 import { Session } from '@supabase/supabase-js'
 import { toast } from 'sonner'
 import { AuthUser, supabase } from '../lib/supabase'
-import { setUserCredits } from '../lib/utils'
+import { setUserCredits, refreshMonthlyCreditsForPlan } from '../lib/utils'
 import type { UserProfile } from '../lib/supabase'
 import { trackAuth, setUserProperties } from '../lib/analytics'
 import mixpanel from 'mixpanel-browser'
@@ -374,7 +374,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 if (createdProfile) {
                   console.log('✅ Profile created successfully')
                   setProfile(createdProfile)
-                  try { setUserCredits(createdProfile.id, createdProfile.credits_balance ?? 0) } catch { /* noop */ }
+                  try { setUserCredits(createdProfile.id, createdProfile.credits_balance ?? 0); refreshMonthlyCreditsForPlan(createdProfile.id, createdProfile.plan as any) } catch { /* noop */ }
                   // Set user properties for analytics
                   setUserProperties({
                     user_id: createdProfile.id,
@@ -400,7 +400,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
               }
               setProfile(updatedProfile)
-              try { setUserCredits(updatedProfile.id, updatedProfile.credits_balance ?? 0) } catch { /* noop */ }
+              try { setUserCredits(updatedProfile.id, updatedProfile.credits_balance ?? 0); refreshMonthlyCreditsForPlan(updatedProfile.id, updatedProfile.plan as any) } catch { /* noop */ }
               setUserProperties({
                 user_id: updatedProfile.id,
                 plan: updatedProfile.plan,
