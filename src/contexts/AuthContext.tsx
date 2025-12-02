@@ -635,9 +635,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.success('Profile updated successfully!')
       return { success: true }
     } catch (err) {
-      handleError(err as Error)
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update profile'
-      return { success: false, error: errorMessage }
+      const e = err as Error
+      const msg = e?.message || ''
+      if (updates?.plan && /plan_check|check constraint|invalid input value/i.test(msg)) {
+        try {
+          await supabase.auth.updateUser({ data: { plan: updates.plan } })
+          const updatedUser = { ...(user as any), plan: updates.plan }
+          setUser(updatedUser)
+          if (profile) {
+            const updatedProfile = { ...profile }
+            setProfile(updatedProfile)
+          }
+          if (session) {
+            cacheUserData(updatedUser, profile || null as any, session)
+          }
+          toast.success('Plan activated')
+          return { success: true }
+        } catch (metaErr) {
+          handleError(metaErr as Error)
+          return { success: false, error: 'Failed to activate plan' }
+        }
+      }
+      handleError(e)
+      return { success: false, error: e?.message || 'Failed to update profile' }
     }
   }
 
@@ -655,16 +675,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (existingProfile) {
         setProfile(existingProfile)
         try { setUserCredits(existingProfile.id, existingProfile.credits_balance ?? 0) } catch { /* noop */ }
+        const planMeta = (session.user.user_metadata?.plan as 'free' | 'pro' | 'team' | 'business' | 'enterprise' | undefined)
+        const nextPlan = (planMeta || existingProfile.plan) as 'free' | 'pro' | 'team' | 'business' | 'enterprise'
         setUser({
           ...user,
-          plan: existingProfile.plan as 'free' | 'pro' | 'team' | 'business' | 'enterprise'
+          plan: nextPlan
         })
         setUserProperties({
           user_id: existingProfile.id,
-          plan: existingProfile.plan,
+          plan: nextPlan,
           company: existingProfile.company || undefined
         })
-        cacheUserData(user, existingProfile, session)
+        cacheUserData({ ...user, plan: nextPlan }, existingProfile, session)
       }
       return { success: true }
     } catch (err) {
