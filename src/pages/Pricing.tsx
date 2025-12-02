@@ -5,7 +5,7 @@ import { Footer } from '../components/layout/Footer'
 import { Check, ArrowLeft, X } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
-import { getUserCredits, refreshMonthlyCreditsForPlan } from '@/lib/utils'
+import { getUserCredits, refreshMonthlyCreditsForPlan, addUserCredits } from '@/lib/utils'
 import { toast } from 'sonner'
 import mixpanel from 'mixpanel-browser'
 
@@ -68,6 +68,24 @@ const Pricing: React.FC = () => {
         toast.error('Please sign in and select a plan')
         navigate('/login')
         return
+      }
+      const testMode = String(import.meta.env.VITE_PAYSTACK_TEST_MODE || '')
+      if (testMode === 'mock') {
+        try {
+          const planUpdate = { plan: selectedPlan.plan }
+          const result = await auth.updateProfile(planUpdate)
+          if (!result.success) {
+            await supabase.auth.updateUser({ data: { plan: selectedPlan.plan } })
+          }
+          await auth.refreshProfile()
+          refreshMonthlyCreditsForPlan(user.id, selectedPlan.plan)
+          setSubModalOpen(false)
+          toast.success('Subscription activated (mock)')
+          return
+        } catch {
+          toast.error('Mock activation failed')
+          return
+        }
       }
       const base = import.meta.env.VITE_API_ORIGIN || window.location.origin
       if (method === 'crypto') {
@@ -177,6 +195,19 @@ const Pricing: React.FC = () => {
       if (!selectedBundle) {
         toast.error('No bundle selected')
         return
+      }
+      const testMode = String(import.meta.env.VITE_PAYSTACK_TEST_MODE || '')
+      if (testMode === 'mock') {
+        try {
+          addUserCredits(user.id, selectedBundle.credits)
+          setCreditBalance(getUserCredits(user.id))
+          setMethodModalOpen(false)
+          toast.success(`Added ${selectedBundle.credits} credits (mock)`) 
+          return
+        } catch {
+          toast.error('Mock credit purchase failed')
+          return
+        }
       }
 
       const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY

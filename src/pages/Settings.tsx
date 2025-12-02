@@ -97,6 +97,21 @@ const Settings: React.FC = () => {
         toast.info('You already have an active Pro plan')
         return
       }
+      const testMode = String(import.meta.env.VITE_PAYSTACK_TEST_MODE || '')
+      if (testMode === 'mock') {
+        try {
+          const result = await updateProfile({ plan: 'pro' })
+          if (!result.success) {
+            await supabase.auth.updateUser({ data: { plan: 'pro' } })
+          }
+          await refreshProfile()
+          toast.success('Subscription activated (mock)')
+          return
+        } catch {
+          toast.error('Mock activation failed')
+          return
+        }
+      }
 
       const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY
       const planCode = import.meta.env.VITE_PAYSTACK_PLAN_CODE
@@ -194,6 +209,21 @@ const Settings: React.FC = () => {
       if (String(user?.plan) === 'pro' || String(profile?.plan) === 'pro') {
         toast.info('You already have an active Pro plan')
         return
+      }
+      const testMode = String(import.meta.env.VITE_PAYSTACK_TEST_MODE || '')
+      if (testMode === 'mock') {
+        try {
+          const result = await updateProfile({ plan: 'pro' })
+          if (!result.success) {
+            await supabase.auth.updateUser({ data: { plan: 'pro' } })
+          }
+          await refreshProfile()
+          toast.success('Subscription activated (mock)')
+          return
+        } catch {
+          toast.error('Mock activation failed')
+          return
+        }
       }
 
       setIsLoadingPayment(true)
