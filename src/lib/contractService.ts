@@ -1279,6 +1279,39 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
     }
   }
 
+  static async createContractFromTemplate(
+    userId: string,
+    template: { name: string; content: string }
+  ): Promise<{ contractId: string; analysisId: string }> {
+    const now = new Date().toISOString()
+    const { data: contractData, error: contractError } = await supabase
+      .from('contracts')
+      .insert({
+        user_id: userId,
+        title: template.name,
+        file_name: `Template - ${template.name}`,
+        extracted_text: template.content,
+        upload_date: now,
+        analysis_status: 'processing'
+      })
+      .select()
+      .single()
+
+    if (contractError || !contractData) {
+      throw new Error('Failed to create contract from template')
+    }
+
+    await this.analyzeContractById(contractData.id)
+
+    let analysisId = ''
+    try {
+      const report = await this.getContractAnalysis(contractData.id)
+      analysisId = report?.id || ''
+    } catch {}
+
+    return { contractId: contractData.id, analysisId }
+  }
+
   static async saveMessage(
     contractId: string,
     userId: string,
@@ -1425,7 +1458,7 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
       const h = doc.internal.pageSize.getHeight()
       doc.setFontSize(10)
       doc.setTextColor('#6B7280')
-      doc.text('© 2025 HelloACA • helloaca.xyz', 40, h - 24)
+      doc.text('© 2025 HelloACA • preview.helloaca.xyz', 40, h - 24)
       doc.setDrawColor('#E5E7EB')
       doc.line(40, h - 36, w - 40, h - 36)
       doc.setTextColor('#111827')

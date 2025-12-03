@@ -306,6 +306,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           plan: session.user.user_metadata?.plan || 'free'
         }
         setUser(authUser)
+        const prevDistinct = mixpanel.get_distinct_id()
+        if (prevDistinct && prevDistinct !== authUser.id) {
+          mixpanel.alias(authUser.id, prevDistinct)
+        }
         mixpanel.identify(authUser.id)
         // Create/update Mixpanel user profile immediately after identification
         mixpanel.people.set({

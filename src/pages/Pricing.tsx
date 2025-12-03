@@ -300,7 +300,7 @@ const Pricing: React.FC = () => {
               const base = baseEnv && baseEnv.length > 0
                 ? baseEnv
                 : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-                    ? 'https://helloaca.xyz'
+                    ? 'https://preview.helloaca.xyz'
                     : window.location.origin)
               const url = `${base}/api/paystack-verify?reference=${encodeURIComponent(response.reference)}`
               const res = await fetch(url)
@@ -315,7 +315,7 @@ const Pricing: React.FC = () => {
                   const base = baseEnv && baseEnv.length > 0
                     ? baseEnv
                     : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-                        ? 'https://helloaca.xyz'
+                        ? 'https://preview.helloaca.xyz'
                         : window.location.origin)
                   await fetch(`${base}/api/notify`, {
                     method: 'POST',

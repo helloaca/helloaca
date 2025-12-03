@@ -4,6 +4,13 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
+function setCors(res: VercelResponse, origin: string) {
+  res.setHeader('Access-Control-Allow-Origin', origin || '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  res.setHeader('Access-Control-Max-Age', '86400')
+}
+
 async function sendEmail(to: string, subject: string, html: string) {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
@@ -33,37 +40,45 @@ async function sendEmail(to: string, subject: string, html: string) {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return res.status(500).json({ error: 'Supabase environment not configured' })
+    const origin = String(req.headers.origin || '*')
+    setCors(res, origin)
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end()
     }
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabase = (supabaseUrl && supabaseServiceKey) ? createClient(supabaseUrl, supabaseServiceKey) : null
     const { event, userId, contractId, extra } = req.body || {}
     if (!event || !userId) {
       return res.status(400).json({ error: 'Missing event or userId' })
     }
-
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('*')
-    .eq('id', userId)
-    .single()
-
-    if (!profile || !profile.email) {
-      return res.status(404).json({ error: 'User profile not found' })
+    let email: string | null = null
+    let profile: any = null
+    if (event !== 'team_invite') {
+      if (!supabase) {
+        return res.status(500).json({ error: 'Supabase environment not configured' })
+      }
+      const { data: p } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      profile = p
+      if (!profile || !profile.email) {
+        return res.status(404).json({ error: 'User profile not found' })
+      }
+      email = profile.email as string
     }
-
-  const email = profile.email as string
-  const base = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || 'https://helloaca.xyz'
+  const base = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || 'https://preview.helloaca.xyz'
 
     const checks: Record<string, boolean> = {
-      analysis_complete: !!profile.notify_analysis_complete,
-      email_report: !!profile.notify_email_reports,
-      weekly_digest: !!profile.notify_weekly_digest,
-      low_credit: !!profile.notify_low_credits,
-      credit_purchase: true
+      analysis_complete: !!profile?.notify_analysis_complete,
+      email_report: !!profile?.notify_email_reports,
+      weekly_digest: !!profile?.notify_weekly_digest,
+      low_credit: !!profile?.notify_low_credits,
+      credit_purchase: true,
+      team_invite: true
     }
 
-    if (event in checks && checks[event] === false) {
+    if (event !== 'team_invite' && event in checks && checks[event] === false) {
       return res.status(200).json({ skipped: true })
     }
 
@@ -115,6 +130,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           <p>Your credit balance has reached zero. Buy credits to unlock full analysis and exports.</p>
           <p><a href="${base}/pricing">Buy credits</a></p>
         `
+      },
+      team_invite: {
+        subject: 'You have been invited to join a team',
+        html: (() => {
+          const toEmail = String(extra?.email || '')
+          const role = String(extra?.role || 'Member')
+          const plan = String(extra?.plan || '')
+          const joinUrl = `${base}/register?email=${encodeURIComponent(toEmail)}`
+          return `
+            <h2>Team Invitation</h2>
+            <p>You have been invited to join a team on Helloaca.</p>
+            ${plan ? `<p><strong>Plan:</strong> ${plan}</p>` : ''}
+            <p><strong>Role:</strong> ${role}</p>
+            <p><a href="${joinUrl}">Create your account to join</a></p>
+            <p>If you already have an account, simply sign in and you will be added automatically.</p>
+          `
+        })()
       }
     }
 
@@ -124,7 +156,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!tpl) {
       return res.status(400).json({ error: 'Unknown event' })
     }
-    const result = await sendEmail(email, tpl.subject, tpl.html)
+    if (event === 'team_invite') {
+      const toEmail = String(extra?.email || '')
+      const role = String(extra?.role || 'Member')
+      const plan = String(extra?.plan || '')
+      if (!toEmail || !/\S+@\S+\.\S+/.test(toEmail)) {
+        return res.status(400).json({ error: 'Invalid invite email' })
+      }
+      if (supabase) {
+        await supabase
+          .from('team_members')
+          .upsert({ owner_id: userId, member_email: toEmail, role, status: 'pending', plan_inherited: plan, updated_at: new Date().toISOString() }, { onConflict: 'owner_id,member_email' })
+      }
+      const result = await sendEmail(toEmail, tpl.subject, tpl.html)
+      return res.status(200).json({ status: 'invite_sent', result })
+    }
+    const result = await sendEmail(String(email), tpl.subject, tpl.html)
     return res.status(200).json({ status: 'sent', result })
   } catch (err) {
     console.error('Notify handler error', err)

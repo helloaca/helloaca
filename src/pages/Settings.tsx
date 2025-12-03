@@ -72,7 +72,12 @@ const Settings: React.FC = () => {
   const [cancelComeBack, setCancelComeBack] = useState('')
   const [isCancelSubmitting, setCancelSubmitting] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+  const [isInviteModalOpen, setInviteModalOpen] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState<'Admin'|'Member'|'Viewer'>('Member')
+  const [isInviting, setInviting] = useState(false)
   const [creditsBalance, setCreditsBalance] = useState(0)
+  const [teamMembers, setTeamMembers] = useState<Array<{ id: string; name?: string; email: string; role: 'Owner'|'Admin'|'Member'|'Viewer'; status: 'active'|'pending' }>>([])
 
   const loadPaystackScript = useCallback(async () => {
     if ((window as any).PaystackPop) return
@@ -178,7 +183,7 @@ const Settings: React.FC = () => {
         callback: (response: any) => {
           (async () => {
             try {
-              const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
+              const base = import.meta.env.VITE_API_ORIGIN || 'https://preview.helloaca.xyz'
               const res = await fetch(`${base}/api/paystack-verify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -461,7 +466,7 @@ const Settings: React.FC = () => {
 
   const cancelSubscription = async () => {
     try {
-      const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
+      const base = import.meta.env.VITE_API_ORIGIN || 'https://preview.helloaca.xyz'
       const res = await fetch(`${base}/api/paystack-cancel-subscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -498,7 +503,7 @@ const Settings: React.FC = () => {
   const submitCancellationFeedback = async (proceed: boolean) => {
     try {
       setCancelSubmitting(true)
-      const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
+      const base = import.meta.env.VITE_API_ORIGIN || 'https://preview.helloaca.xyz'
       await fetch(`${base}/api/cancel-feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -566,7 +571,7 @@ const Settings: React.FC = () => {
         return
       }
       if (!user?.id) return
-      const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
+      const base = import.meta.env.VITE_API_ORIGIN || 'https://preview.helloaca.xyz'
       const res = await fetch(`${base}/api/delete-account`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
@@ -632,25 +637,38 @@ const Settings: React.FC = () => {
     { id: 'security' as const, label: 'Security', icon: Shield }
   ]
 
-  const teamMembers = [
-    { 
-      id: 1, 
-      name: (user?.firstName && user?.lastName) ? `${String(user.firstName)} ${String(user.lastName)}` : user?.name || 'User', 
-      email: user?.email || '', 
-      role: 'Owner', 
-      avatar: (() => {
-        const firstName = user?.firstName ? String(user.firstName) : ''
-        const lastName = user?.lastName ? String(user.lastName) : ''
-        const name = user?.name ? String(user.name) : ''
-        
-        const firstInitial = firstName?.[0] || name?.[0] || 'U'
-        const lastInitial = lastName?.[0] || ''
-        
-        return `${firstInitial}${lastInitial}`
-      })(), 
-      status: 'active' 
+  const loadTeamMembers = useCallback(async () => {
+    if (!user?.id) return
+    const owner: { id: string; name?: string; email: string; role: 'Owner'|'Admin'|'Member'|'Viewer'; status: 'active'|'pending' } = {
+      id: String(user.id),
+      name: (user?.firstName && user?.lastName) ? `${String(user.firstName)} ${String(user.lastName)}` : user?.name || 'User',
+      email: user?.email || '',
+      role: 'Owner',
+      status: 'active'
     }
-  ]
+    try {
+      const { data, error } = await supabase
+        .from('team_members')
+        .select('id,member_email,role,status')
+        .eq('owner_id', String(user.id))
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      const members = Array.isArray(data) ? data.map((m: any) => ({
+        id: String(m.id),
+        name: undefined,
+        email: String(m.member_email || ''),
+        role: (String(m.role || 'Member') as any),
+        status: (String(m.status || 'pending') as any)
+      })) : []
+      setTeamMembers([owner, ...members])
+    } catch {
+      setTeamMembers([owner])
+    }
+  }, [user?.id, user?.firstName, user?.lastName, user?.name, user?.email])
+
+  useEffect(() => {
+    loadTeamMembers()
+  }, [loadTeamMembers])
 
   const handleProfileUpdate = (field: string, value: string) => {
     setProfileData(prev => ({ ...prev, [field]: value }))
@@ -915,7 +933,15 @@ const Settings: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Team Members</h3>
-        <Button>
+        <Button onClick={() => {
+          const plan = String(profile?.plan || (user as any)?.plan || 'free')
+          if (!['team','business','enterprise'].includes(plan)) {
+            toast.error('Upgrade to invite team members')
+            navigate('/pricing')
+            return
+          }
+          setInviteModalOpen(true)
+        }}>
           <Plus className="w-4 h-4 mr-2" />
           Invite Member
         </Button>
@@ -945,9 +971,9 @@ const Settings: React.FC = () => {
                 <tr key={member.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <Avatar seed={profile?.avatar_seed || user?.id || String(member.id)} size={40} className="w-10 h-10 rounded-full mr-4" />
+                      <Avatar seed={profile?.avatar_seed || user?.id || String(member.email)} size={40} className="w-10 h-10 rounded-full mr-4" />
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{member.name}</div>
+                        <div className="text-sm font-medium text-gray-900">{member.name || member.email.split('@')[0]}</div>
                         <div className="text-sm text-gray-500">{member.email}</div>
                       </div>
                     </div>
@@ -1193,20 +1219,90 @@ const Settings: React.FC = () => {
 
           {/* Main Content */}
           <div className="lg:col-span-3">
-            <Card className="p-5 sm:p-8">
-              {activeTab === 'profile' && renderProfileTab()}
-              {activeTab === 'subscription' && renderSubscriptionTab()}
-              {activeTab === 'team' && renderTeamTab()}
-              {activeTab === 'notifications' && renderNotificationsTab()}
-              {activeTab === 'security' && renderSecurityTab()}
-            </Card>
+          <Card className="p-5 sm:p-8">
+            {activeTab === 'profile' && renderProfileTab()}
+            {activeTab === 'subscription' && renderSubscriptionTab()}
+            {activeTab === 'team' && renderTeamTab()}
+            {activeTab === 'notifications' && renderNotificationsTab()}
+            {activeTab === 'security' && renderSecurityTab()}
+          </Card>
+        </div>
+      </div>
+      {isInviteModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { if (!isInviting) setInviteModalOpen(false) }}>
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-5 sm:p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">Invite Member</h3>
+              <button onClick={() => { if (!isInviting) setInviteModalOpen(false) }} className="text-gray-500 hover:text-gray-700"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="name@example.com" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4ECCA3]" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value as any)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4ECCA3]">
+                  <option value="Admin">Admin</option>
+                  <option value="Member">Member</option>
+                  <option value="Viewer">Viewer</option>
+                </select>
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button onClick={() => { if (!isInviting) setInviteModalOpen(false) }} className="px-4 py-2 rounded-lg border border-gray-300">Cancel</button>
+                <button onClick={async () => {
+                  if (isInviting) return
+                  const email = inviteEmail.trim()
+                  if (!/\S+@\S+\.\S+/.test(email)) { toast.error('Enter a valid email'); return }
+                  const plan = String(profile?.plan || (user as any)?.plan || 'free')
+                  if (!['team','business','enterprise'].includes(plan)) { toast.error('Upgrade required'); navigate('/pricing'); return }
+                  setInviting(true)
+                  try {
+                    const baseEnv = import.meta.env.VITE_API_ORIGIN
+                    const hostname = window.location.hostname
+                    let base = baseEnv && baseEnv.length > 0 ? baseEnv : window.location.origin
+                    if ((hostname === 'localhost' || hostname === '127.0.0.1') && typeof base === 'string' && base.includes('preview')) {
+                      base = 'https://preview.helloaca.xyz'
+                    }
+                    const controller = new AbortController()
+                    const timer = setTimeout(() => controller.abort(), 10000)
+                    let notifyOk = false
+                    try {
+                      const resp = await fetch(`${base}/api/notify`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ event: 'team_invite', userId: String(user?.id), extra: { email, role: inviteRole, plan } }),
+                        signal: controller.signal
+                      })
+                      notifyOk = resp.ok
+                    } catch { /* noop */ }
+                    clearTimeout(timer)
+                    toast.success('Invitation sent')
+                    setInviteEmail('')
+                    setInviteRole('Member')
+                    setInviteModalOpen(false)
+                    await loadTeamMembers()
+                    if (!notifyOk) {
+                      toast.info('Invite queued. If email fails, resend later.')
+                    }
+                  } catch {
+                    toast.error('Failed to send invite')
+                  } finally {
+                    setInviting(false)
+                  }
+                }} className="px-4 py-2 rounded-lg bg-[#4ECCA3] text-white hover:bg-[#3DBB90] disabled:opacity-50" disabled={isInviting}>
+                  {isInviting ? 'Sending…' : 'Send Invite'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-        {isSigningOut && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center">
-              <Loader2 className="w-6 h-6 mx-auto mb-3 animate-spin text-gray-700" />
-              <p className="text-gray-900 font-medium">Signing you out…</p>
+      )}
+      {isSigningOut && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center">
+            <Loader2 className="w-6 h-6 mx-auto mb-3 animate-spin text-gray-700" />
+            <p className="text-gray-900 font-medium">Signing you out…</p>
               <p className="text-sm text-gray-600 mt-1">Please wait a moment</p>
             </div>
           </div>

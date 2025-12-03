@@ -29,7 +29,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return
     }
 
-    const appUrl = process.env.APP_URL || process.env.VITE_APP_URL || 'https://helloaca.xyz'
+    const appUrl = process.env.APP_URL || process.env.VITE_APP_URL || 'https://preview.helloaca.xyz'
 
     const chargeRes = await fetch('https://api.commerce.coinbase.com/charges', {
       method: 'POST',

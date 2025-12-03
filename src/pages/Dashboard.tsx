@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { trackContracts } from '@/lib/analytics'
 import { getUserCredits, consumeUserCredit, markContractCredited, getMonthlyFreeUsage, canUseFreeAnalysis, markFreeAnalysisUsed } from '@/lib/utils'
 const ContractHistoryModal = React.lazy(() => import('@/components/ContractHistoryModal'))
+import Modal from '@/components/ui/Modal'
 
 const Dashboard: React.FC = () => {
   const { user, profile, loading: authLoading } = useAuth()
@@ -44,6 +45,21 @@ const Dashboard: React.FC = () => {
   type Section = 'dashboard'|'contracts'|'team'|'library'|'analytics'|'billing'|'approvals'|'versions'|'templates'|'branding'|'advanced_analytics'|'user_mgmt'|'api_keys'|'integrations'|'audit_log'|'sso'|'risk_framework'
   const [activeSection, setActiveSection] = useState<Section>('dashboard')
 
+  const [folders, setFolders] = useState<string[]>([])
+  const [contractFolderMap, setContractFolderMap] = useState<Record<string, string>>({})
+  const [selectedFolder, setSelectedFolder] = useState<string>('all')
+  const [newFolderName, setNewFolderName] = useState('')
+  const getFolderKey = () => `contract_folders_${user?.id || 'anon'}`
+  const getMapKey = () => `contract_folder_map_${user?.id || 'anon'}`
+
+  type ContractTemplate = { id: string, name: string, description?: string, content: string, created_at: string, updated_at: string }
+  const [templates, setTemplates] = useState<ContractTemplate[]>([])
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
+  const [editingTemplate, setEditingTemplate] = useState<ContractTemplate | null>(null)
+  const [templateForm, setTemplateForm] = useState<{ name: string, description: string, content: string }>({ name: '', description: '', content: '' })
+  const getTemplatesKey = () => `contract_templates_${user?.id || 'anon'}`
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
+
   const getCacheKey = () => `contracts_cache_${user?.id || 'anon'}`
   const readCachedContracts = (): Array<Contract & { analysis?: any }> => {
     try {
@@ -57,6 +73,138 @@ const Dashboard: React.FC = () => {
     try {
       localStorage.setItem(getCacheKey(), JSON.stringify(items))
     } catch { void 0 }
+  }
+
+  const writeFolderState = (fs: string[], map: Record<string, string>) => {
+    try {
+      localStorage.setItem(getFolderKey(), JSON.stringify(fs))
+      localStorage.setItem(getMapKey(), JSON.stringify(map))
+    } catch { void 0 }
+  }
+
+  const loadFolderState = () => {
+    try {
+      const rawFolders = localStorage.getItem(getFolderKey())
+      const rawMap = localStorage.getItem(getMapKey())
+      const fs = rawFolders ? JSON.parse(rawFolders) as string[] : []
+      const mp = rawMap ? JSON.parse(rawMap) as Record<string, string> : {}
+      setFolders(fs)
+      setContractFolderMap(mp)
+    } catch {
+      setFolders([])
+      setContractFolderMap({})
+    }
+  }
+
+  const loadTemplates = () => {
+    try {
+      const raw = localStorage.getItem(getTemplatesKey())
+      const list = raw ? JSON.parse(raw) as ContractTemplate[] : []
+      setTemplates(list)
+    } catch {
+      setTemplates([])
+    }
+  }
+
+  const writeTemplates = (list: ContractTemplate[]) => {
+    try {
+      localStorage.setItem(getTemplatesKey(), JSON.stringify(list))
+    } catch { void 0 }
+  }
+
+  const openCreateTemplate = () => {
+    setEditingTemplate(null)
+    setTemplateForm({ name: '', description: '', content: '' })
+    setIsTemplateModalOpen(true)
+  }
+
+  const openEditTemplate = (t: ContractTemplate) => {
+    setEditingTemplate(t)
+    setTemplateForm({ name: t.name, description: t.description || '', content: t.content })
+    setIsTemplateModalOpen(true)
+  }
+
+  const saveTemplate = () => {
+    const name = templateForm.name.trim()
+    const content = templateForm.content.trim()
+    const description = templateForm.description.trim()
+    if (!name || !content) {
+      toast.error('Name and content are required')
+      return
+    }
+    const now = new Date().toISOString()
+    let list = [...templates]
+    if (editingTemplate) {
+      list = list.map(t => t.id === editingTemplate.id ? { ...t, name, description, content, updated_at: now } : t)
+    } else {
+      const id = `tpl_${Date.now()}`
+      list.unshift({ id, name, description, content, created_at: now, updated_at: now })
+    }
+    setTemplates(list)
+    writeTemplates(list)
+    setIsTemplateModalOpen(false)
+    setEditingTemplate(null)
+  }
+
+  const deleteTemplate = (id: string) => {
+    const list = templates.filter(t => t.id !== id)
+    setTemplates(list)
+    writeTemplates(list)
+  }
+
+  const useTemplate = async (t: ContractTemplate) => {
+    if (!user?.id) return
+    try {
+      const { ContractService } = await import('@/lib/contractService')
+      const res = await ContractService.createContractFromTemplate(user.id, { name: t.name, content: t.content })
+      toast.success('Contract created from template')
+      loadUserContracts()
+      navigate(`/analyze/${res.contractId}`)
+    } catch {
+      toast.error('Failed to use template')
+    }
+  }
+
+  const handleInviteUsersClick = () => {
+    if (isTeamPlan || isBusinessPlan || isEnterprisePlan) {
+      setActiveSection('team')
+      return
+    }
+    setIsUpgradeModalOpen(true)
+  }
+
+  const handleCreateFolder = () => {
+    const name = newFolderName.trim()
+    if (!name) return
+    if (folders.includes(name)) { setNewFolderName(''); return }
+    const next = [...folders, name]
+    setFolders(next)
+    writeFolderState(next, contractFolderMap)
+    setNewFolderName('')
+    setSelectedFolder(name)
+  }
+
+  const handleDeleteFolder = (name: string) => {
+    const nextFolders = folders.filter(f => f !== name)
+    const nextMap: Record<string, string> = {}
+    Object.entries(contractFolderMap).forEach(([cid, fname]) => {
+      if (fname !== name) nextMap[cid] = fname
+    })
+    setFolders(nextFolders)
+    setContractFolderMap(nextMap)
+    writeFolderState(nextFolders, nextMap)
+    setSelectedFolder('all')
+  }
+
+  const handleAssignContractFolder = (contractId: string, name: string) => {
+    const next = { ...contractFolderMap }
+    if (name === '' || name === 'uncategorized') {
+      delete next[contractId]
+    } else {
+      next[contractId] = name
+    }
+    setContractFolderMap(next)
+    writeFolderState(folders, next)
   }
 
   // Load user contracts on component mount or when user changes
@@ -84,6 +232,8 @@ const Dashboard: React.FC = () => {
         setStats({ totalContracts: cached.length, thisMonth: thisMonthContracts.length, avgAnalysisTime: '32s', risksSaved: totalRisks })
       }
       loadUserContracts()
+      loadFolderState()
+      loadTemplates()
     }
   }, [user?.id, authLoading])
 
@@ -527,7 +677,7 @@ const Dashboard: React.FC = () => {
         <Header showAuth={true} />
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 py-6 sm:py-8">
           <div className="grid grid-cols-12 gap-6">
-            <aside className="col-span-12 md:col-span-3 lg:col-span-2">
+            <aside className="col-span-12 md:col-span-4 lg:col-span-3">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                 <div className="font-space-grotesk font-bold text-black mb-4">Team Workspace</div>
                 <nav className="space-y-2">
@@ -560,7 +710,7 @@ const Dashboard: React.FC = () => {
               </div>
             </aside>
 
-            <main className="col-span-12 md:col-span-9 lg:col-span-10">
+            <main className="col-span-12 md:col-span-8 lg:col-span-9">
               {activeSection === 'dashboard' && (
                 <div className="space-y-6">
                   <div className="flex items-start justify-between">
@@ -568,7 +718,7 @@ const Dashboard: React.FC = () => {
                       <h1 className="font-space-grotesk text-2xl sm:text-3xl font-bold text-black">{isEnterprisePlan ? 'Enterprise Dashboard' : isBusinessPlan ? 'Business Dashboard' : 'Team Dashboard'}</h1>
                       <p className="text-gray-600">Overview across the team</p>
                     </div>
-                    <button onClick={() => navigate('/settings')} className="px-4 py-2 rounded-lg bg-[#5ACEA8] text-white hover:bg-[#49C89A]">Invite users</button>
+                    <button onClick={handleInviteUsersClick} className="px-4 py-2 rounded-lg bg-[#5ACEA8] text-white hover:bg-[#49C89A]">Invite users</button>
                   </div>
                   <div className="grid md:grid-cols-4 gap-4">
                     <Card><CardContent className="pt-4"><div className="flex items-center"><FileText className="w-6 h-6 text-primary" /><div className="ml-3"><p className="text-2xl font-bold">{monthContracts.length}</p><p className="text-sm text-gray-600">Contracts this month</p></div></div></CardContent></Card>
@@ -617,8 +767,8 @@ const Dashboard: React.FC = () => {
                                   <p className="text-sm text-gray-600">Uploaded {new Date(c.created_at).toLocaleDateString()}</p>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <button className="px-3 py-1 rounded-md bg-gray-900 text-white" onClick={() => handleContractView(c.id)}>Approve</button>
-                                  <button className="px-3 py-1 rounded-md border border-gray-300" onClick={() => handleContractView(c.id)}>Request changes</button>
+                                  <Button size="sm" className="min-w-[112px] bg-gray-900 text-white" onClick={() => handleContractView(c.id)}>Approve</Button>
+                                  <Button size="sm" variant="outline" className="min-w-[112px]" onClick={() => handleContractView(c.id)}>Request</Button>
                                 </div>
                               </div>
                             ))}
@@ -765,7 +915,7 @@ const Dashboard: React.FC = () => {
                       <h2 className="text-xl font-bold">Team members</h2>
                       <p className="text-gray-600">Manage seats and invites</p>
                     </div>
-                    <button onClick={() => navigate('/settings')} className="px-4 py-2 rounded-lg bg-[#5ACEA8] text-white hover:bg-[#49C89A]">Invite users</button>
+                    <button onClick={handleInviteUsersClick} className="px-4 py-2 rounded-lg bg-[#5ACEA8] text-white hover:bg-[#49C89A]">Invite users</button>
                   </div>
                   <Card>
                     <CardContent>
@@ -778,17 +928,46 @@ const Dashboard: React.FC = () => {
               {activeSection === 'library' && (
                 <div className="space-y-4">
                   <h2 className="text-xl font-bold">Shared library</h2>
-                  <div className="bg-white rounded-xl border border-gray-200">
-                    <div className="divide-y">
-                      {contracts.map(c => (
-                        <div key={c.id} className="flex items-center justify-between p-4">
-                          <div>
-                            <p className="font-medium text-gray-900">{getDisplayTitle(c.file_name || c.title)}</p>
-                            <p className="text-sm text-gray-600">Last updated {new Date(c.updated_at || c.created_at).toLocaleString()}</p>
-                          </div>
-                          <button className="text-[#5ACEA8]" onClick={() => handleContractView(c.id)}>View</button>
+                  <div className="bg-white rounded-xl border border-gray-200 p-4">
+                    <div className="flex items-center gap-2 flex-wrap mb-4">
+                      <button onClick={() => setSelectedFolder('all')} className={`px-3 py-1 rounded-lg text-sm ${selectedFolder==='all'?'bg-gray-900 text-white':'border border-gray-300'}`}>All</button>
+                      <button onClick={() => setSelectedFolder('uncategorized')} className={`px-3 py-1 rounded-lg text-sm ${selectedFolder==='uncategorized'?'bg-gray-900 text-white':'border border-gray-300'}`}>Uncategorized</button>
+                      {folders.map(f => (
+                        <div key={`f-${f}`} className="flex items-center gap-1">
+                          <button onClick={() => setSelectedFolder(f)} className={`px-3 py-1 rounded-lg text-sm ${selectedFolder===f?'bg-gray-900 text-white':'border border-gray-300'}`}>{f}</button>
+                          <button onClick={() => handleDeleteFolder(f)} className="px-2 py-1 rounded-lg border border-gray-300 text-xs">Delete</button>
                         </div>
                       ))}
+                      <div className="flex items-center gap-2">
+                        <input value={newFolderName} onChange={e => setNewFolderName(e.target.value)} placeholder="New folder" className="px-3 py-2 border rounded-lg text-sm" />
+                        <button onClick={handleCreateFolder} className="px-3 py-2 rounded-lg bg-[#5ACEA8] text-white">Create</button>
+                      </div>
+                    </div>
+                    <div className="divide-y">
+                      {(() => {
+                        const list = selectedFolder==='all'
+                          ? contracts
+                          : selectedFolder==='uncategorized'
+                            ? contracts.filter(c => !contractFolderMap[c.id])
+                            : contracts.filter(c => contractFolderMap[c.id] === selectedFolder)
+                        return list.map(c => (
+                          <div key={c.id} className="flex items-center justify-between p-4">
+                            <div>
+                              <p className="font-medium text-gray-900">{getDisplayTitle(c.file_name || c.title)}</p>
+                              <p className="text-sm text-gray-600">Last updated {new Date(c.updated_at || c.created_at).toLocaleString()}</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <select value={contractFolderMap[c.id] || 'uncategorized'} onChange={e => handleAssignContractFolder(c.id, e.target.value)} className="px-2 py-1 border rounded-lg text-sm">
+                                <option value="uncategorized">Uncategorized</option>
+                                {folders.map(f => (
+                                  <option key={`opt-${f}`} value={f}>{f}</option>
+                                ))}
+                              </select>
+                              <button className="text-[#5ACEA8]" onClick={() => handleContractView(c.id)}>View</button>
+                            </div>
+                          </div>
+                        ))
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -818,8 +997,8 @@ const Dashboard: React.FC = () => {
                               <p className="text-sm text-gray-600">Risk {(c.analysis?.analysis_data?.executive_summary?.key_metrics?.risk_score ?? c.analysis?.analysis_data?.risk_assessment?.overall_score ?? 0)}</p>
                             </div>
                             <div className="flex items-center gap-2">
-                              <button className="px-3 py-1 rounded-md bg-gray-900 text-white" onClick={() => handleContractView(c.id)}>Approve</button>
-                              <button className="px-3 py-1 rounded-md border border-gray-300" onClick={() => handleContractView(c.id)}>Reject</button>
+                              <Button size="sm" className="min-w-[112px] bg-gray-900 text-white" onClick={() => handleContractView(c.id)}>Approve</Button>
+                              <Button size="sm" variant="outline" className="min-w-[112px]" onClick={() => handleContractView(c.id)}>Reject</Button>
                             </div>
                           </div>
                         ))}
@@ -855,15 +1034,68 @@ const Dashboard: React.FC = () => {
               {isBusinessPlan && activeSection === 'templates' && (
                 <div className="space-y-6">
                   <h2 className="text-xl font-bold">Templates</h2>
-                  <Card>
-                    <CardContent>
-                      <div className="flex items-center gap-3 mb-4">
-                        <button className="px-4 py-2 rounded-lg bg-[#5ACEA8] text-white hover:bg-[#49C89A]">Create template</button>
-                        <button className="px-4 py-2 rounded-lg border border-gray-300">Use template</button>
+                  <div className="flex items-center gap-3 mb-4">
+                    <button className="px-4 py-2 rounded-lg bg-[#5ACEA8] text-white hover:bg-[#49C89A]" onClick={openCreateTemplate}>Create template</button>
+                  </div>
+                  {templates.length === 0 ? (
+                    <Card>
+                      <CardContent>
+                        <p className="text-gray-600">No templates yet. Create one to get started.</p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {templates.map(t => (
+                        <Card key={t.id}>
+                          <CardHeader>
+                            <CardTitle className="flex items-center justify-between">
+                              <span>{t.name}</span>
+                              <span className="text-xs text-gray-500">Updated {new Date(t.updated_at).toLocaleString()}</span>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            {t.description && <p className="text-gray-700 mb-3">{t.description}</p>}
+                            <div className="flex items-center gap-2">
+                              <button className="px-3 py-2 rounded-lg bg-gray-900 text-white" onClick={() => useTemplate(t)}>Use</button>
+                              <button className="px-3 py-2 rounded-lg border border-gray-300" onClick={() => openEditTemplate(t)}>Edit</button>
+                              <button className="px-3 py-2 rounded-lg border border-red-300 text-red-600" onClick={() => deleteTemplate(t.id)}>Delete</button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+
+                  <Modal isOpen={isTemplateModalOpen} onClose={() => setIsTemplateModalOpen(false)} title={editingTemplate ? 'Edit template' : 'Create template'} size="lg">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm text-gray-700 mb-1">Name</label>
+                        <input className="w-full border rounded-lg px-3 py-2" value={templateForm.name} onChange={e => setTemplateForm({ ...templateForm, name: e.target.value })} />
                       </div>
-                      <p className="text-gray-600">Template usage stats will appear here.</p>
-                    </CardContent>
-                  </Card>
+                      <div>
+                        <label className="block text-sm text-gray-700 mb-1">Description</label>
+                        <input className="w-full border rounded-lg px-3 py-2" value={templateForm.description} onChange={e => setTemplateForm({ ...templateForm, description: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-gray-700 mb-1">Content</label>
+                        <textarea className="w-full border rounded-lg px-3 py-2 h-48" value={templateForm.content} onChange={e => setTemplateForm({ ...templateForm, content: e.target.value })} />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button className="px-4 py-2 rounded-lg bg-[#5ACEA8] text-white" onClick={saveTemplate}>Save</button>
+                        <button className="px-4 py-2 rounded-lg border border-gray-300" onClick={() => setIsTemplateModalOpen(false)}>Cancel</button>
+                      </div>
+                    </div>
+                  </Modal>
+
+                  <Modal isOpen={isUpgradeModalOpen} onClose={() => setIsUpgradeModalOpen(false)} title="Upgrade required" size="md">
+                    <div className="space-y-4">
+                      <p className="text-gray-700">Inviting team members is available on Team, Business, and Enterprise plans.</p>
+                      <div className="flex items-center gap-2">
+                        <button className="px-4 py-2 rounded-lg bg-gray-900 text-white" onClick={() => { setIsUpgradeModalOpen(false); navigate('/pricing') }}>View plans</button>
+                        <button className="px-4 py-2 rounded-lg border border-gray-300" onClick={() => setIsUpgradeModalOpen(false)}>Not now</button>
+                      </div>
+                    </div>
+                  </Modal>
                 </div>
               )}
 
