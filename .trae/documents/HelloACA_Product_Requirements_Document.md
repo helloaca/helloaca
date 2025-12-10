@@ -23,7 +23,7 @@ Our HelloACA platform consists of the following main pages:
 4. **Chat Interface**: interactive contract consultation, PDF preview, message history
 5. **Reports Page**: generated PDF reports, download history, export options
 6. **Authentication Pages**: login, registration, password recovery
-7. **Settings Page**: profile management, subscription details, team collaboration settings
+7. **Settings Page**: profile management, subscription details, team collaboration settings (owner, active members, and pending invites shown with pending status until acceptance)
 
 ### 2.3 Page Details
 | Page Name | Module Name | Feature description |
@@ -97,3 +97,11 @@ graph TD
 
 ### 4.3 Responsiveness
 The platform is desktop-first with mobile-adaptive design. Touch interaction optimization is implemented for mobile users, with responsive breakpoints at 768px (tablet) and 480px (mobile). The chat interface adapts to single-column layout on mobile devices.
+
+## 5. Recent Product Updates
+
+- Domain references updated to `https://preview.helloaca.xyz` for public links and exports.
+- Team Members list dynamically loads owner, active members, and pending invites from Supabase.
+- Email notifications endpoint includes CORS headers and OPTIONS preflight handling.
+- Frontend uses `VITE_API_ORIGIN` for environment-safe routing; local dev falls back safely.
+- Mixpanel identity merge (`alias` before `identify`) ensures anonymous activity is associated with signed-in users.

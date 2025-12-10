@@ -51,6 +51,8 @@ graph TD
 
 * Deployment: Vercel (frontend), Supabase (backend services)
 
+* Domains: Public site and API origin use `https://preview.helloaca.xyz`
+
 ## 3. Route Definitions
 
 | Route                  | Purpose                                                   |
@@ -61,6 +63,7 @@ graph TD
 | /chat/\[contractId]    | Interactive chat interface with contract preview          |
 | /reports               | PDF report generation and download management             |
 | /settings              | User profile, subscription, and team management           |
+| /pricing               | Subscription plans and credit purchase                     |
 | /auth/login            | User authentication and login                             |
 | /auth/register         | New user registration                                     |
 | /auth/forgot-password  | Password recovery flow                                    |
@@ -190,6 +193,16 @@ graph TD
     C --> K[Protected Routes]
     D --> L[Contract State]
     D --> M[User State]
+
+## 6. Observability & Analytics
+
+- **Google Analytics**: Pageviews and events via `react-ga4`
+- **Mixpanel**: Event tracking and session recording; identity merged on sign-in using `alias` then `identify`
+
+## 7. CORS & Email Notifications
+
+- **Notify API**: Implements CORS headers and OPTIONS preflight; templates generate links using `API_ORIGIN`/`VITE_API_ORIGIN`
+- **Resend**: Emails sent when `RESEND_API_KEY` is configured; from address `helloaca <noreply@helloaca.xyz>`
 
     subgraph "Frontend Application"
         A
@@ -416,4 +429,3 @@ CREATE POLICY "Users can view own contracts" ON storage.objects
 CREATE POLICY "Users can delete own contracts" ON storage.objects
     FOR DELETE USING (bucket_id = 'contracts' AND auth.uid()::text = (storage.foldername(name))[1]);
 ```
-

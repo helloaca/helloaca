@@ -10,7 +10,7 @@
 
 **Transforming Legal Document Review Through Intelligent Automation**
 
-*Investor Presentation - Q4 2024*
+*Investor Presentation - Q4 2025*
 
 ---
 
@@ -196,12 +196,15 @@
 - 💬 **Interactive Chat**: Natural language contract consultation
 - 📊 **Risk Assessment**: Automated risk classification
 - 📈 **Analytics Dashboard**: Usage tracking and insights
+- 👥 **Team Collaboration**: Owner, members, and pending invites (pending until accepted)
+- 🌐 **Preview Domain**: Public site and APIs at `https://preview.helloaca.xyz`
 
 **Product Roadmap (2025):**
 - Q1: Multi-language support, team collaboration
 - Q2: Mobile apps, predictive analysis
 - Q3: Enterprise features, third-party integrations
 - Q4: Blockchain integration, industry specialization
+- Ongoing: Email notifications via CORS-enabled endpoint; Mixpanel identity merge
 
 **Intellectual Property:**
 - Proprietary risk assessment algorithms

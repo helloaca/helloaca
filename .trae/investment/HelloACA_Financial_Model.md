@@ -48,6 +48,11 @@ HelloACA's financial model demonstrates strong unit economics and a clear path t
 - Real Estate Professionals: 18% ($1.31M ARR)
 - Small-Medium Businesses: 5% ($0.36M ARR)
 
+**Notes on Product Updates Impacting Revenue**
+- Team collaboration increases Business plan adoption (shared workspaces, invites)
+- Improved analytics and identity merging enhance retention and upsell opportunities
+- Preview domain unification reduces friction in marketing and link tracking
+
 **2029 Distribution**
 - Solo Practitioners: 40% ($151.9M ARR)
 - Small Law Firms: 35% ($132.9M ARR)

@@ -670,6 +670,41 @@ const Settings: React.FC = () => {
     loadTeamMembers()
   }, [loadTeamMembers])
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const ownerParam = params.get('acceptInviteOwner')
+    if (ownerParam && user?.id) {
+      ;(async () => {
+        try {
+          const baseEnv = import.meta.env.VITE_API_ORIGIN
+          const hostname = window.location.hostname
+          let base = baseEnv && baseEnv.length > 0 ? baseEnv : window.location.origin
+          if ((hostname === 'localhost' || hostname === '127.0.0.1') && typeof base === 'string' && base.includes('preview')) {
+            base = 'https://preview.helloaca.xyz'
+          }
+          const resp = await fetch(`${base}/api/team-accept-invite`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: String(user.id), ownerId: String(ownerParam) })
+          })
+          const data = await resp.json().catch(() => null)
+          if (resp.ok) {
+            toast.success('Invitation approved')
+            await loadTeamMembers()
+            // Clean URL
+            const url = new URL(window.location.href)
+            url.searchParams.delete('acceptInviteOwner')
+            window.history.replaceState({}, document.title, url.toString())
+          } else {
+            toast.error(data?.error || 'Failed to approve invite')
+          }
+        } catch (e) {
+          toast.error('Failed to approve invite')
+        }
+      })()
+    }
+  }, [user?.id, loadTeamMembers])
+
   const handleProfileUpdate = (field: string, value: string) => {
     setProfileData(prev => ({ ...prev, [field]: value }))
   }
@@ -1453,7 +1488,7 @@ const Settings: React.FC = () => {
               <input type="text" value={deletePhrase} onChange={(e) => setDeletePhrase(e.target.value)} placeholder="delete my account" className="w-full px-4 py-3 border border-gray-300 rounded-lg text-red-600 placeholder-red-400" />
               <div className="flex justify-end gap-3 mt-6">
                 <Button variant="outline" onClick={() => setDeleteStep2Open(false)}>Cancel</Button>
-                <Button onClick={deleteAccount}>Delete</Button>
+                <Button variant="destructive" onClick={deleteAccount}>Delete</Button>
               </div>
             </div>
           </div>

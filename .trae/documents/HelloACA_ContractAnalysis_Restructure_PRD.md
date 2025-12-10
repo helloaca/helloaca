@@ -195,6 +195,14 @@ The AI analysis prompt needs to be updated to generate the enhanced analysis for
 - **System Uptime**: 99.9% availability
 - **Response Time**: < 2 seconds for interactive features
 
+## 7. Recent Product Updates
+
+- Export Center and PDF/HTML exports now brand footers with `https://preview.helloaca.xyz`
+- Team collaboration supports pending invites that remain visible until accepted
+- Email notifications (credits, analysis complete, digest) leverage a CORS-enabled notify endpoint
+- Frontend uses `VITE_API_ORIGIN` to construct environment-safe links
+- Mixpanel identity merge on sign-in provides unified user analytics
+
 ## 7. Implementation Phases
 
 ### Phase 1: Foundation (Week 1-2)

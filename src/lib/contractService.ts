@@ -112,19 +112,50 @@ export class ContractService {
 
       // Stage 3: Save contract to database
       onProgress?.('Saving contract...', 40)
-      const { data: contractData, error: contractError } = await supabase
-        .from('contracts')
-        .insert({
-          user_id: userId,
-          title: file.name.replace(/\.[^/.]+$/, ''),
-          file_name: file.name,
-          file_size: file.size,
-          extracted_text: processedFile.text,
-          upload_date: new Date().toISOString(),
-          analysis_status: 'processing'
-        })
-        .select()
-        .single()
+      let contractData: any = null
+      let contractError: any = null
+      try {
+        const ins = await supabase
+          .from('contracts')
+          .insert({
+            user_id: userId,
+            title: file.name.replace(/\.[^/.]+$/, ''),
+            file_name: file.name,
+            file_size: file.size,
+            extracted_text: processedFile.text,
+            upload_date: new Date().toISOString(),
+            analysis_status: 'processing'
+          })
+          .select()
+          .single()
+        contractData = ins.data
+        contractError = ins.error
+      } catch (e) {
+        // Retry without extracted_text in case column is missing
+        const ins2 = await supabase
+          .from('contracts')
+          .insert({
+            user_id: userId,
+            title: file.name.replace(/\.[^/.]+$/, ''),
+            file_name: file.name,
+            file_size: file.size,
+            upload_date: new Date().toISOString(),
+            analysis_status: 'processing'
+          })
+          .select()
+          .single()
+        contractData = ins2.data
+        contractError = ins2.error
+        if (!contractError && contractData?.id) {
+          // Persist extracted text separately if column exists later
+          try {
+            await supabase
+              .from('contracts')
+              .update({ extracted_text: processedFile.text })
+              .eq('id', contractData.id)
+          } catch {}
+        }
+      }
 
       if (contractError || !contractData) {
         console.error('Contract save error:', contractError)
@@ -176,6 +207,20 @@ export class ContractService {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ event: 'email_report', userId, contractId: currentContractId })
         })
+        try {
+          const { data: memberTeams } = await supabase
+            .from('team_members')
+            .select('owner_id,status')
+            .eq('member_id', String(userId))
+            .eq('status', 'active')
+          if (Array.isArray(memberTeams) && memberTeams.length > 0) {
+            await fetch(`${base}/api/notify`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ event: 'team_upload', userId, contractId: currentContractId, extra: { title: file.name } })
+            })
+          }
+        } catch {}
       } catch { /* noop */ }
 
       onProgress?.('Complete!', 100)

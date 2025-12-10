@@ -19,7 +19,7 @@
 HelloACA is an AI-powered contract analysis platform that helps legal professionals, real estate agents, and business owners analyze contracts quickly and accurately. Using advanced Claude AI technology, HelloACA can detect risks, extract key clauses, and provide instant insights within 30 seconds.
 
 ### Quick Start Guide
-1. **Sign Up**: Create your free account at [HelloACA Platform]
+1. **Sign Up**: Create your free account at `https://preview.helloaca.xyz`
 2. **Upload Contract**: Drag and drop your PDF or DOCX contract file
 3. **Get Analysis**: Receive instant AI-powered contract insights
 4. **Chat & Explore**: Ask questions about your contract using our AI chat
@@ -81,7 +81,7 @@ VITE_CLAUDE_API_KEY=your_claude_api_key
 
 #### Vercel Deployment (Recommended)
 1. Connect your GitHub repository to Vercel
-2. Configure environment variables in Vercel dashboard
+2. Configure client (`VITE_*`) and server-only (`RESEND_API_KEY`, `EMAIL_FROM`, `SUPABASE_SERVICE_ROLE_KEY`, `API_ORIGIN`) environment variables in Vercel dashboard
 3. Deploy with automatic builds on push to main branch
 
 #### Manual Deployment
@@ -138,6 +138,19 @@ npm run build
 - View analysis history and trends
 - Export usage reports for billing purposes
 
+### Team Collaboration
+
+#### Invites and Member Management
+- Owners can invite team members via email
+- Invited users appear in the Team Members list with status `pending` until they accept
+- Accepted invites show members as active with assigned roles
+
+#### Notifications
+- Email notifications (credits, analysis complete, weekly digest) are sent via Resend when configured
+### System Notes
+- All public links and footers reference `https://preview.helloaca.xyz`
+- The notify API implements CORS headers and handles OPTIONS preflight requests
+- Mixpanel identity is merged on sign-in to unify anonymous and user activity
 ### Interactive Chat Interface
 
 #### Chat with Your Contract

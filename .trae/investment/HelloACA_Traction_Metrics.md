@@ -5,7 +5,7 @@
 
 ## Executive Summary
 
-HelloACA has achieved significant traction since launch, demonstrating strong product-market fit with exceptional growth metrics across all key performance indicators. Our AI-powered contract analysis platform has attracted 2,847 active users, generated $23.4K in monthly recurring revenue, and maintained industry-leading retention rates.
+HelloACA has achieved significant traction since launch, demonstrating strong product-market fit with exceptional growth metrics across all key performance indicators. Our AI-powered contract analysis platform has attracted 2,847 active users, generated $23.4K in monthly recurring revenue, and maintained industry-leading retention rates. Recent product updates include team collaboration with pending invites, unified preview domain `https://preview.helloaca.xyz`, CORS-enabled notify endpoint, and Mixpanel identity merging for improved analytics accuracy.
 
 ---
 

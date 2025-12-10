@@ -115,6 +115,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           <p><a href="${base}/analyze/${contractId}?tab=export">Open Export Center</a></p>
         `
       },
+      team_upload: {
+        subject: 'New contract uploaded by a team member',
+        html: (() => {
+          const memberName = String(extra?.memberName || '')
+          const title = String(extra?.title || '')
+          return `
+            <h2>New Team Upload</h2>
+            <p>${memberName || 'A team member'} uploaded a new contract${title ? `: <strong>${title}</strong>` : ''}.</p>
+            ${contractId ? `<p><a href="${base}/analyze/${contractId}">View Contract</a></p>` : ''}
+          `
+        })()
+      },
+      plan_upgrade: {
+        subject: 'Your plan has been upgraded',
+        html: (() => {
+          const plan = String(extra?.plan || '')
+          return `
+            <h2>Congratulations on upgrading!</h2>
+            <p>Your plan is now <strong>${plan.toUpperCase()}</strong>.</p>
+            <p>Explore new features in your dashboard.</p>
+            <p><a href="${base}/dashboard">Go to Dashboard</a></p>
+          `
+        })()
+      },
       weekly_digest: {
         subject: 'Weekly digest of your contract activity',
         html: `
@@ -133,26 +157,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       team_invite: {
         subject: 'You have been invited to join a team',
-        html: (() => {
-          const toEmail = String(extra?.email || '')
-          const role = String(extra?.role || 'Member')
-          const plan = String(extra?.plan || '')
-          const joinUrl = `${base}/register?email=${encodeURIComponent(toEmail)}`
-          return `
-            <h2>Team Invitation</h2>
-            <p>You have been invited to join a team on Helloaca.</p>
-            ${plan ? `<p><strong>Plan:</strong> ${plan}</p>` : ''}
-            <p><strong>Role:</strong> ${role}</p>
-            <p><a href="${joinUrl}">Create your account to join</a></p>
-            <p>If you already have an account, simply sign in and you will be added automatically.</p>
-          `
-        })()
+        html: ''
       }
     }
 
   // Do not modify credits here; this endpoint only sends emails
 
-  const tpl = templates[event]
+    const tpl = templates[event]
     if (!tpl) {
       return res.status(400).json({ error: 'Unknown event' })
     }
@@ -168,8 +179,110 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .from('team_members')
           .upsert({ owner_id: userId, member_email: toEmail, role, status: 'pending', plan_inherited: plan, updated_at: new Date().toISOString() }, { onConflict: 'owner_id,member_email' })
       }
-      const result = await sendEmail(toEmail, tpl.subject, tpl.html)
+      let linkHtml = ''
+      try {
+        let existing: any = null
+        if (supabase) {
+          const { data } = await supabase
+            .from('user_profiles')
+            .select('id,email')
+            .eq('email', toEmail)
+            .limit(1)
+            .single()
+          existing = data
+        }
+        if (existing && existing.id) {
+          const acceptUrl = `${base}/settings?acceptInviteOwner=${encodeURIComponent(String(userId))}`
+          linkHtml = `<p><a href="${acceptUrl}">Approve invitation</a></p><p>Already have an account. Just approve the invite.</p>`
+        } else {
+          const joinUrl = `${base}/register?email=${encodeURIComponent(toEmail)}`
+          linkHtml = `<p><a href="${joinUrl}">Create your account to join</a></p>`
+        }
+      } catch {
+        const joinUrl = `${base}/register?email=${encodeURIComponent(toEmail)}`
+        linkHtml = `<p><a href="${joinUrl}">Create your account to join</a></p>`
+      }
+      const html = `
+        <h2>Team Invitation</h2>
+        <p>You have been invited to join a team on Helloaca.</p>
+        ${plan ? `<p><strong>Plan:</strong> ${plan}</p>` : ''}
+        <p><strong>Role:</strong> ${role}</p>
+        ${linkHtml}
+      `
+      const result = await sendEmail(toEmail, tpl.subject, html)
       return res.status(200).json({ status: 'invite_sent', result })
+    }
+    if (event === 'credit_purchase') {
+      try {
+        const creditsNum = Number(extra?.credits || 0)
+        if (supabase && userId) {
+          await supabase
+            .from('notifications')
+            .insert({
+              user_id: String(userId),
+              title: 'Credits purchased',
+              body: `You purchased ${creditsNum} credits. Reference: ${String(extra?.reference || '')}`,
+              type: 'credit_purchase',
+              read: false
+            })
+        }
+      } catch {}
+    }
+    if (event === 'plan_upgrade') {
+      try {
+        if (supabase && userId) {
+          await supabase
+            .from('notifications')
+            .insert({
+              user_id: String(userId),
+              title: 'Plan upgraded',
+              body: `Your plan has been upgraded to ${String(extra?.plan || '')}.`,
+              type: 'system',
+              read: false
+            })
+        }
+      } catch {}
+    }
+    if (event === 'team_upload') {
+      try {
+        if (supabase && userId) {
+          const { data: memberProfile } = await supabase
+            .from('user_profiles')
+            .select('id,email,first_name,last_name')
+            .eq('id', String(userId))
+            .single()
+          const memberName = memberProfile ? `${memberProfile.first_name || ''} ${memberProfile.last_name || ''}`.trim() : ''
+          const { data: owners } = await supabase
+            .from('team_members')
+            .select('owner_id')
+            .eq('member_id', String(userId))
+            .eq('status', 'active')
+          const ownerIds = Array.isArray(owners) ? owners.map((o: any) => String(o.owner_id)).filter(Boolean) : []
+          const titleText = String(extra?.title || '')
+          if (ownerIds.length > 0) {
+            await supabase
+              .from('notifications')
+              .insert(ownerIds.map((oid: string) => ({
+                user_id: oid,
+                title: 'New team contract uploaded',
+                body: `${memberName || 'Team member'} uploaded ${titleText || 'a new contract'}.`,
+                type: 'system',
+                read: false
+              })))
+            for (const oid of ownerIds) {
+              const { data: owner } = await supabase
+                .from('user_profiles')
+                .select('email')
+                .eq('id', oid)
+                .single()
+              const ownerEmail = String(owner?.email || '')
+              if (ownerEmail) {
+                await sendEmail(ownerEmail, templates.team_upload.subject, templates.team_upload.html)
+              }
+            }
+          }
+        }
+      } catch {}
     }
     const result = await sendEmail(String(email), tpl.subject, tpl.html)
     return res.status(200).json({ status: 'sent', result })

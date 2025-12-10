@@ -182,12 +182,38 @@ const Pricing: React.FC = () => {
                 if (result.success) {
                   await auth.refreshProfile()
                   try { refreshMonthlyCreditsForPlan(user.id, selectedPlan.plan) } catch {}
+                  try {
+                    const baseEnv = import.meta.env.VITE_API_ORIGIN
+                    const base = baseEnv && baseEnv.length > 0
+                      ? baseEnv
+                      : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+                          ? 'https://preview.helloaca.xyz'
+                          : window.location.origin)
+                    await fetch(`${base}/api/notify`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ event: 'plan_upgrade', userId: user.id, email: user.email, extra: { plan: selectedPlan.plan } })
+                    })
+                  } catch {}
                   toast.success('Subscription activated')
                 } else {
                   try {
                     await supabase.auth.updateUser({ data: { plan: selectedPlan.plan } })
                     await auth.refreshProfile()
                     try { refreshMonthlyCreditsForPlan(user.id, selectedPlan.plan) } catch {}
+                    try {
+                      const baseEnv = import.meta.env.VITE_API_ORIGIN
+                      const base = baseEnv && baseEnv.length > 0
+                        ? baseEnv
+                        : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+                            ? 'https://preview.helloaca.xyz'
+                            : window.location.origin)
+                      await fetch(`${base}/api/notify`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ event: 'plan_upgrade', userId: user.id, email: user.email, extra: { plan: selectedPlan.plan } })
+                      })
+                    } catch {}
                     toast.success('Subscription activated')
                   } catch {
                     toast.error(result.error || 'Failed to update plan')

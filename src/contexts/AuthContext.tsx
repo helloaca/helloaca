@@ -460,6 +460,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearTimeout(profileTimeout)
       setLoading(false)
       setIsRehydrating(false)
+      try {
+        if (session && session.user) {
+          const path = window.location.pathname
+          if (path !== '/dashboard') {
+            window.location.assign('/dashboard')
+          }
+        }
+      } catch {}
     }
   }
 

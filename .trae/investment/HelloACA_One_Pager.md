@@ -20,6 +20,8 @@ HelloACA leverages Claude AI to deliver professional-grade contract insights ins
 - Professional PDF reports with risk assessment
 - 94% accuracy rate with continuous improvement
 - Mobile-optimized for on-the-go professionals
+ - Team collaboration with dynamic invites (pending until accepted)
+ - Unified preview domain `https://preview.helloaca.xyz` for links and exports
 
 ---
 
@@ -93,6 +95,7 @@ HelloACA leverages Claude AI to deliver professional-grade contract insights ins
 - Claude AI integration for contract analysis
 - End-to-end encryption and SOC 2 compliance
 - 99.5% uptime with <2 second response times
+ - CORS-enabled email notifications endpoint; Mixpanel identity merge for analytics
 
 **Product Roadmap 2025:**
 - Multi-language support (Spanish, French, German)

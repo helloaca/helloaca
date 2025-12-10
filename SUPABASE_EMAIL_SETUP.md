@@ -69,8 +69,8 @@ The templates are already customized with HelloACA branding:
 - **Primary Color**: #4ECCA3 (HelloACA green)
 - **Secondary Color**: #000000 (Black)
 - **Font**: Inter (matching website typography)
-- **Logo**: https://helloaca.xyz/logo.png
-- **Website**: https://helloaca.xyz
+- **Logo**: https://preview.helloaca.xyz/logo.png
+- **Website**: https://preview.helloaca.xyz
 - **Support Email**: support@helloaca.xyz
 
 ### 5. Testing
@@ -108,7 +108,7 @@ The templates are designed for maximum compatibility:
 **Common Issues:**
 
 1. **Logo not displaying**:
-   - Ensure `https://helloaca.xyz/logo.png` is publicly accessible
+   - Ensure `https://preview.helloaca.xyz/logo.png` is publicly accessible
    - Check image dimensions (recommended: 40px height)
 
 2. **Colors not showing**:

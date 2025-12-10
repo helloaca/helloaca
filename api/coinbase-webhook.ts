@@ -66,6 +66,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .eq('id', profile.id)
         }
 
+        try {
+          const base = process.env.API_ORIGIN || process.env.VITE_API_ORIGIN || 'https://preview.helloaca.xyz'
+          await fetch(`${base}/api/notify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event: 'plan_upgrade', userId: String(profile.id), email, extra: { plan: 'pro' } })
+          })
+        } catch {}
+
         const creditsMeta = (data?.metadata?.credits as number) || 0
         const credits = Number.isFinite(creditsMeta) ? Math.floor(creditsMeta) : 0
         if (credits > 0) {
