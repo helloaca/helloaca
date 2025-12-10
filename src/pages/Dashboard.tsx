@@ -234,11 +234,23 @@ const Dashboard: React.FC = () => {
       }
       ;(async () => {
         try {
-          const { data: { session } } = await supabase.auth.getSession()
-          if (!session) {
-            await new Promise(r => setTimeout(r, 500))
+          // Wait for session to be fully established
+          let session = null
+          for (let i = 0; i < 10; i++) {
+            const { data } = await supabase.auth.getSession()
+            if (data.session) {
+              session = data.session
+              break
+            }
+            await new Promise(r => setTimeout(r, 200))
           }
-        } catch {}
+          
+          if (!session) {
+             console.warn('Session not found after waiting, attempting load anyway')
+          }
+        } catch (e) {
+          console.error('Session check failed', e)
+        }
         await loadUserContracts()
       })()
       loadFolderState()
@@ -264,14 +276,15 @@ const Dashboard: React.FC = () => {
       const fetchPromise = (async () => {
         try {
           const { ContractService } = await import('@/lib/contractService')
-          const full = await ContractService.getUserContractsWithAnalysis(user!.id)
-          return { data: full }
+          const summary = await ContractService.getDashboardSummary(user!.id)
+          setStats({ totalContracts: summary.totalContracts, thisMonth: summary.thisMonth, avgAnalysisTime: '32s', risksSaved: summary.risksIdentified })
+          return { data: summary.recentContracts }
         } catch (serviceError) {
-          console.error('ContractService error:', serviceError)
+          console.error('ContractService summary error:', serviceError)
           try {
             const { ContractService } = await import('@/lib/contractService')
-            const basic = await ContractService.getUserContracts(user!.id)
-            return { data: basic.map(c => ({ ...c, analysis: undefined })) }
+            const full = await ContractService.getUserContractsWithAnalysis(user!.id)
+            return { data: full }
           } catch (fallbackError) {
             console.error('Fallback loading also failed:', fallbackError)
             return { error: fallbackError }
@@ -299,32 +312,7 @@ const Dashboard: React.FC = () => {
       setContracts(userContracts)
       writeCachedContracts(userContracts)
       
-      // Calculate stats
-      const now = new Date()
-      const thisMonth = now.getMonth()
-      const thisYear = now.getFullYear()
-      
-      const thisMonthContracts = userContracts.filter(contract => {
-        const contractDate = new Date(contract.created_at)
-        return contractDate.getMonth() === thisMonth && contractDate.getFullYear() === thisYear
-      })
-
-      // Calculate total risks from all completed contracts
-      let totalRisks = 0
-      userContracts.forEach(contract => {
-        const sections = contract.analysis?.analysis_data?.sections
-        if (sections) {
-          const count = Object.values(sections).reduce((acc: number, section: any) => acc + (section.keyFindings?.length || 0), 0)
-          totalRisks += count
-        }
-      })
-
-      setStats({
-        totalContracts: userContracts.length,
-        thisMonth: thisMonthContracts.length,
-        avgAnalysisTime: '32s',
-        risksSaved: totalRisks
-      })
+      // Stats are set from summary; preserve existing avg time
       
       console.log('Contract loading completed successfully')
     } catch (error) {
@@ -407,6 +395,7 @@ const Dashboard: React.FC = () => {
 
   // Handle file selection and upload
   const handleFileSelect = async (file: File, skipCreditsModal?: boolean) => {
+    console.log('📂 handleFileSelect called for:', file.name)
     if (!user?.id) {
       setUploadStatus('error')
       setUploadMessage('User not authenticated')

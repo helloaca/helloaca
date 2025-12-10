@@ -112,10 +112,19 @@ export class ContractService {
 
       // Stage 3: Save contract to database
       onProgress?.('Saving contract...', 40)
+      console.log('💾 Saving contract to database...')
+      
       let contractData: any = null
       let contractError: any = null
+      
       try {
-        const ins = await supabase
+        // Create a timeout promise
+        const saveTimeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database insert timed out after 15s')), 15000)
+        )
+        
+        // Race the insert against the timeout
+        const insertPromise = supabase
           .from('contracts')
           .insert({
             user_id: userId,
@@ -128,10 +137,18 @@ export class ContractService {
           })
           .select()
           .single()
+          
+        const ins: any = await Promise.race([insertPromise, saveTimeout])
+        
         contractData = ins.data
         contractError = ins.error
+        console.log('💾 Primary insert result:', { success: !!contractData, error: contractError })
+        
       } catch (e) {
-        // Retry without extracted_text in case column is missing
+        console.warn('⚠️ Primary insert failed or timed out:', e)
+        
+        // Retry without extracted_text in case column is missing or payload too large
+        console.log('🔄 Retrying insert without extracted text...')
         const ins2 = await supabase
           .from('contracts')
           .insert({
@@ -144,16 +161,21 @@ export class ContractService {
           })
           .select()
           .single()
+          
         contractData = ins2.data
         contractError = ins2.error
+        
         if (!contractError && contractData?.id) {
           // Persist extracted text separately if column exists later
+          console.log('💾 Retry successful, updating text content separately...')
           try {
             await supabase
               .from('contracts')
               .update({ extracted_text: processedFile.text })
               .eq('id', contractData.id)
-          } catch {}
+          } catch (updateErr) {
+            console.warn('⚠️ Failed to update extracted text:', updateErr)
+          }
         }
       }
 
@@ -1121,6 +1143,58 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
       return data || []
     } catch (error) {
       console.error('Error fetching user contracts:', error)
+      throw error
+    }
+  }
+
+  static async getDashboardSummary(userId: string): Promise<{ totalContracts: number; thisMonth: number; risksIdentified: number; recentContracts: Array<Contract & { analysis?: any }> }> {
+    try {
+      const { data: contracts, error: contractsError } = await supabase
+        .from('contracts')
+        .select('id,user_id,title,file_name,file_size,upload_date,analysis_status,created_at,updated_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+
+      if (contractsError) {
+        throw new Error('Failed to fetch contracts')
+      }
+
+      const totalContracts = Array.isArray(contracts) ? contracts.length : 0
+      const now = new Date()
+      const thisMonth = now.getMonth()
+      const thisYear = now.getFullYear()
+      const thisMonthCount = (contracts || []).filter((c) => {
+        const d = new Date(c.created_at)
+        return d.getMonth() === thisMonth && d.getFullYear() === thisYear
+      }).length
+
+      let risksIdentified = 0
+      let recentContracts: Array<Contract & { analysis?: any }> = contracts || []
+      if (totalContracts > 0) {
+        const ids = recentContracts.map((c) => c.id)
+        const { data: analyses } = await supabase
+          .from('reports')
+          .select('id,contract_id,user_id,analysis_data')
+          .in('contract_id', ids)
+        const withAnalysis = recentContracts.map((contract) => {
+          const analysis = analyses?.find((a) => a.contract_id === contract.id)
+          if (analysis?.analysis_data && validateEnhancedAnalysis(analysis.analysis_data)) {
+            analysis.analysis_data = { ...analysis.analysis_data, ...toLegacyAnalysis(analysis.analysis_data as EnhancedContractAnalysis) }
+          }
+          return { ...contract, analysis }
+        })
+        recentContracts = withAnalysis
+        withAnalysis.forEach((contract) => {
+          const sections = contract.analysis?.analysis_data?.sections
+          if (sections) {
+            const count = Object.values(sections).reduce((acc: number, section: any) => acc + (section.keyFindings?.length || 0), 0)
+            risksIdentified += count
+          }
+        })
+      }
+
+      return { totalContracts, thisMonth: thisMonthCount, risksIdentified, recentContracts: recentContracts.slice(0, 5) }
+    } catch (error) {
       throw error
     }
   }
