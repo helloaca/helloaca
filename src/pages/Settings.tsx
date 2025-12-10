@@ -572,10 +572,10 @@ const Settings: React.FC = () => {
       }
       if (!user?.id) return
       const base = import.meta.env.VITE_API_ORIGIN || 'https://preview.helloaca.xyz'
-      const res = await fetch(`${base}/api/delete-account`, {
+      const res = await fetch(`${base}/api/app`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-        body: JSON.stringify({ userId: user.id, email: user.email, token: session?.access_token })
+        body: JSON.stringify({ action: 'delete_account', userId: user.id, email: user.email })
       })
       if (res.ok) {
         toast.success('Account deleted')
@@ -682,10 +682,10 @@ const Settings: React.FC = () => {
           if ((hostname === 'localhost' || hostname === '127.0.0.1') && typeof base === 'string' && base.includes('preview')) {
             base = 'https://preview.helloaca.xyz'
           }
-          const resp = await fetch(`${base}/api/team-accept-invite`, {
+          const resp = await fetch(`${base}/api/app`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: String(user.id), ownerId: String(ownerParam) })
+            headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+            body: JSON.stringify({ action: 'team_accept_invite', userId: String(user.id), ownerId: String(ownerParam) })
           })
           const data = await resp.json().catch(() => null)
           if (resp.ok) {
