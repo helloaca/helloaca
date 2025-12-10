@@ -334,7 +334,7 @@ const Pricing: React.FC = () => {
               if (data?.status === 'success') {
                 if (auth?.refreshProfile && user?.id) {
                   await auth.refreshProfile()
-                  setCreditBalance(getUserCredits(user.id))
+                  setCreditBalance(Number(auth?.profile?.credits_balance || getUserCredits(user.id)))
                 }
                 try {
                   const baseEnv = import.meta.env.VITE_API_ORIGIN

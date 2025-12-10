@@ -47,6 +47,26 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
       }
     }
     loadNotifs()
+
+    let sub: any
+    try {
+      if (isAuthenticated && user?.id) {
+        // Subscribe to live notifications for instant updates
+        sub = supabase
+          .channel(`notif_${user.id}`)
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, (payload: any) => {
+            const n = payload?.new
+            if (n && n.id) {
+              setNotifications((prev) => [{ id: String(n.id), title: String(n.title || ''), body: String(n.body || ''), read: Boolean(n.read), created_at: String(n.created_at || new Date().toISOString()) }, ...prev])
+            }
+          })
+          .subscribe()
+      }
+    } catch {}
+
+    return () => {
+      try { if (sub) supabase.removeChannel(sub) } catch {}
+    }
   }, [isAuthenticated, user?.id])
 
   const toggleNotif = async () => {

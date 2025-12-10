@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import type { Contract } from '@/lib/contractService'
 import { toast } from 'sonner'
+import { supabase } from '@/lib/supabase'
 import { trackContracts } from '@/lib/analytics'
 import { getUserCredits, consumeUserCredit, markContractCredited, getMonthlyFreeUsage, canUseFreeAnalysis, markFreeAnalysisUsed } from '@/lib/utils'
 const ContractHistoryModal = React.lazy(() => import('@/components/ContractHistoryModal'))
@@ -231,7 +232,15 @@ const Dashboard: React.FC = () => {
         })
         setStats({ totalContracts: cached.length, thisMonth: thisMonthContracts.length, avgAnalysisTime: '32s', risksSaved: totalRisks })
       }
-      loadUserContracts()
+      ;(async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession()
+          if (!session) {
+            await new Promise(r => setTimeout(r, 500))
+          }
+        } catch {}
+        await loadUserContracts()
+      })()
       loadFolderState()
       loadTemplates()
     }
