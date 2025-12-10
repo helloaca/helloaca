@@ -531,14 +531,16 @@ const Pricing: React.FC = () => {
               { plan: 'team' as const, title: 'Team', monthly: 79, features: ['30 analyses/month (team)','5 seats','Shared library','Team dashboard','Basic analytics','Centralized billing'] },
               { plan: 'business' as const, title: 'Business', monthly: 199, features: ['100 analyses/month (team)','15 seats','Approval workflows','Advanced analytics','Custom templates','Version comparison','White‑label reports','Priority support'] },
               { plan: 'enterprise' as const, title: 'Enterprise', monthly: 499, features: ['500 analyses/month (team)','50 seats','Custom risk frameworks','API access','SSO/SAML','Integrations','Audit trail','SLA 99.9%','Account manager'] }
-            ]).map((p) => (
-              <div key={p.plan} className="bg-white rounded-2xl shadow-xl p-8 h-full flex flex-col relative">
+            ]).map((p) => {
+              const isDisabled = p.plan === 'team' || p.plan === 'business' || p.plan === 'enterprise'
+              return (
+              <div key={p.plan} className={`bg-white rounded-2xl shadow-xl p-8 h-full flex flex-col relative ${isDisabled ? 'opacity-60 grayscale' : ''}`}>
                 <div className="mb-4 flex items-center justify-between">
                   <div>
                     <h3 className="text-2xl font-bold text-gray-900">{p.title}</h3>
                     <p className="text-gray-600">{billingPeriod==='monthly' ? `$${p.monthly}/month` : `$${p.monthly*12}/year`}</p>
                   </div>
-                  {p.plan==='business' && (
+                  {p.plan==='pro' && (
                     <span className="absolute -top-3 right-4 text-xs px-2 py-1 rounded-full bg-gray-900 text-white shadow">Most popular</span>
                   )}
                 </div>
@@ -548,19 +550,28 @@ const Pricing: React.FC = () => {
                   ))}
                 </ul>
                 <div className="mt-auto">
-                  <button
-                    onClick={() => { setSelectedPlan({ plan: p.plan, period: billingPeriod, priceUSD: billingPeriod==='monthly' ? p.monthly : p.monthly*12 }); setSubModalOpen(true) }}
-                    className="w-full py-3 px-6 rounded-lg font-medium bg-[#5ACEA8] text-white hover:bg-[#49C89A]"
-                  >
-                    Get started
-                  </button>
+                  {isDisabled ? (
+                    <button
+                      disabled
+                      className="w-full h-11 px-6 rounded-lg font-medium bg-gray-300 text-gray-700 cursor-not-allowed leading-none whitespace-nowrap"
+                    >
+                      Coming soon...
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => { setSelectedPlan({ plan: p.plan, period: billingPeriod, priceUSD: billingPeriod==='monthly' ? p.monthly : p.monthly*12 }); setSubModalOpen(true) }}
+                      className="w-full py-3 px-6 rounded-lg font-medium bg-[#5ACEA8] text-white hover:bg-[#49C89A]"
+                    >
+                      Get started
+                    </button>
+                  )}
                 </div>
               </div>
-            ))}
+            )})}
           </div>
 
           {/* Plan Comparison */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 mb-16">
+          {/* <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 mb-16">
             <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">Compare Plans</h2>
             <div className="overflow-x-auto">
               <table className="min-w-full table-fixed divide-y divide-gray-200">
@@ -604,7 +615,7 @@ const Pricing: React.FC = () => {
                 </tbody>
               </table>
             </div>
-          </div>
+          </div> */}
 
           {/* FAQ Section */}
           <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12">
