@@ -192,7 +192,8 @@ const Register: React.FC = () => {
               
               <button
                 onClick={handleMicrosoftSignup}
-                className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                disabled={true}
+                className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 opacity-50 cursor-not-allowed transition-colors"
               >
                 <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
                   <path fill="#F25022" d="M1 1h10v10H1z"/>
@@ -200,7 +201,7 @@ const Register: React.FC = () => {
                   <path fill="#7FBA00" d="M1 13h10v10H1z"/>
                   <path fill="#FFB900" d="M13 13h10v10H13z"/>
                 </svg>
-                Sign up with Microsoft
+                Sign up with Microsoft (Coming Soon)
               </button>
             </div>
 

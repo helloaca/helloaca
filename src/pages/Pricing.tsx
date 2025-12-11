@@ -336,19 +336,6 @@ const Pricing: React.FC = () => {
                   await auth.refreshProfile()
                   setCreditBalance(Number(auth?.profile?.credits_balance || getUserCredits(user.id)))
                 }
-                try {
-                  const baseEnv = import.meta.env.VITE_API_ORIGIN
-                  const base = baseEnv && baseEnv.length > 0
-                    ? baseEnv
-                    : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-                        ? 'https://preview.helloaca.xyz'
-                        : window.location.origin)
-                  await fetch(`${base}/api/notify`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ event: 'credit_purchase', userId: user?.id, extra: { credits: selectedBundle.credits, reference: response.reference } })
-                  })
-                } catch { /* noop */ }
                 mixpanel.track('Purchase', {
                   user_id: user?.id,
                   transaction_id: response.reference,
