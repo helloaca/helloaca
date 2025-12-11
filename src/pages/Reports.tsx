@@ -41,14 +41,17 @@ const Reports: React.FC = () => {
     ;(async () => {
       try {
         // Wait for session to be fully established
-        let session = null
+        let activeSession = null
         for (let i = 0; i < 10; i++) {
           const { data } = await supabase.auth.getSession()
           if (data.session) {
-            session = data.session
+            activeSession = data.session
             break
           }
           await new Promise(r => setTimeout(r, 200))
+        }
+        if (!activeSession) {
+          console.warn('Session not found after waiting, attempting load anyway')
         }
       } catch (e) {
         console.error('Session check failed', e)
