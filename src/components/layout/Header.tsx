@@ -208,44 +208,7 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
                   </svg>
                   {hasUnread && <span className="inline-block ml-1 w-2 h-2 bg-[#4ECCA3] rounded-full" />}
                 </button>
-                {isNotifOpen && (
-                  <div className="fixed top-14 sm:top-16 right-4 w-96 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                    <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900">Notifications</p>
-                      <button onClick={markAllRead} className="text-xs text-[#4ECCA3] hover:underline">Mark all read</button>
-                    </div>
-                    <div className="max-h-64 overflow-auto">
-                      {notifications.length === 0 ? (
-                        <p className="px-4 py-3 text-sm text-gray-500">No notifications</p>
-                      ) : notifications.map((n) => (
-                        <button
-                          key={n.id}
-                          className="w-full text-left px-4 py-3 hover:bg-gray-50"
-                          onClick={async () => {
-                            try {
-                              if (!n.read && isAuthenticated && user?.id) {
-                                await supabase
-                                  .from('notifications')
-                                  .update({ read: true })
-                                  .eq('id', n.id)
-                                  .eq('user_id', String(user.id))
-                                setNotifications(notifications.map((x) => (x.id === n.id ? { ...x, read: true } : x)))
-                              }
-                              setExpanded((prev) => ({ ...prev, [n.id]: !prev[n.id] }))
-                            } catch {}
-                          }}
-                        >
-                          <div className="flex items-start justify-between">
-                            <p className="text-sm font-medium text-gray-900">{n.title}</p>
-                            {!n.read && <span className="inline-block w-2 h-2 bg-[#4ECCA3] rounded-full" />}
-                          </div>
-                          {n.body && expanded[n.id] && <p className="text-sm text-gray-600 mt-1">{n.body}</p>}
-                          <p className="text-xs text-gray-400 mt-1">{n.created_at ? new Date(n.created_at).toLocaleString() : ''}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                
                 <div className="relative">
                 <button
                   onClick={toggleUserMenu}
@@ -288,8 +251,21 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
             ) : null}
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          {/* Mobile Menu & Notifications */}
+          <div className="md:hidden flex items-center space-x-2">
+            {isAuthenticated && user && (
+              <button
+                onClick={toggleNotif}
+                className="p-2 rounded-lg text-gray-700 hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                aria-label="Notifications"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                  <path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2Z" />
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 5-3 7h18c0-2-3 0-3-7" />
+                </svg>
+                {hasUnread && <span className="inline-block ml-1 w-2 h-2 bg-[#4ECCA3] rounded-full" />}
+              </button>
+            )}
             <button
               onClick={toggleMobileMenu}
               className="p-2 rounded-lg text-gray-700 hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
@@ -302,6 +278,46 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
             </button>
           </div>
         </div>
+
+        {/* Notifications Dropdown (Shared) */}
+        {isNotifOpen && (
+          <div className="fixed top-14 sm:top-16 right-2 sm:right-4 w-[calc(100vw-1rem)] sm:w-96 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100">
+              <p className="text-sm font-medium text-gray-900">Notifications</p>
+              <button onClick={markAllRead} className="text-xs text-[#4ECCA3] hover:underline">Mark all read</button>
+            </div>
+            <div className="max-h-64 overflow-auto">
+              {notifications.length === 0 ? (
+                <p className="px-4 py-3 text-sm text-gray-500">No notifications</p>
+              ) : notifications.map((n) => (
+                <button
+                  key={n.id}
+                  className="w-full text-left px-4 py-3 hover:bg-gray-50"
+                  onClick={async () => {
+                    try {
+                      if (!n.read && isAuthenticated && user?.id) {
+                        await supabase
+                          .from('notifications')
+                          .update({ read: true })
+                          .eq('id', n.id)
+                          .eq('user_id', String(user.id))
+                        setNotifications(notifications.map((x) => (x.id === n.id ? { ...x, read: true } : x)))
+                      }
+                      setExpanded((prev) => ({ ...prev, [n.id]: !prev[n.id] }))
+                    } catch {}
+                  }}
+                >
+                  <div className="flex items-start justify-between">
+                    <p className="text-sm font-medium text-gray-900">{n.title}</p>
+                    {!n.read && <span className="inline-block w-2 h-2 bg-[#4ECCA3] rounded-full" />}
+                  </div>
+                  {n.body && expanded[n.id] && <p className="text-sm text-gray-600 mt-1">{n.body}</p>}
+                  <p className="text-xs text-gray-400 mt-1">{n.created_at ? new Date(n.created_at).toLocaleString() : ''}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Mobile Menu with backdrop and animations */}
         {isMobileMenuOpen && (
