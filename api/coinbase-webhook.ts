@@ -97,7 +97,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
 
              try {
-                const base = process.env.API_ORIGIN || process.env.VITE_API_ORIGIN || 'https://preview.helloaca.xyz'
+                const base = process.env.API_ORIGIN || process.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
                 await fetch(`${base}/api/notify`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

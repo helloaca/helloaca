@@ -298,7 +298,7 @@ const TermsOfService: React.FC = () => {
                     </div>
                   </div>
                   <div className="mt-4">
-                    <p><strong>Website:</strong> https://preview.helloaca.xyz</p>
+                    <p><strong>Website:</strong> https://helloaca.xyz</p>
                   </div>
                 </div>
               </section>

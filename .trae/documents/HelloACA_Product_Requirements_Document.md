@@ -100,7 +100,7 @@ The platform is desktop-first with mobile-adaptive design. Touch interaction opt
 
 ## 5. Recent Product Updates
 
-- Domain references updated to `https://preview.helloaca.xyz` for public links and exports.
+- Domain references updated to `https://helloaca.xyz` for public links and exports.
 - Team Members list dynamically loads owner, active members, and pending invites from Supabase.
 - Email notifications endpoint includes CORS headers and OPTIONS preflight handling.
 - Frontend uses `VITE_API_ORIGIN` for environment-safe routing; local dev falls back safely.

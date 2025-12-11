@@ -183,7 +183,7 @@ const Settings: React.FC = () => {
         callback: (response: any) => {
           (async () => {
             try {
-              const base = import.meta.env.VITE_API_ORIGIN || 'https://preview.helloaca.xyz'
+              const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
               const res = await fetch(`${base}/api/paystack-verify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

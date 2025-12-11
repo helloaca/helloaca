@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://preview.helloaca.xyz/sitemap.xml
+Sitemap: https://helloaca.xyz/sitemap.xml

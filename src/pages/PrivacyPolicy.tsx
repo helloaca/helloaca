@@ -373,7 +373,7 @@ const PrivacyPolicy: React.FC = () => {
                     </div>
                     <div>
                       <p><strong>Website:</strong></p>
-                      <p>https://preview.helloaca.xyz</p>
+                      <p>https://helloaca.xyz</p>
                     </div>
                   </div>
                 </div>

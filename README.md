@@ -109,14 +109,14 @@ VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
 
 # Application Configuration (client)
 VITE_APP_URL=http://localhost:5173
-VITE_API_ORIGIN=https://preview.helloaca.xyz
+VITE_API_ORIGIN=https://helloaca.xyz
 
 # Email Notifications (server-only; set in hosting env, not client)
 RESEND_API_KEY=your_resend_api_key
 EMAIL_FROM="helloaca <noreply@helloaca.xyz>"
 SUPABASE_URL=your_supabase_project_url
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-API_ORIGIN=https://preview.helloaca.xyz
+API_ORIGIN=https://helloaca.xyz
 ```
 
 Notes:
@@ -168,7 +168,7 @@ helloaca/
 
 ## 📣 Recent Product Updates
 
-- Domain references updated to `https://preview.helloaca.xyz` across app, emails, and exports.
+- Domain references updated to `https://helloaca.xyz` across app, emails, and exports.
 - Team Members list now loads owner, active members, and pending invites from Supabase.
 - Email notify endpoint includes CORS headers and handles OPTIONS preflight.
 - Frontend uses `VITE_API_ORIGIN` for environment-safe API routing.
@@ -218,7 +218,7 @@ Payment processing includes:
 2. **Configure Environment Variables**
    - Add all client variables in Vercel dashboard (`VITE_*`)
    - Add server-only variables (`RESEND_API_KEY`, `EMAIL_FROM`, `SUPABASE_SERVICE_ROLE_KEY`, `API_ORIGIN`)
-   - Use `https://preview.helloaca.xyz` for public links and API origin
+   - Use `https://helloaca.xyz` for public links and API origin
 
 3. **Deploy**
    ```bash

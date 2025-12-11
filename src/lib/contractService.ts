@@ -164,7 +164,7 @@ export class ContractService {
         const base = baseEnv && baseEnv.length > 0
           ? baseEnv
           : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-              ? 'https://preview.helloaca.xyz'
+              ? 'https://helloaca.xyz'
               : window.location.origin)
         await fetch(`${base}/api/notify`, {
           method: 'POST',
