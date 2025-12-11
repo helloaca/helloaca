@@ -183,8 +183,8 @@ const PrivacyPolicy: React.FC = () => {
 
                 <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">6.3 Team and Organization Sharing</h3>
                 <ul>
-                  <li>Business and Enterprise plans allow document sharing within your organization</li>
-                  <li>Administrators can manage user access and permissions</li>
+                  <li>Team, Business and Enterprise plans allow document sharing within your organization</li>
+                  <li>Administrators can manage user access, seats, and permissions</li>
                   <li>Shared documents remain under your organization's control</li>
                 </ul>
               </section>
@@ -231,7 +231,7 @@ const PrivacyPolicy: React.FC = () => {
                 <h3 className="text-xl font-semibold text-gray-800 mb-3">7.1 Retention Periods</h3>
                 <ul>
                   <li><strong>Account Data:</strong> Retained while your account is active plus 3 years</li>
-                  <li><strong>Documents:</strong> Retained according to your subscription plan</li>
+                  <li><strong>Documents:</strong> Retained according to your usage and account settings</li>
                   <li><strong>Usage Data:</strong> Retained for 2 years for analytics and improvement</li>
                   <li><strong>Support Data:</strong> Retained for 5 years for quality assurance</li>
                 </ul>
@@ -316,7 +316,7 @@ const PrivacyPolicy: React.FC = () => {
                 <p>We work with trusted third-party providers for:</p>
                 <ul>
                   <li><strong>Cloud Infrastructure:</strong> AWS, Google Cloud (SOC 2 compliant)</li>
-                  <li><strong>Payment Processing:</strong> Stripe, PayPal (PCI DSS compliant)</li>
+                  <li><strong>Payment Processing:</strong> Paystack, Coinbase Commerce (PCI DSS compliant where applicable)</li>
                   <li><strong>Analytics:</strong> Google Analytics (Measurement ID: G-0JVYR712V0) for website usage analytics with anonymized data</li>
                   <li><strong>Customer Support:</strong> Intercom, Zendesk</li>
                   <li><strong>Email Services:</strong> SendGrid, Mailchimp</li>

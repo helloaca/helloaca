@@ -182,7 +182,7 @@
 
 ## Version History
 
-### Version 1.0.0 (Q4 2024) - Current Release ✅
+### Version 1.1.0 (Q4 2025) - Current Release ✅
 **🎉 Current Features**
 - Core contract analysis engine with Claude AI
 - User authentication and subscription management
@@ -190,14 +190,19 @@
 - PDF report generation for Pro and Business users
 - Responsive web application with modern UI
 - Supabase backend infrastructure
-- Basic dashboard and contract history
+- Dashboard and contract history with usage statistics
+- Team collaboration: dynamic list shows owner, active members, and pending invites until acceptance
+- Public domain references updated to `https://preview.helloaca.xyz` across app, emails, and exports
+- CORS-preflight-enabled notify endpoint for emails and digest communications
+- Mixpanel identity merge on sign-in to associate anonymous activity with user profiles
 
 **📊 Current Metrics**
 - Support for PDF and DOCX files up to 10MB
-- 30-second average analysis time
+- 30-second average analysis time (typical)
 - 3-tier subscription model
 - Mobile-responsive design
 - Enterprise-grade security
+- Email delivery via Resend when configured
 
 ### Version 0.9.0 (Q3 2024) - Beta Release
 **🧪 Beta Testing Phase**

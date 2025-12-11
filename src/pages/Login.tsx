@@ -56,28 +56,29 @@ const Login: React.FC = () => {
 
       if (result.success) {
         setIsLoading(false)
-        try {
-          const mfaTimeout = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), 5000))
-          const factorsResult = await Promise.race([
-            (supabase as any).auth.mfa.listFactors(),
-            mfaTimeout
-          ])
-          if ('timedOut' in factorsResult) {
-            setErrors({ general: 'Signed in, but network is slow. Please try again.' })
-            return
-          }
-          const totp = factorsResult?.data?.find((f: any) => f.factorType === 'totp')
-          if (totp) {
-            setFactorId(totp.id)
-            setRequireMfa(true)
-          } else {
-            navigate('/dashboard')
-          }
-        } catch {
-          navigate('/dashboard')
-        }
+        navigate('/dashboard')
       } else {
-        setErrors({ general: result.error || 'Login failed' })
+        const msg = result.error || 'Login failed'
+        const mayNeedMfa = /mfa|two[- ]?factor|otp|verification code/i.test(msg)
+        if (mayNeedMfa) {
+          try {
+            const mfaTimeout = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), 5000))
+            const factorsResult = await Promise.race([
+              (supabase as any).auth.mfa.listFactors(),
+              mfaTimeout
+            ])
+            if (!('timedOut' in factorsResult) && Array.isArray(factorsResult?.data)) {
+              const totp = factorsResult.data.find((f: any) => f.factorType === 'totp')
+              if (totp) {
+                setFactorId(totp.id)
+                setRequireMfa(true)
+                setIsLoading(false)
+                return
+              }
+            }
+          } catch { /* noop */ }
+        }
+        setErrors({ general: msg })
       }
     } catch {
       setErrors({ general: 'An unexpected error occurred' })
@@ -111,13 +112,13 @@ const Login: React.FC = () => {
         return
       }
       setIsVerifying(true)
-      const { error: cErr } = await (supabase as any).auth.mfa.challenge({ factorId })
+      const { data: challenge, error: cErr } = await (supabase as any).auth.mfa.challenge({ factorId })
       if (cErr) {
         setMfaError('Challenge failed')
         setIsVerifying(false)
         return
       }
-      const { error: vErr } = await (supabase as any).auth.mfa.verify({ factorId, code: totpCode })
+      const { error: vErr } = await (supabase as any).auth.mfa.verify({ factorId, code: totpCode, challengeId: challenge?.id })
       if (vErr) {
         setMfaError('Invalid code')
         setIsVerifying(false)
@@ -180,7 +181,8 @@ const Login: React.FC = () => {
             
             <button
               onClick={handleMicrosoftLogin}
-              className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              disabled={true}
+              className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 opacity-50 cursor-not-allowed transition-colors"
             >
               <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
                 <path fill="#F25022" d="M1 1h10v10H1z"/>
@@ -188,7 +190,7 @@ const Login: React.FC = () => {
                 <path fill="#7FBA00" d="M1 13h10v10H1z"/>
                 <path fill="#FFB900" d="M13 13h10v10H13z"/>
               </svg>
-              Continue with Microsoft
+              Continue with Microsoft (Coming Soon)
             </button>
           </div>
 

@@ -2,7 +2,7 @@
 ## AI-Powered Contract Analysis Platform
 
 **Effective Date:** December 31, 2024  
-**Last Updated:** December 31, 2024
+**Last Updated:** December 10, 2025
 
 ---
 
@@ -30,6 +30,7 @@ HelloACA is an AI-powered contract analysis platform that provides:
 - Interactive AI-powered contract consultation
 - Professional reporting and documentation
 - Secure document storage and management
+- Team collaboration features with pending invites shown until accepted
 
 ### 3. User Accounts and Registration
 
@@ -85,6 +86,7 @@ HelloACA is an AI-powered contract analysis platform that provides:
 - You may delete documents at any time
 - We may retain anonymized analytics data
 - Account data is retained for legal and operational purposes
+- Email notifications are sent via third-party provider (Resend) when configured; messages include links to `https://preview.helloaca.xyz`
 
 ### 7. Subscription and Billing
 
@@ -124,6 +126,7 @@ HelloACA is an AI-powered contract analysis platform that provides:
 - We strive for 99.5% uptime but cannot guarantee continuous availability
 - Maintenance and updates may cause temporary interruptions
 - We are not liable for service interruptions
+- Cross-origin requests to notification endpoints implement CORS with OPTIONS preflight handling
 
 **9.2 Accuracy Disclaimer**
 - AI analysis is provided "as is" without warranties
@@ -168,6 +171,10 @@ HelloACA is an AI-powered contract analysis platform that provides:
 - We may update these Terms with reasonable notice
 - Continued use constitutes acceptance of changes
 - Material changes require explicit consent
+
+### 14. Contact Information
+- Website: https://preview.helloaca.xyz
+- Support: support@helloaca.xyz
 
 ---
 

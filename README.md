@@ -19,6 +19,7 @@ HelloACA leverages advanced AI technology to provide instant contract insights, 
 - **💬 Interactive Chat**: Ask questions about your contracts with context-aware AI responses
 - **📊 Risk Classification**: Automated categorization of contract risks with severity indicators
 - **📄 PDF Reports**: Generate professional, branded analysis reports
+- **👥 Team Collaboration**: Dynamic team list with owner, members, and pending invites until accepted
 - **🔒 Secure Storage**: Enterprise-grade security with Supabase backend
 
 ### User Tiers
@@ -96,19 +97,31 @@ HelloACA leverages advanced AI technology to provide instant contract insights, 
 Create a `.env` file in the root directory with the following variables:
 
 ```env
-# Supabase Configuration
+# Supabase Configuration (client)
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-# Claude AI Configuration
+# Claude AI Configuration (client)
 VITE_CLAUDE_API_KEY=your_claude_api_key
 
-# Stripe Configuration
+# Stripe Configuration (client)
 VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
 
-# Application Configuration
+# Application Configuration (client)
 VITE_APP_URL=http://localhost:5173
+VITE_API_ORIGIN=https://helloaca.xyz
+
+# Email Notifications (server-only; set in hosting env, not client)
+RESEND_API_KEY=your_resend_api_key
+EMAIL_FROM="helloaca <noreply@helloaca.xyz>"
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+API_ORIGIN=https://helloaca.xyz
 ```
+
+Notes:
+- Server-only variables (`RESEND_API_KEY`, `EMAIL_FROM`, `SUPABASE_SERVICE_ROLE_KEY`, `API_ORIGIN`) must be set in the serverless runtime environment (e.g., Vercel Project Settings) and should NOT be included in client bundles.
+- `VITE_API_ORIGIN` is consumed by the frontend for constructing public links and API routes.
 
 ### Getting API Keys
 
@@ -151,6 +164,15 @@ helloaca/
 3. **View Analysis**: Get instant AI-powered insights and risk assessment
 4. **Chat with Contract**: Ask specific questions about contract terms
 5. **Generate Reports**: Export professional PDF reports (Pro/Business plans)
+6. **Invite Team Members**: Send team invites; pending invites appear until accepted
+
+## 📣 Recent Product Updates
+
+- Domain references updated to `https://helloaca.xyz` across app, emails, and exports.
+- Team Members list now loads owner, active members, and pending invites from Supabase.
+- Email notify endpoint includes CORS headers and handles OPTIONS preflight.
+- Frontend uses `VITE_API_ORIGIN` for environment-safe API routing.
+- Mixpanel identity merge on sign-in associates anonymous activity with user profiles.
 
 ### For Developers
 
@@ -194,8 +216,9 @@ Payment processing includes:
    - Vercel will auto-detect the Vite configuration
 
 2. **Configure Environment Variables**
-   - Add all environment variables in Vercel dashboard
-   - Ensure production URLs are used for APIs
+   - Add all client variables in Vercel dashboard (`VITE_*`)
+   - Add server-only variables (`RESEND_API_KEY`, `EMAIL_FROM`, `SUPABASE_SERVICE_ROLE_KEY`, `API_ORIGIN`)
+   - Use `https://helloaca.xyz` for public links and API origin
 
 3. **Deploy**
    ```bash

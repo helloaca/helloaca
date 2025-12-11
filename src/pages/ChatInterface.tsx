@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm'
 import Header from '../components/layout/Header'
 import { useAuth } from '../contexts/AuthContext'
 import { messageService } from '../services/messageService'
+import { isContractCredited } from '@/lib/utils'
 
 interface Message {
   id: string
@@ -26,7 +27,7 @@ interface Contract {
 
 const ChatInterface: React.FC = () => {
   const { contractId } = useParams<{ contractId: string }>()
-  const { user, profile, loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const [contract, setContract] = useState<Contract | null>(null)
   const [isLoadingContract, setIsLoadingContract] = useState(true)
@@ -34,6 +35,7 @@ const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [creditedDb, setCreditedDb] = useState<boolean>(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
   const [messageCount, setMessageCount] = useState(0)
@@ -112,6 +114,25 @@ const ChatInterface: React.FC = () => {
 
     loadChatHistory()
   }, [contract, user, isLoadingContract])
+
+  // Check DB-paid flag to keep contract unlocked after site data clear
+  useEffect(() => {
+    const checkPaid = async () => {
+      try {
+        if (!contract || !user) return
+        const { supabase } = await import('../lib/supabase')
+        const { data } = await supabase
+          .from('reports')
+          .select('analysis_data')
+          .eq('contract_id', contract.id)
+          .eq('user_id', user.id)
+          .single()
+        const paid = !!(data?.analysis_data?.paid_analysis || data?.analysis_data?.paid || data?.analysis_data?.credited_contract)
+        setCreditedDb(paid)
+      } catch { /* noop */ }
+    }
+    checkPaid()
+  }, [contract?.id, user?.id])
 
   // Initialize welcome message based on contract state
   const initializeWelcomeMessage = () => {
@@ -218,18 +239,19 @@ Please provide a helpful response based on the contract and our conversation.`
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || !contract || !contract.extracted_text) return
 
-    if (profile?.plan === 'free') {
-      const userMsgCount = await messageService.getUserMessageCount(contract.id)
-      if (userMsgCount >= 5) {
-        const limitMessage: Message = {
-          id: 'limit-reached',
-          type: 'ai',
-          content: 'You have reached the free plan limit of 5 questions for this contract. Upgrade to Pro for unlimited questions and analyses ($3/month).',
-          timestamp: new Date()
-        }
-        setMessages(prev => [...prev, limitMessage])
-        return
+    const userMsgCount = await messageService.getUserMessageCount(contract.id)
+    const freeChatLimit = 5
+    const creditedLocal = user?.id ? isContractCredited(user.id, contract.id) : false
+    const credited = creditedLocal || creditedDb
+    if (!credited && userMsgCount >= freeChatLimit) {
+      const limitMessage: Message = {
+        id: 'limit-reached',
+        type: 'ai',
+        content: `Free tier includes ${freeChatLimit} questions per contract. Buy credits to continue chatting and unlock full analysis.`,
+        timestamp: new Date()
       }
+      setMessages(prev => [...prev, limitMessage])
+      return
     }
 
     const userMessage: Message = {
@@ -638,7 +660,7 @@ Please provide a helpful response based on the contract and our conversation.`
                             onClick={() => navigate('/pricing')}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                           >
-                            Upgrade to Pro
+                            Buy Credits
                           </button>
                         </div>
                       )}

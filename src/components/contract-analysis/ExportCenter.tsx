@@ -4,14 +4,17 @@ import Badge from '@/components/ui/Badge'
 import { Download, FileText, FileBarChart, AlertTriangle } from 'lucide-react'
 import { ExportData, EnhancedContractAnalysis } from '@/types/contractAnalysis'
 import jsPDF from 'jspdf'
+import Button from '@/components/ui/Button'
 
 interface ExportCenterProps {
   exportData: ExportData
   contractTitle: string
   analysis?: EnhancedContractAnalysis
+  locked?: boolean
+  onUpgrade?: () => void
 }
 
-export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contractTitle, analysis }) => {
+export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contractTitle, analysis, locked, onUpgrade }) => {
 
 
 
@@ -54,6 +57,11 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contract
   }
 
   const safeContractTitle = contractTitle || 'Contract_Analysis'
+  const displayCharts = (safeExportData.charts_data && safeExportData.charts_data.length > 0)
+    ? safeExportData.charts_data
+    : (analysis?.risk_assessment?.risk_distribution
+        ? [{ chart_type: 'risk_distribution', data: Object.entries(analysis.risk_assessment.risk_distribution), configuration: {} }]
+        : [])
 
   const addPdfHeader = (doc: jsPDF, subtitle: string) => {
     doc.setFillColor('#4ECCA3')
@@ -228,7 +236,7 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contract
       '',
       'chart_type,category,score'
     ]
-    const charts = safeExportData.charts_data || []
+    const charts = displayCharts || []
     charts.forEach(c => {
       const d = c.data || []
       d.forEach((item: any) => {
@@ -256,7 +264,7 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contract
 
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="relative space-y-4 sm:space-y-6">
       {/* Header - Responsive Layout */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Export Center</h2>
@@ -266,8 +274,9 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contract
       </div>
 
       {/* Export Options - Responsive Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={downloadPdfReport}>
+      <div className={locked ? 'pointer-events-none select-none filter blur-sm' : ''}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={locked ? onUpgrade : downloadPdfReport}>
           <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center text-sm sm:text-base">
@@ -286,9 +295,9 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contract
               <Badge variant="default" className="text-xs">Professional</Badge>
             </div>
           </CardContent>
-        </Card>
+          </Card>
 
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={downloadWordDoc}>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={locked ? onUpgrade : downloadWordDoc}>
           <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center text-sm sm:text-base">
@@ -307,9 +316,9 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contract
               <Badge variant="default" className="text-xs">Editable</Badge>
             </div>
           </CardContent>
-        </Card>
+          </Card>
 
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={downloadAnnotatedPdf}>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={locked ? onUpgrade : downloadAnnotatedPdf}>
           <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center text-sm sm:text-base">
@@ -328,9 +337,9 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contract
               <Badge variant="default" className="text-xs">Annotated</Badge>
             </div>
           </CardContent>
-        </Card>
+          </Card>
 
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={downloadChartsCsv}>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={locked ? onUpgrade : downloadChartsCsv}>
           <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center text-sm sm:text-base">
@@ -349,15 +358,16 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contract
               <Badge variant="default" className="text-xs">Data</Badge>
             </div>
           </CardContent>
-        </Card>
+          </Card>
+        </div>
       </div>
 
       {/* Preview Section - Responsive */}
-      <div className="space-y-3 sm:space-y-4">
+      <div className={locked ? 'pointer-events-none select-none filter blur-sm space-y-3 sm:space-y-4' : 'space-y-3 sm:space-y-4'}>
         <h3 className="text-base sm:text-lg font-semibold">Preview</h3>
         
         {/* Chart Data Preview - Responsive Card */}
-        {safeExportData.charts_data?.length > 0 && (
+        {displayCharts?.length > 0 && (
           <Card>
             <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
               <CardTitle className="flex items-center text-sm sm:text-base">
@@ -367,20 +377,50 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contract
             </CardHeader>
             <CardContent className="px-4 sm:px-6 py-3 sm:py-4">
               <div className="space-y-2 sm:space-y-3">
-                {safeExportData.charts_data.map((chart, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <span className="text-xs sm:text-sm font-medium truncate mr-2">{chart.chart_type}</span>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <div className="w-16 sm:w-24 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="h-2 rounded-full bg-blue-500"
-                          style={{ width: `${(chart.data?.length || 0) * 10}%` }}
-                        />
+                {displayCharts.map((chart, index) => {
+                  if (chart.chart_type === 'risk_distribution') {
+                    const entries = (chart.data || []).map((item: any) => {
+                      if (Array.isArray(item) && item.length >= 2) {
+                        return { k: String(item[0]), v: Number(item[1]) }
+                      }
+                      if (item && typeof item === 'object') {
+                        const k = (item.category ?? item.key ?? '')
+                        const v = Number(item.score ?? item.value ?? 0)
+                        return { k: String(k), v }
+                      }
+                      return { k: '', v: 0 }
+                    }).filter((e: any) => e.k)
+                    const total = entries.reduce((sum: number, e: any) => sum + (isFinite(e.v) ? e.v : 0), 0)
+                    return entries.map((e: any, idx: number) => (
+                      <div key={`${index}-${idx}`} className="flex items-center justify-between">
+                        <span className="text-xs sm:text-sm font-medium truncate mr-2">{e.k}</span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="w-24 sm:w-32 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="h-2 rounded-full bg-blue-500"
+                              style={{ width: `${total > 0 ? Math.round((e.v / total) * 100) : 0}%` }}
+                            />
+                          </div>
+                          <span className="text-xs sm:text-sm text-gray-600 w-10 sm:w-12 text-right">{e.v}</span>
+                        </div>
                       </div>
-                      <span className="text-xs sm:text-sm text-gray-600 w-10 sm:w-12 text-right">{(chart.data?.length || 0)}</span>
+                    ))
+                  }
+                  return (
+                    <div key={index} className="flex items-center justify-between">
+                      <span className="text-xs sm:text-sm font-medium truncate mr-2">{chart.chart_type}</span>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="w-24 sm:w-32 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="h-2 rounded-full bg-blue-500"
+                            style={{ width: `${(chart.data?.length || 0) * 10}%` }}
+                          />
+                        </div>
+                        <span className="text-xs sm:text-sm text-gray-600 w-10 sm:w-12 text-right">{(chart.data?.length || 0)}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </CardContent>
           </Card>
@@ -412,6 +452,18 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contract
           </Card>
         )}
       </div>
+
+      {locked ? (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="bg-white/85 backdrop-blur-sm rounded-lg p-6 text-center">
+            <h3 className="text-lg font-semibold text-gray-900">Upgrade to unlock exports</h3>
+            <p className="text-sm text-gray-600 mt-2">Buy credits to export reports, documents, and data.</p>
+            <div className="mt-4 flex justify-center">
+              <Button onClick={onUpgrade} className="min-h-[44px] px-6">Upgrade</Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

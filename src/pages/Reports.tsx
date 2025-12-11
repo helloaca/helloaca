@@ -6,6 +6,7 @@ import Footer from '../components/layout/Footer'
 import Button from '../components/ui/Button'
 import { useAuth } from '../contexts/AuthContext'
 import { ContractService, Contract, ContractAnalysis } from '../lib/contractService'
+import { supabase } from '@/lib/supabase'
 import { generatePDFReport } from '../lib/pdfGenerator'
 import { toast } from 'sonner'
 
@@ -29,19 +30,37 @@ const Reports: React.FC = () => {
 
   // Load reports on component mount
   useEffect(() => {
-    // Add timeout protection for loading
     const timeoutId = setTimeout(() => {
       if (isLoading) {
         console.warn('Reports loading timeout - proceeding without data')
         setIsLoading(false)
         setError('Loading is taking longer than expected. Please refresh the page.')
       }
-    }, 15000) // 15 second timeout
+    }, 15000)
 
-    loadReports()
+    ;(async () => {
+      try {
+        // Wait for session to be fully established
+        let activeSession = null
+        for (let i = 0; i < 10; i++) {
+          const { data } = await supabase.auth.getSession()
+          if (data.session) {
+            activeSession = data.session
+            break
+          }
+          await new Promise(r => setTimeout(r, 200))
+        }
+        if (!activeSession) {
+          console.warn('Session not found after waiting, attempting load anyway')
+        }
+      } catch (e) {
+        console.error('Session check failed', e)
+      }
+      await loadReports()
+    })()
 
     return () => clearTimeout(timeoutId)
-  }, [user])
+  }, [user?.id])
 
   // Filter and sort reports when dependencies change
   useEffect(() => {

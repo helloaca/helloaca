@@ -91,7 +91,7 @@ const LandingPage: React.FC = () => {
           </AnimateOnScroll>
           <AnimateOnScroll delay={100}>
           <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Upload. Analyze. Understand. Unlimited contract analysis for $3/month. Start free with 1 contract/month.
+            Upload. Analyze. Understand. Start free with 1 contract/month. Buy credits for additional analyses.
           </p>
           </AnimateOnScroll>
           <AnimateOnScroll delay={200}>
@@ -100,7 +100,7 @@ const LandingPage: React.FC = () => {
               Try Free
             </Button>
             <Button variant="secondary" size="lg" className="text-base sm:text-lg px-8 py-4 min-h-[48px]" onClick={() => navigate('/pricing')}>
-              Subscribe $3/month
+              Compare Plans
             </Button>
           </div>
           </AnimateOnScroll>
@@ -430,7 +430,7 @@ const LandingPage: React.FC = () => {
               Simple Pricing
             </h2>
             <p className="text-lg sm:text-xl text-gray-600">
-              Free: 1 contract/month • Pro: $3/month unlimited
+              Free: 1 analysis/month • Credits: Pay as you go
             </p>
           </div>
           </AnimateOnScroll>
@@ -460,8 +460,7 @@ const LandingPage: React.FC = () => {
                   </li>
                 </ul>
                 <Button 
-                  variant="outline" 
-                  className="w-full min-h-[48px] text-base"
+                  className="w-full min-h-[48px] text-base bg-[#5ACEA8] text-white hover:bg-[#49C89A]"
                   onClick={() => {
                     trackPricing.selectPlan('free')
                     navigate('/register')
@@ -473,42 +472,42 @@ const LandingPage: React.FC = () => {
             </Card>
             </AnimateOnScroll>
             
-            {/* Pro Plan */}
+            {/* Credits */}
             <AnimateOnScroll delay={100}>
             <Card className="border-2 border-primary relative">
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <span className="bg-primary text-white px-3 sm:px-4 py-1 rounded-full text-xs sm:text-sm font-medium">
+              <div className="absolute -top-3 right-4">
+                <span className="bg-[#5ACEA8] text-white px-3 sm:px-4 py-1 rounded-full text-xs sm:text-sm font-medium shadow">
                   Most Popular
                 </span>
               </div>
               <CardHeader className="pb-4 sm:pb-6">
-                <CardTitle className="text-lg sm:text-xl">Pro Plan</CardTitle>
-                <div className="text-2xl sm:text-3xl font-bold">$3<span className="text-base sm:text-lg font-normal">/month</span></div>
-                <CardDescription className="text-sm sm:text-base">Unlimited contract analysis</CardDescription>
+                <CardTitle className="text-lg sm:text-xl">Credits</CardTitle>
+                <div className="text-2xl sm:text-3xl font-bold">From $7</div>
+                <CardDescription className="text-sm sm:text-base">Buy credits for additional analyses</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2 sm:space-y-3 mb-6">
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-                    <span className="text-sm sm:text-base">Unlimited contracts</span>
+                    <span className="text-sm sm:text-base">1 credit = 1 analysis + chat</span>
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-                    <span className="text-sm sm:text-base">Full AI suite</span>
+                    <span className="text-sm sm:text-base">Bundles: 1 ($7), 5 ($30), 10 ($55)</span>
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-                    <span className="text-sm sm:text-base">Priorty Support</span>
+                    <span className="text-sm sm:text-base">No subscription — pay when needed</span>
                   </li>
                 </ul>
                 <Button 
-                  className="w-full min-h-[48px] text-base"
+                  className="w-full min-h-[48px] text-base bg-transparent border border-[#5ACEA8] text-[#5ACEA8] hover:bg-[#5ACEA8]/10"
                   onClick={() => {
-                    trackPricing.selectPlan('pro')
+                    trackPricing.selectPlan('credits')
                     navigate('/pricing')
                   }}
                 >
-                  Subscribe $3/month
+                  Buy Credits
                 </Button>
               </CardContent>
             </Card>

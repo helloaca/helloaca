@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import mixpanel from 'mixpanel-browser';
 
 export interface Message {
   id: string;
@@ -184,6 +185,10 @@ export class MessageService {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
+      mixpanel.track('Search', {
+        search_query: query,
+        results_count: data?.length || 0
+      })
       return data || [];
     } catch (error) {
       console.error('Error searching messages:', error);

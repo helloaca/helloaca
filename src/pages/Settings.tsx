@@ -10,7 +10,6 @@ import {
   Edit3,
   Plus,
   Crown,
-  Check,
   Loader2,
   ArrowLeft,
   X
@@ -22,9 +21,10 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { toast } from 'sonner'
 import Avatar from '../components/ui/Avatar'
+import { getUserCredits } from '@/lib/utils'
 
 const Settings: React.FC = () => {
-  const { user, profile, updateProfile, signOut, refreshProfile } = useAuth()
+  const { user, profile, updateProfile, signOut, refreshProfile, session } = useAuth()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'profile' | 'subscription' | 'team' | 'notifications' | 'security'>('profile')
   const [loading, setLoading] = useState(false)
@@ -38,10 +38,10 @@ const Settings: React.FC = () => {
     language: 'English'
   })
   const [notifications, setNotifications] = useState({
-    emailReports: true,
-    analysisComplete: true,
-    weeklyDigest: false,
-    securityAlerts: true,
+    emailReports: !!profile?.notify_email_reports,
+    analysisComplete: !!profile?.notify_analysis_complete,
+    weeklyDigest: !!profile?.notify_weekly_digest,
+    securityAlerts: !!profile?.notify_low_credits,
     teamUpdates: true
   })
   const [isSigningOut, setIsSigningOut] = useState(false)
@@ -60,6 +60,8 @@ const Settings: React.FC = () => {
   const [totpCode, setTotpCode] = useState('')
   const [isEnrolling2FA, setEnrolling2FA] = useState(false)
   const [isVerifying2FA, setVerifying2FA] = useState(false)
+  const [totpEnabled, setTotpEnabled] = useState(false)
+  const [totpFactorId, setTotpFactorId] = useState<string | null>(null)
   const [isDeleteStep1Open, setDeleteStep1Open] = useState(false)
   const [isDeleteStep2Open, setDeleteStep2Open] = useState(false)
   const [deletePhrase, setDeletePhrase] = useState('')
@@ -70,6 +72,12 @@ const Settings: React.FC = () => {
   const [cancelComeBack, setCancelComeBack] = useState('')
   const [isCancelSubmitting, setCancelSubmitting] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+  const [isInviteModalOpen, setInviteModalOpen] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState<'Admin'|'Member'|'Viewer'>('Member')
+  const [isInviting, setInviting] = useState(false)
+  const [creditsBalance, setCreditsBalance] = useState(0)
+  const [teamMembers, setTeamMembers] = useState<Array<{ id: string; name?: string; email: string; role: 'Owner'|'Admin'|'Member'|'Viewer'; status: 'active'|'pending' }>>([])
 
   const loadPaystackScript = useCallback(async () => {
     if ((window as any).PaystackPop) return
@@ -90,9 +98,26 @@ const Settings: React.FC = () => {
         navigate('/login')
         return
       }
-      if (String(user?.plan) === 'pro' || String(profile?.plan) === 'pro') {
+      if (['pro','team','business','enterprise'].includes(String(user?.plan)) || ['pro','team','business','enterprise'].includes(String(profile?.plan))) {
         toast.info('You already have an active Pro plan')
         return
+      }
+      const testMode = String(import.meta.env.VITE_PAYSTACK_TEST_MODE || '')
+      const hostname = window.location.hostname
+      const shouldMock = testMode === 'mock' || hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('preview')
+      if (shouldMock) {
+        try {
+          const result = await updateProfile({ plan: 'pro' })
+          if (!result.success) {
+            await supabase.auth.updateUser({ data: { plan: 'pro' } })
+          }
+          await refreshProfile()
+          toast.success('Subscription activated (mock)')
+          return
+        } catch {
+          toast.error('Mock activation failed')
+          return
+        }
       }
 
       const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY
@@ -109,6 +134,20 @@ const Settings: React.FC = () => {
       } catch {
         setIsLoadingPayment(false)
         setProcessingMethod(null)
+        if (shouldMock) {
+          try {
+            const result = await updateProfile({ plan: 'pro' })
+            if (!result.success) {
+              await supabase.auth.updateUser({ data: { plan: 'pro' } })
+            }
+            await refreshProfile()
+            toast.success('Subscription activated (mock)')
+            return
+          } catch {
+            toast.error('Mock activation failed')
+            return
+          }
+        }
         toast.error('Network error loading payment library')
         return
       }
@@ -191,6 +230,23 @@ const Settings: React.FC = () => {
       if (String(user?.plan) === 'pro' || String(profile?.plan) === 'pro') {
         toast.info('You already have an active Pro plan')
         return
+      }
+      const testMode = String(import.meta.env.VITE_PAYSTACK_TEST_MODE || '')
+      const hostname = window.location.hostname
+      const shouldMock = testMode === 'mock' || hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('preview')
+      if (shouldMock) {
+        try {
+          const result = await updateProfile({ plan: 'pro' })
+          if (!result.success) {
+            await supabase.auth.updateUser({ data: { plan: 'pro' } })
+          }
+          await refreshProfile()
+          toast.success('Subscription activated (mock)')
+          return
+        } catch {
+          toast.error('Mock activation failed')
+          return
+        }
       }
 
       setIsLoadingPayment(true)
@@ -290,16 +346,6 @@ const Settings: React.FC = () => {
         return
       }
       const timeout = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), 8000))
-      const challengePromise = (supabase as any).auth.mfa.challenge({ factorId })
-      const challengeResult: any = await Promise.race([challengePromise, timeout])
-      if ('timedOut' in challengeResult) {
-        toast.error('Network timeout initiating verification. Please try again.')
-        return
-      }
-      if (challengeResult?.error) {
-        toast.error('Failed to challenge 2FA')
-        return
-      }
       const verifyPromise = (supabase as any).auth.mfa.verify({ factorId, code: totpCode })
       const verifyResult: any = await Promise.race([verifyPromise, timeout])
       if ('timedOut' in verifyResult) {
@@ -322,13 +368,57 @@ const Settings: React.FC = () => {
     }
   }
 
+  const loadMfaStatus = useCallback(async () => {
+    try {
+      const timeout = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), 6000))
+      const listPromise = (supabase as any).auth.mfa.listFactors()
+      const result: any = await Promise.race([listPromise, timeout])
+      if ('timedOut' in result) return
+      const totp = Array.isArray(result?.data) ? result.data.find((f: any) => f.factorType === 'totp') : null
+      setTotpEnabled(!!totp)
+      setTotpFactorId(totp?.id || null)
+    } catch { /* noop */ }
+  }, [])
+
+  useEffect(() => {
+    loadMfaStatus()
+  }, [loadMfaStatus])
+
+  const disable2FA = async () => {
+    try {
+      if (!totpFactorId) {
+        toast.error('No TOTP factor found')
+        return
+      }
+      const timeout = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), 8000))
+      const unenrollPromise = (supabase as any).auth.mfa.unenroll({ factorId: totpFactorId })
+      const res: any = await Promise.race([unenrollPromise, timeout])
+      if ('timedOut' in res) {
+        toast.error('Network timeout disabling 2FA. Please try again.')
+        return
+      }
+      if (res?.error) {
+        toast.error('Failed to disable 2FA')
+        return
+      }
+      setTotpEnabled(false)
+      setTotpFactorId(null)
+      toast.success('2FA disabled')
+    } catch {
+      toast.error('Failed to disable 2FA')
+    }
+  }
+
   const viewBillingHistory = async () => {
     try {
       if (!user?.email) {
         toast.error('No user email found')
         return
       }
-      const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
+      const baseEnv = import.meta.env.VITE_API_ORIGIN
+      const base = baseEnv && baseEnv.length > 0
+        ? baseEnv
+        : window.location.origin
       const [cardRes, cryptoRes] = await Promise.all([
         fetch(`${base}/api/paystack-history?email=${encodeURIComponent(String(user.email))}`),
         fetch(`${base}/api/coinbase-list-charges?email=${encodeURIComponent(String(user.email))}`)
@@ -376,7 +466,7 @@ const Settings: React.FC = () => {
 
   const cancelSubscription = async () => {
     try {
-      const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
+      const base = import.meta.env.VITE_API_ORIGIN || 'https://preview.helloaca.xyz'
       const res = await fetch(`${base}/api/paystack-cancel-subscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -413,7 +503,7 @@ const Settings: React.FC = () => {
   const submitCancellationFeedback = async (proceed: boolean) => {
     try {
       setCancelSubmitting(true)
-      const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
+      const base = import.meta.env.VITE_API_ORIGIN || 'https://preview.helloaca.xyz'
       await fetch(`${base}/api/cancel-feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -481,18 +571,19 @@ const Settings: React.FC = () => {
         return
       }
       if (!user?.id) return
-      const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
-      const res = await fetch(`${base}/api/delete-account`, {
+      const base = import.meta.env.VITE_API_ORIGIN || 'https://preview.helloaca.xyz'
+      const res = await fetch(`${base}/api/app`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, email: user.email })
+        headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+        body: JSON.stringify({ action: 'delete_account', userId: user.id, email: user.email })
       })
       if (res.ok) {
         toast.success('Account deleted')
         await signOut()
         navigate('/')
       } else {
-        toast.error('Failed to delete account')
+        const msg = await res.json().catch(() => null)
+        toast.error(typeof msg?.error === 'string' ? msg.error : 'Failed to delete account')
       }
     } catch {
       toast.error('Failed to delete account')
@@ -532,40 +623,103 @@ const Settings: React.FC = () => {
     }
   }, [user, profile])
 
+  useEffect(() => {
+    if (user?.id) {
+      setCreditsBalance(getUserCredits(user.id))
+    }
+  }, [user?.id])
+
   const tabs = [
     { id: 'profile' as const, label: 'Profile', icon: User },
-    { id: 'subscription' as const, label: 'Subscription', icon: CreditCard },
+    { id: 'subscription' as const, label: 'Credits', icon: CreditCard },
     { id: 'team' as const, label: 'Team', icon: Users },
     { id: 'notifications' as const, label: 'Notifications', icon: Bell },
     { id: 'security' as const, label: 'Security', icon: Shield }
   ]
 
-  const teamMembers = [
-    { 
-      id: 1, 
-      name: (user?.firstName && user?.lastName) ? `${String(user.firstName)} ${String(user.lastName)}` : user?.name || 'User', 
-      email: user?.email || '', 
-      role: 'Owner', 
-      avatar: (() => {
-        const firstName = user?.firstName ? String(user.firstName) : ''
-        const lastName = user?.lastName ? String(user.lastName) : ''
-        const name = user?.name ? String(user.name) : ''
-        
-        const firstInitial = firstName?.[0] || name?.[0] || 'U'
-        const lastInitial = lastName?.[0] || ''
-        
-        return `${firstInitial}${lastInitial}`
-      })(), 
-      status: 'active' 
+  const loadTeamMembers = useCallback(async () => {
+    if (!user?.id) return
+    const owner: { id: string; name?: string; email: string; role: 'Owner'|'Admin'|'Member'|'Viewer'; status: 'active'|'pending' } = {
+      id: String(user.id),
+      name: (user?.firstName && user?.lastName) ? `${String(user.firstName)} ${String(user.lastName)}` : user?.name || 'User',
+      email: user?.email || '',
+      role: 'Owner',
+      status: 'active'
     }
-  ]
+    try {
+      const { data, error } = await supabase
+        .from('team_members')
+        .select('id,member_email,role,status')
+        .eq('owner_id', String(user.id))
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      const members = Array.isArray(data) ? data.map((m: any) => ({
+        id: String(m.id),
+        name: undefined,
+        email: String(m.member_email || ''),
+        role: (String(m.role || 'Member') as any),
+        status: (String(m.status || 'pending') as any)
+      })) : []
+      setTeamMembers([owner, ...members])
+    } catch {
+      setTeamMembers([owner])
+    }
+  }, [user?.id, user?.firstName, user?.lastName, user?.name, user?.email])
+
+  useEffect(() => {
+    loadTeamMembers()
+  }, [loadTeamMembers])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const ownerParam = params.get('acceptInviteOwner')
+    if (ownerParam && user?.id) {
+      ;(async () => {
+        try {
+          const baseEnv = import.meta.env.VITE_API_ORIGIN
+          const hostname = window.location.hostname
+          let base = baseEnv && baseEnv.length > 0 ? baseEnv : window.location.origin
+          if ((hostname === 'localhost' || hostname === '127.0.0.1') && typeof base === 'string' && base.includes('preview')) {
+            base = 'https://preview.helloaca.xyz'
+          }
+          const resp = await fetch(`${base}/api/app`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+            body: JSON.stringify({ action: 'team_accept_invite', userId: String(user.id), ownerId: String(ownerParam) })
+          })
+          const data = await resp.json().catch(() => null)
+          if (resp.ok) {
+            toast.success('Invitation approved')
+            await loadTeamMembers()
+            // Clean URL
+            const url = new URL(window.location.href)
+            url.searchParams.delete('acceptInviteOwner')
+            window.history.replaceState({}, document.title, url.toString())
+          } else {
+            toast.error(data?.error || 'Failed to approve invite')
+          }
+        } catch (e) {
+          toast.error('Failed to approve invite')
+        }
+      })()
+    }
+  }, [user?.id, loadTeamMembers])
 
   const handleProfileUpdate = (field: string, value: string) => {
     setProfileData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleNotificationToggle = (setting: string) => {
-    setNotifications(prev => ({ ...prev, [setting]: !prev[setting as keyof typeof prev] }))
+  const handleNotificationToggle = async (setting: string) => {
+    const next = !notifications[setting as keyof typeof notifications]
+    setNotifications(prev => ({ ...prev, [setting]: next }))
+    try {
+      const updates: any = {}
+      if (setting === 'emailReports') updates.notify_email_reports = next
+      if (setting === 'analysisComplete') updates.notify_analysis_complete = next
+      if (setting === 'weeklyDigest') updates.notify_weekly_digest = next
+      if (setting === 'securityAlerts') updates.notify_low_credits = next
+      await updateProfile(updates)
+    } catch { /* noop */ }
   }
 
   const handleSaveProfile = async () => {
@@ -756,16 +910,14 @@ const Settings: React.FC = () => {
   const renderSubscriptionTab = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Current Plan</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Credits &amp; Billing</h3>
         <Card className="p-5 sm:p-6 border-2 border-[#4ECCA3]">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4">
             <div className="flex items-center min-w-0">
               <Crown className="w-6 h-6 text-[#4ECCA3] mr-3" />
               <div>
-                <h4 className="text-lg sm:text-xl font-semibold text-gray-900">{String(profile?.plan || user?.plan) === 'pro' ? 'Pro Plan' : 'Free Plan'}</h4>
-                <p className="text-sm sm:text-base text-gray-600">
-                  {String(profile?.plan || user?.plan) === 'pro' ? '$3/month • Billed monthly' : 'Free forever'}
-                </p>
+                <h4 className="text-lg sm:text-xl font-semibold text-gray-900">Usage-Based Access</h4>
+                <p className="text-sm sm:text-base text-gray-600">Credits: {creditsBalance} • 1 free analysis/month • No subscription</p>
               </div>
             </div>
             <div className="text-left sm:text-right">
@@ -780,83 +932,34 @@ const Settings: React.FC = () => {
               <p className="text-xs sm:text-sm text-gray-600">Contracts this month</p>
             </div>
             <div className="text-center">
-              <p className="text-xl sm:text-2xl font-bold text-[#4ECCA3]">
-                {String(profile?.plan || user?.plan) === 'free' ? '1' : '∞'}
-              </p>
-              <p className="text-xs sm:text-sm text-gray-600">Monthly limit</p>
+              <p className="text-xl sm:text-2xl font-bold text-[#4ECCA3]">1</p>
+              <p className="text-xs sm:text-sm text-gray-600">Free monthly allowance</p>
             </div>
             <div className="text-center">
               <p className="text-xl sm:text-2xl font-bold text-[#4ECCA3]">0</p>
               <p className="text-xs sm:text-sm text-gray-600">Reports generated</p>
             </div>
             <div className="text-center">
-              <p className="text-xl sm:text-2xl font-bold text-[#4ECCA3]">
-                {String(profile?.plan || user?.plan) === 'free' ? '0' : '∞'}
-              </p>
-              <p className="text-xs sm:text-sm text-gray-600">AI chat messages</p>
+              <p className="text-xl sm:text-2xl font-bold text-[#4ECCA3]">{creditsBalance > 0 ? 'Unlimited' : 'Limited'}</p>
+              <p className="text-xs sm:text-sm text-gray-600">AI chat on credited contracts</p>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 sm:space-x-4">
-            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setMethodModalOpen(true)}>Change Plan</Button>
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => navigate('/pricing')}>Buy Credits</Button>
             <Button variant="outline" className="w-full sm:w-auto" onClick={() => setBillingHistoryOpen(true)}>View Billing History</Button>
-            {String(profile?.plan || user?.plan) !== 'free' && (
-              <Button variant="outline" className="w-full sm:w-auto text-red-600 border-red-300 hover:bg-red-50" onClick={() => setCancelFeedbackOpen(true)}>
-                Cancel Subscription
-              </Button>
-            )}
           </div>
         </Card>
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Available Plans</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            {
-              name: 'Free',
-              price: '$0',
-              period: 'month',
-              features: ['1 contract per month', 'Basic AI-powered analysis'],
-              current: String(profile?.plan || user?.plan) === 'free'
-            },
-            {
-              name: 'Pro',
-              price: '$3',
-              period: 'month',
-              features: ['Unlimited contracts', 'Full AI analysis suite'],
-              current: String(profile?.plan || user?.plan) === 'pro'
-            }
-          ].map((plan) => (
-            <Card key={plan.name} className={`p-6 ${plan.current ? 'ring-2 ring-[#4ECCA3]' : ''}`}>
-              <div className="text-center">
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">{plan.name}</h4>
-                <div className="mb-4">
-                  <span className="text-3xl font-bold text-gray-900">{plan.price}</span>
-                  <span className="text-gray-500">/{plan.period}</span>
-                </div>
-                <ul className="space-y-2 mb-6">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-center justify-center text-sm text-gray-600">
-                      <Check className="w-4 h-4 text-[#4ECCA3] mr-2" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <Button 
-                  variant={plan.current ? 'outline' : 'primary'}
-                  className="w-full"
-                  disabled={plan.current}
-                  onClick={() => {
-                    if (!plan.current && plan.name === 'Pro') setMethodModalOpen(true)
-                  }}
-                >
-                  {plan.current ? 'Current Plan' : 'Upgrade'}
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Manage Credits</h3>
+        <Card className="p-6">
+          <div className="text-center">
+            <p className="text-gray-700 mb-4">Buy credits as needed. One credit covers one full contract analysis plus chat.</p>
+            <Button className="w-full sm:w-auto" onClick={() => navigate('/pricing')}>Go to Pricing</Button>
+          </div>
+        </Card>
       </div>
     </div>
   )
@@ -865,7 +968,15 @@ const Settings: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Team Members</h3>
-        <Button>
+        <Button onClick={() => {
+          const plan = String(profile?.plan || (user as any)?.plan || 'free')
+          if (!['team','business','enterprise'].includes(plan)) {
+            toast.error('Upgrade to invite team members')
+            navigate('/pricing')
+            return
+          }
+          setInviteModalOpen(true)
+        }}>
           <Plus className="w-4 h-4 mr-2" />
           Invite Member
         </Button>
@@ -895,9 +1006,9 @@ const Settings: React.FC = () => {
                 <tr key={member.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <Avatar seed={profile?.avatar_seed || user?.id || String(member.id)} size={40} className="w-10 h-10 rounded-full mr-4" />
+                      <Avatar seed={profile?.avatar_seed || user?.id || String(member.email)} size={40} className="w-10 h-10 rounded-full mr-4" />
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{member.name}</div>
+                        <div className="text-sm font-medium text-gray-900">{member.name || member.email.split('@')[0]}</div>
                         <div className="text-sm text-gray-500">{member.email}</div>
                       </div>
                     </div>
@@ -999,7 +1110,7 @@ const Settings: React.FC = () => {
                     {key === 'emailReports' && 'Receive reports via email when analysis is complete'}
                     {key === 'analysisComplete' && 'Get notified when contract analysis finishes'}
                     {key === 'weeklyDigest' && 'Weekly summary of your contract analysis activity'}
-                    {key === 'securityAlerts' && 'Important security and account notifications'}
+                    {key === 'securityAlerts' && 'Low credit alerts and important account notifications'}
                     {key === 'teamUpdates' && 'Updates about team member activity and changes'}
                   </p>
                 </div>
@@ -1037,11 +1148,23 @@ const Settings: React.FC = () => {
               <div>
                 <p className="font-medium text-gray-900">Two-Factor Authentication</p>
                 <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${totpEnabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {totpEnabled ? 'Enabled' : 'Disabled'}
+                  </span>
+                  {totpEnabled && <span className="text-xs text-gray-500">Authenticator: TOTP</span>}
+                </div>
               </div>
-              <Button variant="outline" className="w-full sm:w-auto" onClick={startEnable2FA} disabled={isEnrolling2FA}>
-                {isEnrolling2FA ? (<Loader2 className="w-4 h-4 mr-2 animate-spin" />) : null}
-                Enable 2FA
-              </Button>
+              {totpEnabled ? (
+                <Button variant="outline" className="w-full sm:w-auto" onClick={disable2FA} disabled={isVerifying2FA}>
+                  Disable 2FA
+                </Button>
+              ) : (
+                <Button variant="outline" className="w-full sm:w-auto" onClick={startEnable2FA} disabled={isEnrolling2FA}>
+                  {isEnrolling2FA ? (<Loader2 className="w-4 h-4 mr-2 animate-spin" />) : null}
+                  Enable 2FA
+                </Button>
+              )}
             </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
@@ -1131,20 +1254,90 @@ const Settings: React.FC = () => {
 
           {/* Main Content */}
           <div className="lg:col-span-3">
-            <Card className="p-5 sm:p-8">
-              {activeTab === 'profile' && renderProfileTab()}
-              {activeTab === 'subscription' && renderSubscriptionTab()}
-              {activeTab === 'team' && renderTeamTab()}
-              {activeTab === 'notifications' && renderNotificationsTab()}
-              {activeTab === 'security' && renderSecurityTab()}
-            </Card>
+          <Card className="p-5 sm:p-8">
+            {activeTab === 'profile' && renderProfileTab()}
+            {activeTab === 'subscription' && renderSubscriptionTab()}
+            {activeTab === 'team' && renderTeamTab()}
+            {activeTab === 'notifications' && renderNotificationsTab()}
+            {activeTab === 'security' && renderSecurityTab()}
+          </Card>
+        </div>
+      </div>
+      {isInviteModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { if (!isInviting) setInviteModalOpen(false) }}>
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-5 sm:p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">Invite Member</h3>
+              <button onClick={() => { if (!isInviting) setInviteModalOpen(false) }} className="text-gray-500 hover:text-gray-700"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="name@example.com" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4ECCA3]" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value as any)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4ECCA3]">
+                  <option value="Admin">Admin</option>
+                  <option value="Member">Member</option>
+                  <option value="Viewer">Viewer</option>
+                </select>
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button onClick={() => { if (!isInviting) setInviteModalOpen(false) }} className="px-4 py-2 rounded-lg border border-gray-300">Cancel</button>
+                <button onClick={async () => {
+                  if (isInviting) return
+                  const email = inviteEmail.trim()
+                  if (!/\S+@\S+\.\S+/.test(email)) { toast.error('Enter a valid email'); return }
+                  const plan = String(profile?.plan || (user as any)?.plan || 'free')
+                  if (!['team','business','enterprise'].includes(plan)) { toast.error('Upgrade required'); navigate('/pricing'); return }
+                  setInviting(true)
+                  try {
+                    const baseEnv = import.meta.env.VITE_API_ORIGIN
+                    const hostname = window.location.hostname
+                    let base = baseEnv && baseEnv.length > 0 ? baseEnv : window.location.origin
+                    if ((hostname === 'localhost' || hostname === '127.0.0.1') && typeof base === 'string' && base.includes('preview')) {
+                      base = 'https://preview.helloaca.xyz'
+                    }
+                    const controller = new AbortController()
+                    const timer = setTimeout(() => controller.abort(), 10000)
+                    let notifyOk = false
+                    try {
+                      const resp = await fetch(`${base}/api/notify`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ event: 'team_invite', userId: String(user?.id), extra: { email, role: inviteRole, plan } }),
+                        signal: controller.signal
+                      })
+                      notifyOk = resp.ok
+                    } catch { /* noop */ }
+                    clearTimeout(timer)
+                    toast.success('Invitation sent')
+                    setInviteEmail('')
+                    setInviteRole('Member')
+                    setInviteModalOpen(false)
+                    await loadTeamMembers()
+                    if (!notifyOk) {
+                      toast.info('Invite queued. If email fails, resend later.')
+                    }
+                  } catch {
+                    toast.error('Failed to send invite')
+                  } finally {
+                    setInviting(false)
+                  }
+                }} className="px-4 py-2 rounded-lg bg-[#4ECCA3] text-white hover:bg-[#3DBB90] disabled:opacity-50" disabled={isInviting}>
+                  {isInviting ? 'Sending…' : 'Send Invite'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-        {isSigningOut && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center">
-              <Loader2 className="w-6 h-6 mx-auto mb-3 animate-spin text-gray-700" />
-              <p className="text-gray-900 font-medium">Signing you out…</p>
+      )}
+      {isSigningOut && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center">
+            <Loader2 className="w-6 h-6 mx-auto mb-3 animate-spin text-gray-700" />
+            <p className="text-gray-900 font-medium">Signing you out…</p>
               <p className="text-sm text-gray-600 mt-1">Please wait a moment</p>
             </div>
           </div>
@@ -1295,7 +1488,7 @@ const Settings: React.FC = () => {
               <input type="text" value={deletePhrase} onChange={(e) => setDeletePhrase(e.target.value)} placeholder="delete my account" className="w-full px-4 py-3 border border-gray-300 rounded-lg text-red-600 placeholder-red-400" />
               <div className="flex justify-end gap-3 mt-6">
                 <Button variant="outline" onClick={() => setDeleteStep2Open(false)}>Cancel</Button>
-                <Button onClick={deleteAccount}>Delete</Button>
+                <Button variant="destructive" onClick={deleteAccount}>Delete</Button>
               </div>
             </div>
           </div>

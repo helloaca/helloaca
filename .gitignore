@@ -116,3 +116,6 @@ temp/
 # Misc
 *.tgz
 *.tar.gz
+
+#manmade
+error.txt

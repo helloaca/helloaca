@@ -1,4 +1,5 @@
 import ReactGA from 'react-ga4'
+import mixpanel from 'mixpanel-browser'
 
 // Google Analytics Measurement ID
 const GA_MEASUREMENT_ID = 'G-0JVYR712V0'
@@ -20,12 +21,21 @@ export const trackPageView = (path: string, title?: string) => {
     page: path,
     title: title || document.title
   })
+  mixpanel.track('Page View', {
+    page_url: window.location.origin + path,
+    page_title: title || document.title
+  })
 }
 
 // Track events
 export const trackEvent = (action: string, category: string, label?: string, value?: number) => {
   ReactGA.event({
     action,
+    category,
+    label,
+    value
+  })
+  mixpanel.track(action, {
     category,
     label,
     value
@@ -110,11 +120,17 @@ export const trackEngagement = {
 // Track errors
 export const trackError = (errorMessage: string, errorLocation: string) => {
   trackEvent('error', 'system', `${errorLocation}: ${errorMessage}`)
+  mixpanel.track('Error', {
+    error_message: errorMessage,
+    error_type: 'system',
+    page_url: window.location.href
+  })
 }
 
 // Set user properties (for authenticated users)
 export const setUserProperties = (properties: Record<string, any>) => {
   ReactGA.set(properties)
+  mixpanel.register(properties)
 }
 
 // Track custom dimensions

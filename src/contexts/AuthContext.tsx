@@ -2,8 +2,10 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 import { Session } from '@supabase/supabase-js'
 import { toast } from 'sonner'
 import { AuthUser, supabase } from '../lib/supabase'
+import { setUserCredits, refreshMonthlyCreditsForPlan } from '../lib/utils'
 import type { UserProfile } from '../lib/supabase'
 import { trackAuth, setUserProperties } from '../lib/analytics'
+import mixpanel from 'mixpanel-browser'
 
 interface AuthContextType {
   user: AuthUser | null
@@ -239,6 +241,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setSession(null)
             setLoading(false)
             setIsRehydrating(false)
+            // Reset Mixpanel identity on logout to prevent cross-user data mixing
+            mixpanel.reset()
           } else if (event === 'TOKEN_REFRESHED' && session) {
             setSession(session)
             // Update cached session
@@ -302,6 +306,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           plan: session.user.user_metadata?.plan || 'free'
         }
         setUser(authUser)
+        const prevDistinct = mixpanel.get_distinct_id()
+        if (prevDistinct && prevDistinct !== authUser.id) {
+          mixpanel.alias(authUser.id, prevDistinct)
+        }
+        mixpanel.identify(authUser.id)
+        // Create/update Mixpanel user profile immediately after identification
+        mixpanel.people.set({
+          $email: authUser.email,
+          $name: authUser.name,
+          plan: authUser.plan
+        })
+        // Persist plan as a super property on events
+        mixpanel.register({ plan: authUser.plan })
+        // Send a confirmation event so Users page shows a recent event tied to this profile
+        mixpanel.track('User Profile Set', { plan: authUser.plan })
 
         try {
           // Check if we need to fetch profile data
@@ -339,7 +358,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   email: session.user.email!,
                   first_name: firstName,
                   last_name: lastName,
-                  plan: plan as 'free' | 'pro' | 'business',
+                  plan: plan as 'free' | 'pro' | 'team' | 'business' | 'enterprise',
                   company: null,
                   role: null,
                   timezone: null,
@@ -359,6 +378,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 if (createdProfile) {
                   console.log('✅ Profile created successfully')
                   setProfile(createdProfile)
+                  try { setUserCredits(createdProfile.id, createdProfile.credits_balance ?? 0); refreshMonthlyCreditsForPlan(createdProfile.id, createdProfile.plan as any) } catch { /* noop */ }
                   // Set user properties for analytics
                   setUserProperties({
                     user_id: createdProfile.id,
@@ -384,6 +404,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
               }
               setProfile(updatedProfile)
+              try { setUserCredits(updatedProfile.id, updatedProfile.credits_balance ?? 0); refreshMonthlyCreditsForPlan(updatedProfile.id, updatedProfile.plan as any) } catch { /* noop */ }
               setUserProperties({
                 user_id: updatedProfile.id,
                 plan: updatedProfile.plan,
@@ -405,12 +426,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               first_name: session.user.user_metadata?.firstName || null,
               last_name: session.user.user_metadata?.lastName || null,
               email: session.user.email!,
-              plan: (session.user.user_metadata?.plan || 'free') as 'free' | 'pro' | 'business',
+              plan: (session.user.user_metadata?.plan || 'free') as 'free' | 'pro' | 'team' | 'business' | 'enterprise',
               plan_expires_at: null,
               company: null,
               role: null,
               timezone: null,
               avatar_seed: session.user.id,
+              credits_balance: 0,
+              notify_email_reports: false,
+              notify_analysis_complete: false,
+              notify_weekly_digest: false,
+              notify_low_credits: true,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             }
@@ -434,6 +460,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearTimeout(profileTimeout)
       setLoading(false)
       setIsRehydrating(false)
+      try {
+        if (session && session.user) {
+          const path = window.location.pathname
+          if (path !== '/dashboard') {
+            window.location.assign('/dashboard')
+          }
+        }
+      } catch {}
     }
   }
 
@@ -454,6 +488,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       // Track successful sign up
       trackAuth.signUp('email')
+      mixpanel.track('Sign Up', {
+        email,
+        signup_method: 'email'
+      })
       toast.success('Account created successfully! Please check your email to verify your account.')
       return { success: true }
     } catch (err) {
@@ -501,9 +539,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       trackAuth.signIn('email')
+      mixpanel.track('Sign In', {
+        email,
+        login_method: 'email',
+        success: true
+      })
       return { success: true }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred during sign in'
+      mixpanel.track('Sign In', {
+        email,
+        login_method: 'email',
+        success: false
+      })
       return { success: false, error: errorMessage }
     }
   }
@@ -521,9 +569,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       // Track successful Google sign in
       trackAuth.signIn('google')
+      mixpanel.track('Sign In', {
+        login_method: 'google',
+        success: true
+      })
       return { success: true }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred'
+      mixpanel.track('Sign In', {
+        login_method: 'google',
+        success: false
+      })
       return { success: false, error: errorMessage }
     }
   }
@@ -546,12 +602,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setProfile(null)
       setSession(null)
       clearCachedUserData()
+      // Clear Mixpanel state on explicit sign out
+      mixpanel.reset()
     }
   }
 
   const resetPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email)
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      })
       if (error) {
         return { success: false, error: error.message }
       }
@@ -587,9 +647,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.success('Profile updated successfully!')
       return { success: true }
     } catch (err) {
-      handleError(err as Error)
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update profile'
-      return { success: false, error: errorMessage }
+      const e = err as Error
+      const msg = e?.message || ''
+      if (updates?.plan && /plan_check|check constraint|invalid input value/i.test(msg)) {
+        try {
+          await supabase.auth.updateUser({ data: { plan: updates.plan } })
+          const updatedUser = { ...(user as any), plan: updates.plan }
+          setUser(updatedUser)
+          if (profile) {
+            const updatedProfile = { ...profile }
+            setProfile(updatedProfile)
+          }
+          if (session) {
+            cacheUserData(updatedUser, profile || null as any, session)
+          }
+          toast.success('Plan activated')
+          return { success: true }
+        } catch (metaErr) {
+          handleError(metaErr as Error)
+          return { success: false, error: 'Failed to activate plan' }
+        }
+      }
+      handleError(e)
+      return { success: false, error: e?.message || 'Failed to update profile' }
     }
   }
 
@@ -606,21 +686,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error
       if (existingProfile) {
         setProfile(existingProfile)
+        try { setUserCredits(existingProfile.id, existingProfile.credits_balance ?? 0) } catch { /* noop */ }
+        const planMeta = (session.user.user_metadata?.plan as 'free' | 'pro' | 'team' | 'business' | 'enterprise' | undefined)
+        const nextPlan = (planMeta || existingProfile.plan) as 'free' | 'pro' | 'team' | 'business' | 'enterprise'
         setUser({
           ...user,
-          plan: existingProfile.plan as 'free' | 'pro' | 'business'
+          plan: nextPlan
         })
         setUserProperties({
           user_id: existingProfile.id,
-          plan: existingProfile.plan,
+          plan: nextPlan,
           company: existingProfile.company || undefined
         })
-        cacheUserData(user, existingProfile, session)
+        cacheUserData({ ...user, plan: nextPlan }, existingProfile, session)
       }
       return { success: true }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to refresh profile'
       console.error('Error refreshing profile:', err)
+      try {
+        const planMeta = (session.user.user_metadata?.plan as 'free' | 'pro' | 'team' | 'business' | 'enterprise' | undefined)
+        if (planMeta) {
+          setUser({ ...user, plan: planMeta })
+          cacheUserData({ ...user, plan: planMeta }, profile || null as any, session)
+        }
+      } catch { /* noop */ }
       return { success: false, error: errorMessage }
     }
   }

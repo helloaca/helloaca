@@ -11,6 +11,8 @@ import { RiskAssessmentComponent } from '@/components/contract-analysis/RiskAsse
 import { LegalInsightsComponent } from '@/components/contract-analysis/LegalInsights'
 import { ExportCenter } from '@/components/contract-analysis/ExportCenter'
 import { SectionAnalysis, RedFlag, CheckItem } from '@/types/contractAnalysis'
+import { useAuth } from '@/contexts/AuthContext'
+import { isContractCredited } from '@/lib/utils'
 
 // Section icons mapping
 const sectionIcons = {
@@ -45,15 +47,22 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
   onChatWithAI
 }) => {
   const nav = useNavigate()
+  const auth = useAuth() as any
+  const user = auth.user
+  const profile = auth.profile
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
-  const [activeTab, setActiveTab] = useState<'executive' | 'clauses' | 'risk' | 'legal' | 'export'>('executive')
-  const tabs: Array<{ id: 'executive' | 'clauses' | 'risk' | 'legal' | 'export'; label: string; icon: any }> = [
+  const [activeTab, setActiveTab] = useState<'executive' | 'clauses' | 'risk' | 'legal' | 'export' | 'playbook'>('executive')
+  const proOrAbove = ['pro','team','business','enterprise'].includes(String(profile?.plan || user?.plan || 'free'))
+  const tabs: { id: 'executive' | 'clauses' | 'risk' | 'legal' | 'export' | 'playbook'; label: string; icon: any }[] = [
     { id: 'executive', label: 'Executive Summary', icon: FileText },
     { id: 'clauses', label: 'Clause Analysis', icon: Scale },
     { id: 'risk', label: 'Risk Assessment', icon: AlertTriangle },
     { id: 'legal', label: 'Legal Insights', icon: Gavel },
     { id: 'export', label: 'Export Center', icon: Download }
   ]
+  if (proOrAbove) {
+    tabs.splice(4, 0, { id: 'playbook', label: 'Negotiation Playbook', icon: MessageCircle })
+  }
   const currentIndex = tabs.findIndex(t => t.id === activeTab)
   const handlePrev = () => { if (currentIndex > 0) setActiveTab(tabs[currentIndex - 1].id) }
   const handleNext = () => { if (currentIndex < tabs.length - 1) setActiveTab(tabs[currentIndex + 1].id) }
@@ -83,6 +92,11 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
     recommendations: [],
     checkItems: []
   }))
+
+  const creditedLocal = user?.id ? isContractCredited(user.id, contract.id) : false
+  const creditedDb = !!((analysis?.analysis_data as any)?.paid_analysis || (analysis?.analysis_data as any)?.paid || (analysis?.analysis_data as any)?.credited_contract)
+  const credited = creditedLocal || creditedDb
+  const isLocked = proOrAbove ? false : !credited
 
   return (
     <div className="space-y-8">
@@ -141,7 +155,8 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
 
       {/* Clause Analysis Tab */}
       {activeTab === 'clauses' && (
-        <div className="space-y-4">
+        <div className="relative">
+          <div className={isLocked ? 'pointer-events-none select-none filter blur-sm space-y-4' : 'space-y-4'}>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Section-by-Section Analysis</h2>
             <div className="flex space-x-2">
@@ -318,19 +333,31 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
                 )}
               </Card>
             )
-          })
-        ) : (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Section Analysis Available</h3>
-              <p className="text-gray-600">
-                The contract analysis is using the legacy format. Please re-upload the contract for the new section-by-section analysis.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            })
+          ) : (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Section Analysis Available</h3>
+                <p className="text-gray-600">
+                  The contract analysis is using the legacy format. Please re-upload the contract for the new section-by-section analysis.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+          </div>
+          {isLocked ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-white/85 backdrop-blur-sm rounded-lg p-6 text-center">
+                <h3 className="text-lg font-semibold text-gray-900">Upgrade to unlock Clause Analysis</h3>
+                <p className="text-sm text-gray-600 mt-2">Buy credits to view detailed clause analysis.</p>
+                <div className="mt-4 flex justify-center">
+                  <Button onClick={() => nav('/pricing')} className="min-h-[44px] px-6">Upgrade</Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
       )}
 
       {activeTab === 'clauses' && analysis.analysis_data?.criticalIssues && analysis.analysis_data.criticalIssues.length > 0 && (
@@ -439,11 +466,70 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
       )}
 
       {activeTab === 'risk' && enhancedData?.risk_assessment && (
-        <RiskAssessmentComponent riskAssessment={enhancedData.risk_assessment} />
+        <RiskAssessmentComponent 
+          riskAssessment={enhancedData.risk_assessment} 
+          blurCategories={isLocked}
+          onUpgrade={() => nav('/pricing')}
+        />
       )}
 
       {activeTab === 'legal' && enhancedData?.legal_insights && (
         <LegalInsightsComponent legalInsights={enhancedData.legal_insights} />
+      )}
+
+      {activeTab === 'playbook' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <MessageCircle className="h-5 w-5 text-gray-900 mr-2" />
+              Negotiation Playbook
+            </CardTitle>
+            <CardDescription>Priority moves and suggested counters</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3">Priorities</h4>
+                <div className="space-y-2">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-blue-900 text-sm">{enhancedData?.executive_summary?.quick_insights?.negotiation_priority || 'Focus on high‑risk clauses and payment terms.'}</p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3">Tips by role</h4>
+                <div className="space-y-2">
+                  {(enhancedData?.legal_insights?.role_based_advice || []).map((r: any, idx: number) => (
+                    <div key={`rb-${idx}`} className="bg-white rounded-lg p-3 border border-gray-200">
+                      <div className="text-sm font-medium text-gray-900 mb-2">{String(r?.role || 'General')}</div>
+                      <ul className="list-disc ml-5 space-y-1">
+                        {(r?.negotiation_tips || []).map((t: string, i: number) => (
+                          <li key={`tip-${idx}-${i}`} className="text-sm text-gray-700">{t}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3">Suggested language</h4>
+                <div className="space-y-2">
+                  {(enhancedData?.clause_analysis?.clauses_by_section || []).slice(0,6).flatMap((s: any) => (s?.clauses || [])).map((c: any, idx: number) => {
+                    const recs = Array.isArray(c?.recommendations) ? c.recommendations : []
+                    const langs = recs.filter((r: any) => typeof r === 'object' && r?.suggested_language).slice(0,1)
+                    if (langs.length === 0) return null
+                    return (
+                      <div key={`lang-${idx}`} className="bg-white rounded-lg p-3 border border-gray-200">
+                        <div className="text-sm font-medium text-gray-900 mb-1">Clause</div>
+                        <p className="text-sm text-gray-700">{String(langs[0].suggested_language)}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {activeTab === 'export' && enhancedData?.export_data && contract && (
@@ -451,6 +537,8 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
           exportData={enhancedData.export_data} 
           contractTitle={contract.title}
           analysis={enhancedData}
+          locked={isLocked}
+          onUpgrade={() => nav('/pricing')}
         />
       )}
 
