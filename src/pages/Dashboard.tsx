@@ -40,6 +40,7 @@ const Dashboard: React.FC = () => {
   const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [freeEligible, setFreeEligible] = useState(false)
+  const [backendOutage, setBackendOutage] = useState(false)
 
   // Contract history modal state
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
@@ -317,13 +318,20 @@ const Dashboard: React.FC = () => {
       console.log('Contract loading completed successfully')
     } catch (error) {
       console.error('Error loading contracts:', error)
+      const code = (error as any)?.code || ''
+      const message = String((error as any)?.message || '')
+      const isRecursion = code === '42P17' || /infinite recursion/i.test(message)
       
       // Retry logic with exponential backoff
       if (retryCount < maxRetries) {
         const delay = baseDelay * Math.pow(2, retryCount) // Exponential backoff
         console.log(`Retrying contract loading in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`)
         
-        toast.error(`Failed to load contracts. Retrying in ${delay/1000}s...`)
+        if (!isRecursion) {
+          toast.error(`Failed to load contracts. Retrying in ${delay/1000}s...`)
+        } else {
+          setBackendOutage(true)
+        }
         
         setTimeout(() => {
           loadUserContracts(retryCount + 1)
@@ -334,7 +342,11 @@ const Dashboard: React.FC = () => {
       
       // Final failure after all retries
       console.error('Contract loading failed after all retries')
-      toast.error('Failed to load contracts after multiple attempts. Please refresh the page.')
+      if (!isRecursion) {
+        toast.error('Failed to load contracts after multiple attempts. Please refresh the page.')
+      } else {
+        setBackendOutage(true)
+      }
       
       // Don't leave contracts empty on error - show empty state
       setContracts([])
@@ -718,6 +730,11 @@ const Dashboard: React.FC = () => {
                     </div>
                     <button onClick={handleInviteUsersClick} className="px-4 py-2 rounded-lg bg-[#5ACEA8] text-white hover:bg-[#49C89A]">Invite users</button>
                   </div>
+                  {backendOutage && (
+                    <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-yellow-800">
+                      Temporary data outage — showing cached/empty data. Try again later.
+                    </div>
+                  )}
                   <div className="grid md:grid-cols-4 gap-4">
                     <Card><CardContent className="pt-4"><div className="flex items-center"><FileText className="w-6 h-6 text-primary" /><div className="ml-3"><p className="text-2xl font-bold">{monthContracts.length}</p><p className="text-sm text-gray-600">Contracts this month</p></div></div></CardContent></Card>
                     <Card><CardContent className="pt-4"><div className="flex items-center"><AlertCircle className="w-6 h-6 text-red-500" /><div className="ml-3"><p className="text-2xl font-bold">{attention.length}</p><p className="text-sm text-gray-600">Needs attention</p></div></div></CardContent></Card>
@@ -1307,6 +1324,12 @@ const Dashboard: React.FC = () => {
             Here's what's happening with your contracts today.
           </p>
         </div>
+
+        {backendOutage && (
+          <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-yellow-800">
+            Temporary data outage — showing cached/empty data. Try again later.
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
