@@ -131,6 +131,7 @@ export class ContractService {
         throw new Error('Failed to save contract to database')
       }
 
+      try { localStorage.setItem(`contract_cache_${contractData.id}`, JSON.stringify(contractData)) } catch { /* noop */ }
       currentContractId = contractData.id
 
       // Stage 4: Analyze contract
@@ -151,6 +152,7 @@ export class ContractService {
         throw new Error('Contract ID is missing after insertion')
       }
       const analysisData = await this.saveAnalysisResults(currentContractId, userId, analysisResult)
+      try { localStorage.setItem(`analysis_cache_${currentContractId}`, JSON.stringify(analysisData)) } catch { /* noop */ }
 
       // Stage 6: Update contract status
       onProgress?.('Finalizing...', 90)
@@ -158,6 +160,10 @@ export class ContractService {
         .from('contracts')
         .update({ analysis_status: 'completed' })
         .eq('id', currentContractId)
+      try {
+        const updated = { ...contractData, analysis_status: 'completed' }
+        localStorage.setItem(`contract_cache_${currentContractId}`, JSON.stringify(updated))
+      } catch { /* noop */ }
 
       try {
         const baseEnv = import.meta.env.VITE_API_ORIGIN
@@ -1312,6 +1318,10 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
 
       if (error) {
         if (error.code === 'PGRST116') {
+          try {
+            const raw = localStorage.getItem(`contract_cache_${contractId}`)
+            if (raw) return JSON.parse(raw) as Contract
+          } catch { /* noop */ }
           return null
         }
         console.error('Failed to fetch contract:', error)

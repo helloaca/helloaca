@@ -152,7 +152,7 @@ const Login: React.FC = () => {
             </div>
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h2>
-          <p className="text-gray-600">Sign in to your HelloACA account</p>
+          <p className="text-gray-600">Sign in to your Helloaca account</p>
         </div>
 
         <Card className="p-8">
