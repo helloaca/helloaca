@@ -4,8 +4,7 @@ import Header from '../components/layout/Header'
 import { Footer } from '../components/layout/Footer'
 import { Check, ArrowLeft, X } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
-import { getUserCredits, refreshMonthlyCreditsForPlan, addUserCredits } from '@/lib/utils'
+import { getUserCredits, addUserCredits } from '@/lib/utils'
 import { toast } from 'sonner'
 // import mixpanel from 'mixpanel-browser'
 
@@ -24,6 +23,10 @@ const Pricing: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState<{ plan: 'pro'|'team'|'business'|'enterprise'; period: 'monthly'|'yearly'; priceUSD: number } | null>(null)
   const [billingPeriod, setBillingPeriod] = useState<'monthly'|'yearly'>('monthly')
   const [isBundleModalOpen, setBundleModalOpen] = useState(false)
+  const [isWaitlistOpen, setWaitlistOpen] = useState(false)
+  const [waitlistName, setWaitlistName] = useState('')
+  const [waitlistEmail, setWaitlistEmail] = useState('')
+  const [waitlistPlans, setWaitlistPlans] = useState<Array<'team'|'business'|'enterprise'>>([])
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -41,6 +44,12 @@ const Pricing: React.FC = () => {
     }
   }, [user?.id])
 
+  useEffect(() => {
+    if (isWaitlistOpen) {
+      setWaitlistEmail(String(user?.email || ''))
+    }
+  }, [isWaitlistOpen, user?.email])
+
   const bundles = [
     { credits: 1, priceUSD: 2, popular: false as const },
     { credits: 5, priceUSD: 9, popular: true as const },
@@ -50,111 +59,93 @@ const Pricing: React.FC = () => {
   // Removed: custom pricing calculator; using fixed bundles
   // Removed inline custom credits UI; modal uses predefined bundles
 
-  const loadPaystackScript = useCallback(async () => {
-    if ((window as any).PaystackPop) return
+  
+
+  const loadFlutterwaveScript = useCallback(async () => {
+    if ((window as any).FlutterwaveCheckout) return
     await new Promise<void>((resolve, reject) => {
       const script = document.createElement('script')
-      script.src = 'https://js.paystack.co/v1/inline.js'
+      script.src = 'https://checkout.flutterwave.com/v3.js'
       script.async = true
       script.onload = () => resolve()
-      script.onerror = () => reject(new Error('Failed to load Paystack script'))
+      script.onerror = () => reject(new Error('Failed to load Flutterwave script'))
       document.body.appendChild(script)
     })
   }, [])
 
-  const handleSubscribePlan = useCallback(async (method: 'card'|'crypto') => {
+  const startFlutterwaveCreditsCheckout = useCallback(async () => {
     try {
-      if (!user || !selectedPlan) {
-        toast.error('Please sign in and select a plan')
-        navigate('/login')
-        return
-      }
-      const testMode = String(import.meta.env.VITE_PAYSTACK_TEST_MODE || '')
-      const hostname = window.location.hostname
-      const shouldMock = testMode === 'mock' || hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('preview')
-      if (shouldMock) {
-        try {
-          const planUpdate = { plan: selectedPlan.plan }
-          const result = await auth.updateProfile(planUpdate)
-          if (!result.success) {
-            await supabase.auth.updateUser({ data: { plan: selectedPlan.plan } })
-          }
-          await auth.refreshProfile()
-          refreshMonthlyCreditsForPlan(user.id, selectedPlan.plan)
-          setSubModalOpen(false)
-          toast.success('Subscription activated (mock)')
-          return
-        } catch {
-          toast.error('Mock activation failed')
-          return
-        }
-      }
-      const base = import.meta.env.VITE_API_ORIGIN || window.location.origin
-      if (method === 'crypto') {
-        setIsLoading(true)
-        setProcessingMethod('crypto')
-        const controller = new AbortController()
-        const timer = setTimeout(() => controller.abort(), 10000)
-        try {
-          const res = await fetch(`${base}/api/coinbase-create-charge`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id, email: user.email, amount_usd: selectedPlan.priceUSD, plan: selectedPlan.plan, period: selectedPlan.period }),
-            signal: controller.signal
-          })
-          const data = await res.json().catch(() => null)
-          clearTimeout(timer)
-          const url = data?.hosted_url
-          if (res.ok && url) {
-            setSubModalOpen(false)
-            window.location.href = url
-            return
-          }
-          toast.error(typeof data?.error === 'string' ? data.error : 'Failed to start crypto payment')
-        } catch {
-          clearTimeout(timer)
-          toast.error('Network error starting crypto payment')
-        } finally {
-          setIsLoading(false)
-          setProcessingMethod(null)
-        }
-        return
-      }
-
-      // Prefer Flutterwave for USD
+      if (!user || !selectedBundle) { toast.error('No bundle selected'); return }
+      const publicKey = import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY
+      if (!publicKey) { toast.error('Payment is not configured'); return }
       setIsLoading(true)
       setProcessingMethod('card')
-      const controller = new AbortController()
-      const timer = setTimeout(() => controller.abort(), 12000)
-      try {
-        const res = await fetch(`${base}/api/flutterwave-create-payment`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id, email: user.email, amount_usd: selectedPlan.priceUSD, plan: selectedPlan.plan, period: selectedPlan.period }),
-          signal: controller.signal
-        })
-        const data = await res.json().catch(() => null)
-        clearTimeout(timer)
-        const link = data?.link
-        if (res.ok && link) {
-          setSubModalOpen(false)
-          window.location.href = link
-          return
-        }
-        toast.error(typeof data?.error === 'string' ? data.error : 'Failed to start payment')
-      } catch {
-        clearTimeout(timer)
-        toast.error('Network error starting payment')
-      } finally {
-        setIsLoading(false)
-        setProcessingMethod(null)
-      }
-    } catch (err) {
+      await loadFlutterwaveScript()
+      const txRef = `CREDITS-${selectedBundle.credits}-${Date.now()}`
+      const baseEnv = import.meta.env.VITE_API_ORIGIN
+      const baseUrl = baseEnv && baseEnv.length > 0 ? baseEnv : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://preview.helloaca.xyz' : window.location.origin)
+      const preferredCurrency = String(import.meta.env.VITE_FLUTTERWAVE_DEFAULT_CURRENCY || 'USD').toUpperCase()
+      const preferredCountry = String(import.meta.env.VITE_FLUTTERWAVE_DEFAULT_COUNTRY || '').toUpperCase()
+      const fxRateNgn = Number(String(import.meta.env.VITE_FX_USD_TO_NGN_RATE || '1600'))
+      const amountLocal = preferredCurrency === 'NGN' ? Math.round(selectedBundle.priceUSD * fxRateNgn) : selectedBundle.priceUSD
+      ;(window as any).FlutterwaveCheckout({
+        public_key: publicKey,
+        tx_ref: txRef,
+        amount: amountLocal,
+        currency: preferredCurrency,
+        payment_options: 'card',
+        ...(preferredCountry ? { country: preferredCountry } : {}),
+        redirect_url: `${baseUrl}/api/flutterwave-verify?tx_ref=${encodeURIComponent(txRef)}&email=${encodeURIComponent(user.email)}`,
+        customer: { email: String(user.email) },
+        meta: { userId: user.id, credits: selectedBundle.credits },
+        customizations: { title: 'HelloACA', description: `${selectedBundle.credits} credits`, logo: `${baseUrl}/logo.png` },
+        onclose: () => { setIsLoading(false); setProcessingMethod(null) }
+      })
+      setMethodModalOpen(false)
+    } catch (e) {
       setIsLoading(false)
       setProcessingMethod(null)
-      toast.error(err instanceof Error ? err.message : 'Payment initialization failed')
+      toast.error('Network error starting payment')
     }
-  }, [user, selectedPlan, navigate, loadPaystackScript])
+  }, [user, selectedBundle, loadFlutterwaveScript])
+
+  const startFlutterwaveSubscribeCheckout = useCallback(async () => {
+    try {
+      if (!user || !selectedPlan) { toast.error('Please sign in and select a plan'); return }
+      const publicKey = import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY
+      if (!publicKey) { toast.error('Payment is not configured'); return }
+      setIsLoading(true)
+      setProcessingMethod('card')
+      await loadFlutterwaveScript()
+      const txRef = `SUB-${String(selectedPlan.plan).toUpperCase()}-${String(selectedPlan.period).toUpperCase()}-${Date.now()}`
+      const baseEnv = import.meta.env.VITE_API_ORIGIN
+      const baseUrl = baseEnv && baseEnv.length > 0 ? baseEnv : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://preview.helloaca.xyz' : window.location.origin)
+      const preferredCurrency2 = String(import.meta.env.VITE_FLUTTERWAVE_DEFAULT_CURRENCY || 'USD').toUpperCase()
+      const preferredCountry2 = String(import.meta.env.VITE_FLUTTERWAVE_DEFAULT_COUNTRY || '').toUpperCase()
+      const fxRateNgn2 = Number(String(import.meta.env.VITE_FX_USD_TO_NGN_RATE || '1600'))
+      const amountLocal2 = preferredCurrency2 === 'NGN' ? Math.round(selectedPlan.priceUSD * fxRateNgn2) : selectedPlan.priceUSD
+      ;(window as any).FlutterwaveCheckout({
+        public_key: publicKey,
+        tx_ref: txRef,
+        amount: amountLocal2,
+        currency: preferredCurrency2,
+        payment_options: 'card',
+        ...(preferredCountry2 ? { country: preferredCountry2 } : {}),
+        redirect_url: `${baseUrl}/api/flutterwave-verify?tx_ref=${encodeURIComponent(txRef)}&email=${encodeURIComponent(user.email)}`,
+        customer: { email: String(user.email) },
+        meta: { userId: user.id, plan: selectedPlan.plan, period: selectedPlan.period },
+        customizations: { title: 'Helloaca', description: `${selectedPlan.plan} subscription (${selectedPlan.period})`, logo: `${baseUrl}/logo.png` },
+        onclose: () => { setIsLoading(false); setProcessingMethod(null) }
+      })
+      setSubModalOpen(false)
+    } catch (e) {
+      setIsLoading(false)
+      setProcessingMethod(null)
+      toast.error('Network error starting payment')
+    }
+  }, [user, selectedPlan, loadFlutterwaveScript])
+
+  
 
   const handleBuyCredits = useCallback(async () => {
     try {
@@ -181,41 +172,13 @@ const Pricing: React.FC = () => {
         }
       }
 
-      // Use Flutterwave
-      setIsLoading(true)
-      setProcessingMethod('card')
-      const base = import.meta.env.VITE_API_ORIGIN || window.location.origin
-      const controller = new AbortController()
-      const timer = setTimeout(() => controller.abort(), 12000)
-      try {
-        const res = await fetch(`${base}/api/flutterwave-create-payment`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id, email: user.email, amount_usd: selectedBundle.priceUSD, credits: selectedBundle.credits }),
-          signal: controller.signal
-        })
-        const data = await res.json().catch(() => null)
-        clearTimeout(timer)
-        const link = data?.link
-        if (res.ok && link) {
-          setMethodModalOpen(false)
-          window.location.href = link
-          return
-        }
-        toast.error(typeof data?.error === 'string' ? data.error : 'Failed to start payment')
-      } catch {
-        clearTimeout(timer)
-        toast.error('Network error starting payment')
-      } finally {
-        setIsLoading(false)
-        setProcessingMethod(null)
-      }
+      await startFlutterwaveCreditsCheckout()
     } catch (err) {
       setIsLoading(false)
       setProcessingMethod(null)
       toast.error(err instanceof Error ? err.message : 'Payment initialization failed')
     }
-  }, [user, navigate, loadPaystackScript, selectedBundle])
+  }, [user, navigate, selectedBundle, startFlutterwaveCreditsCheckout])
 
   // Crypto callback flow will be implemented when crypto is enabled
 
@@ -365,10 +328,10 @@ const Pricing: React.FC = () => {
                 <div className="mb-4 flex items-center justify-between">
                   <div>
                     <h3 className="text-2xl font-bold text-gray-900">{p.title}</h3>
-                    <p className="text-gray-600">{p.plan==='pro' ? (billingPeriod==='monthly' ? `$${p.monthly}/month` : `$${p.monthly*12}/year`) : 'Contact us'}</p>
+                    <p className="text-gray-600">{p.plan==='pro' ? (billingPeriod==='monthly' ? `$${p.monthly}/month` : `$${p.monthly*12}/year`) : 'Coming Soon...'}</p>
                   </div>
                   {p.plan==='pro' && (
-                    <span className="absolute -top-3 right-4 text-xs px-2 py-1 rounded-full bg-gray-900 text-white shadow">Most popular</span>
+                    <span className="absolute -top-3 right-4 text-xs px-2 py-1 rounded-full bg-[#4ECCA3] text-white shadow">Most popular</span>
                   )}
                 </div>
                 <ul className="space-y-2 text-sm mb-6">
@@ -379,10 +342,10 @@ const Pricing: React.FC = () => {
                 <div className="mt-auto">
                   {isDisabled ? (
                     <button
-                      onClick={() => navigate('/contact')}
-                      className="w-full h-11 px-6 rounded-lg font-medium bg-gray-900 text-white leading-none whitespace-nowrap"
+                      onClick={() => { setWaitlistPlans([p.plan]); setWaitlistOpen(true) }}
+                      className="w-full h-11 px-6 rounded-lg font-medium bg-[#4ECCA3] text-white leading-none whitespace-nowrap"
                     >
-                      Contact us
+                      Join waitlist
                     </button>
                   ) : (
                     <button
@@ -469,7 +432,7 @@ const Pricing: React.FC = () => {
                 onClick={handleBuyCredits}
                 disabled={isLoading || processingMethod === 'crypto'}
                 className={`w-full py-3 px-6 rounded-lg font-medium text-center transition-colors ${
-                  'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                  'bg-[#4ECCA3] text-white hover:bg-[#4ECCA3]/90 disabled:opacity-50 disabled:cursor-not-allowed'
                 }`}
               >
                 {processingMethod === 'card' ? 'Processing…' : 'Card'}
@@ -501,10 +464,10 @@ const Pricing: React.FC = () => {
             <button
               key={`bundle-${b.credits}`}
               onClick={() => { setSelectedBundle(b); setBundleModalOpen(false); setMethodModalOpen(true) }}
-              className={`relative text-left rounded-2xl border ${b.popular ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'} bg-white hover:bg-gray-50 p-5 pt-7 transition-shadow`}
+                className={`relative text-left rounded-2xl border ${b.popular ? 'border-[#4ECCA3] ring-2 ring-[#4ECCA3]/30' : 'border-gray-200'} bg-white hover:bg-gray-50 p-5 pt-7 transition-shadow`}
             >
               {b.popular && (
-                <span className="absolute -top-3 right-3 text-xs px-2 py-1 rounded-full bg-blue-600 text-white shadow">Best value</span>
+                <span className="absolute -top-3 right-3 text-xs px-2 py-1 rounded-full bg-[#4ECCA3] text-white shadow">Best value</span>
               )}
               <div className="text-2xl font-bold text-gray-900 mb-1">${b.priceUSD}</div>
               <div className="text-sm text-gray-600">{b.credits} credit{b.credits>1?'s':''}</div>
@@ -523,10 +486,83 @@ const Pricing: React.FC = () => {
             </button>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Subscribe to {selectedPlan.plan} ({selectedPlan.period})</h3>
             <p className="text-gray-600 mb-4">Total: ${selectedPlan.priceUSD}</p>
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={async () => { await handleSubscribePlan('card') }} disabled={isLoading} className="py-3 px-6 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">Card</button>
-              <button onClick={async () => { await handleSubscribePlan('crypto') }} disabled={isLoading} className="py-3 px-6 rounded-lg font-medium bg-gray-900 text-white hover:bg-black disabled:opacity-50">Crypto</button>
+            <div className="grid grid-cols-1 gap-3">
+              <button onClick={async () => { await startFlutterwaveSubscribeCheckout() }} disabled={isLoading} className="py-3 px-6 rounded-lg font-medium bg-[#4ECCA3] text-white hover:bg-[#4ECCA3]/90 disabled:opacity-50">Card</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {isWaitlistOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { if (!isLoading) setWaitlistOpen(false) }}>
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
+            <button aria-label="Close" onClick={() => setWaitlistOpen(false)} disabled={isLoading} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Join the waitlist</h3>
+            <p className="text-gray-600 mb-4">We’ll notify you when these plans are available.</p>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault()
+                if (!waitlistEmail || waitlistPlans.length === 0) { toast.error('Email and at least one plan are required'); return }
+                try {
+                  setIsLoading(true)
+                  const baseEnv = import.meta.env.VITE_API_ORIGIN
+                  const base = baseEnv && baseEnv.length > 0 ? baseEnv : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://preview.helloaca.xyz' : window.location.origin)
+                  const res = await fetch(`${base}/api/waitlist`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: waitlistName, email: waitlistEmail, plans: waitlistPlans, userId: user?.id, source: 'pricing' })
+                  })
+                  const data = await res.json().catch(() => null)
+                  if (res.ok && data?.status === 'success') {
+                    toast.success('Added to waitlist')
+                    setWaitlistOpen(false)
+                    setWaitlistName('')
+                    setWaitlistPlans([])
+                  } else {
+                    toast.error(typeof data?.error === 'string' ? data.error : 'Could not save')
+                  }
+                } catch {
+                  toast.error('Network error')
+                } finally {
+                  setIsLoading(false)
+                }
+              }}
+            >
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">Name</label>
+                  <input value={waitlistName} onChange={(e) => setWaitlistName(e.target.value)} className="w-full h-11 rounded-lg border border-gray-300 px-3" placeholder="Your name" />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">Email</label>
+                  <input value={waitlistEmail} onChange={(e) => setWaitlistEmail(e.target.value)} className="w-full h-11 rounded-lg border border-gray-300 px-3" placeholder="you@example.com" type="email" required />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">Plans</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {(['team','business','enterprise'] as const).map((pl) => (
+                      <label key={pl} className="flex items-center gap-2 border rounded-lg px-3 py-2">
+                        <input type="checkbox" checked={waitlistPlans.includes(pl)} onChange={(e) => {
+                          const checked = e.target.checked
+                          setWaitlistPlans((prev) => {
+                            if (checked && !prev.includes(pl)) return [...prev, pl]
+                            if (!checked) return prev.filter((x) => x !== pl)
+                            return prev
+                          })
+                        }} />
+                        <span className="capitalize">{pl}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 flex gap-3 justify-end">
+                <button type="button" onClick={() => setWaitlistOpen(false)} className="px-4 py-2 rounded-lg border">Cancel</button>
+                <button type="submit" disabled={isLoading} className="px-4 py-2 rounded-lg bg-[#4ECCA3] text-white disabled:opacity-50">Join waitlist</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

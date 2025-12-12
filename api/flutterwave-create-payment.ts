@@ -19,13 +19,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const base = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://preview.helloaca.xyz')
     const redirect_url = `${base}/api/flutterwave-verify?tx_ref=${encodeURIComponent(reference)}&email=${encodeURIComponent(email)}`
 
+    const preferredCurrency = (process.env.FLUTTERWAVE_DEFAULT_CURRENCY || 'USD').toUpperCase()
+    const preferredCountry = (process.env.FLUTTERWAVE_DEFAULT_COUNTRY || '').toUpperCase()
+    const usdAmount = Number(amount_usd)
+    const fxRateNgn = Number(process.env.FLUTTERWAVE_USD_TO_NGN_RATE || process.env.FX_USD_TO_NGN || 1600)
+    const finalAmount = preferredCurrency === 'NGN' ? Math.round(usdAmount * fxRateNgn) : usdAmount
     const payload = {
       tx_ref: reference,
-      amount: Number(amount_usd),
-      currency: 'USD',
+      amount: finalAmount,
+      currency: preferredCurrency,
       redirect_url,
       payment_options: 'card',
       public_key: pub,
+      ...(preferredCountry ? { country: preferredCountry } : {}),
       customer: { email },
       meta: { userId, credits, plan, period },
       customizations: {
