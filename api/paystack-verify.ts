@@ -132,7 +132,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const resendKey = process.env.RESEND_API_KEY
     if (resendKey) {
       try {
-        const base = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || 'https://helloaca.xyz'
+        const base = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || 'https://preview.helloaca.xyz'
         const receiptUrl = `${base}/api/receipt?reference=${encodeURIComponent(reference)}`
         
         const html = `

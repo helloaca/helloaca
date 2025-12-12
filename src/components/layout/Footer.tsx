@@ -124,7 +124,7 @@ const Footer: React.FC = () => {
                 <Twitter className="h-5 w-5" />
               </a>
               <a
-                href="mailto:support@helloaca.xyz"
+                href="mailto:support@preview.helloaca.xyz"
                 className="p-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-gray-300 hover:text-primary transition-colors"
                 aria-label="Email HelloACA support"
               >

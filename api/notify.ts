@@ -67,7 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       email = profile.email as string
     }
-  const base = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || 'https://helloaca.xyz'
+  const base = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || 'https://preview.helloaca.xyz'
 
     const checks: Record<string, boolean> = {
       analysis_complete: !!profile?.notify_analysis_complete,
