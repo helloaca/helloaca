@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import mixpanel from 'mixpanel-browser';
 
 export interface Message {
   id: string;
@@ -153,6 +154,25 @@ export class MessageService {
   }
 
   /**
+   * Get user question count for a contract
+   */
+  async getUserMessageCount(contractId: string): Promise<number> {
+    try {
+      const { count, error } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('contract_id', contractId)
+        .eq('role', 'user');
+
+      if (error) throw error;
+      return count || 0;
+    } catch (error) {
+      console.error('Error getting user message count:', error);
+      return 0;
+    }
+  }
+
+  /**
    * Search messages by content
    */
   async searchMessages(contractId: string, query: string): Promise<Message[]> {
@@ -165,6 +185,10 @@ export class MessageService {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
+      mixpanel.track('Search', {
+        search_query: query,
+        results_count: data?.length || 0
+      })
       return data || [];
     } catch (error) {
       console.error('Error searching messages:', error);

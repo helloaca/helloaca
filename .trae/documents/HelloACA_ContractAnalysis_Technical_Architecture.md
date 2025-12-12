@@ -50,17 +50,20 @@ graph TD
 - Serverless functions for AI processing
 - Edge functions for real-time features
 - Row Level Security for data protection
+ - CORS-enabled notification endpoint with OPTIONS preflight
 
 **AI Integration:**
 - Claude API for contract analysis
 - Custom prompt engineering for legal domain
 - Structured JSON output with validation
 - Fallback mechanisms for AI failures
+ - Mixpanel analytics with identity merge on sign-in (alias then identify)
 
 **Export Functionality:**
 - PDFKit for professional PDF generation
 - Docx.js for Word document creation
 - Custom annotation engine for contract markup
+ - Branded footers and links updated to `https://preview.helloaca.xyz`
 
 ## 3. Enhanced Data Structures
 

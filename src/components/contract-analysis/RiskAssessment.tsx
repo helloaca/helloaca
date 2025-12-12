@@ -3,12 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import { AlertTriangle, Shield } from 'lucide-react'
 import { RiskAssessment } from '@/types/contractAnalysis'
+import Button from '@/components/ui/Button'
 
 interface RiskAssessmentProps {
   riskAssessment: RiskAssessment
+  blurCategories?: boolean
+  onUpgrade?: () => void
 }
 
-export const RiskAssessmentComponent: React.FC<RiskAssessmentProps> = ({ riskAssessment }) => {
+export const RiskAssessmentComponent: React.FC<RiskAssessmentProps> = ({ riskAssessment, blurCategories, onUpgrade }) => {
   if (!riskAssessment || Object.keys(riskAssessment).length === 0) {
     return (
       <Card className="w-full">
@@ -77,28 +80,40 @@ export const RiskAssessmentComponent: React.FC<RiskAssessmentProps> = ({ riskAss
               Risk Categories
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-4 sm:px-6 py-3 sm:py-4">
-            <div className="space-y-3 sm:space-y-4">
-              {safeRiskAssessment.risk_categories.map((cat: NonNullable<RiskAssessment['risk_categories']>[number], index: number) => (
-                <div key={index} className="p-2 sm:p-3 bg-gray-50 rounded">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="default" className="text-xs sm:text-sm">{cat.category}</Badge>
-                      <span className="text-xs sm:text-sm text-gray-600">Score: {cat.score}</span>
+          <CardContent className="px-4 sm:px-6 py-3 sm:py-4 relative">
+            <div className={blurCategories ? 'pointer-events-none select-none filter blur-sm' : ''}>
+              <div className="space-y-3 sm:space-y-4">
+                {safeRiskAssessment.risk_categories.map((cat: NonNullable<RiskAssessment['risk_categories']>[number], index: number) => (
+                  <div key={index} className="p-2 sm:p-3 bg-gray-50 rounded">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="default" className="text-xs sm:text-sm">{cat.category}</Badge>
+                        <span className="text-xs sm:text-sm text-gray-600">Score: {cat.score}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs sm:text-sm text-gray-600">Risk Level:</span>
+                        <Badge variant={cat.risk_level === 'Critical' ? 'danger' : cat.risk_level === 'High' ? 'warning' : cat.risk_level === 'Medium' ? 'info' : 'success'} className="text-xs sm:text-sm">
+                          {cat.risk_level}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm text-gray-600">Risk Level:</span>
-                      <Badge variant={cat.risk_level === 'Critical' ? 'danger' : cat.risk_level === 'High' ? 'warning' : cat.risk_level === 'Medium' ? 'info' : 'success'} className="text-xs sm:text-sm">
-                        {cat.risk_level}
-                      </Badge>
-                    </div>
+                    {cat.description && (
+                      <p className="text-xs sm:text-sm text-gray-700 mt-2">{cat.description}</p>
+                    )}
                   </div>
-                  {cat.description && (
-                    <p className="text-xs sm:text-sm text-gray-700 mt-2">{cat.description}</p>
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
+            {blurCategories ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="bg-white/85 backdrop-blur-sm rounded-lg p-4 text-center">
+                  <p className="text-sm text-gray-700">Upgrade to view risk category details</p>
+                  <div className="mt-3 flex justify-center">
+                    <Button onClick={onUpgrade} className="min-h-[36px]">Upgrade</Button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
       )}

@@ -1,9 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk'
+import mixpanel from 'mixpanel-browser'
 
-const claudeApiKey = import.meta.env.VITE_CLAUDE_API_KEY
+const claudeApiKey = import.meta.env.VITE_CLAUDE_API_KEY || import.meta.env.VITE_ANTHROPIC_API_KEY
 
 if (!claudeApiKey) {
-  throw new Error('VITE_CLAUDE_API_KEY is not set in environment variables')
+  throw new Error('Claude API key not found. Set VITE_CLAUDE_API_KEY or VITE_ANTHROPIC_API_KEY')
 }
 
 const anthropic = new Anthropic({
@@ -20,11 +21,17 @@ export const claudeService = {
   async sendMessage(messages: ClaudeMessage[], contractContext?: string, forceJsonResponse?: boolean): Promise<string> {
     try {
       console.log('🤖 Claude API Request - Messages:', messages.length, 'Context:', !!contractContext)
+      const start = performance.now()
+      mixpanel.track('AI Prompt Sent', {
+        message_count: messages.length,
+        has_contract_context: !!contractContext,
+        force_json: !!forceJsonResponse
+      })
       
       // Prepare system message with contract context if available and strict no-emoji policy
       const baseSystemMessage = contractContext 
-        ? `You are an AI assistant specialized in contract analysis. You have access to the following contract content: ${contractContext}. Please provide helpful, accurate responses about the contract terms, obligations, and any questions the user might have.`
-        : 'You are an AI assistant specialized in contract analysis. Please provide helpful responses about contract-related questions.'
+        ? `You are an AI assistant specialized in contract analysis. You have access to the following contract content: ${contractContext}. Provide helpful, accurate responses about the contract.`
+        : 'You are an AI assistant specialized in contract analysis. Provide helpful responses about contract-related questions.'
       
       // Add strict no-emoji policy to system message with rich formatting allowed
       const systemMessage = `${baseSystemMessage}
@@ -40,12 +47,17 @@ IMPORTANT COMMUNICATION POLICY:
 - Maintain a formal, business-appropriate tone at all times`
 
       // Try multiple model names to find the correct one
-      const models = [
-        'claude-3-sonnet-20240229',
-        'claude-3-sonnet-20241022',
-        'claude-3-haiku-20240307',
-        'claude-3-opus-20240229'
-      ]
+      const envModelsRaw = (import.meta.env.VITE_CLAUDE_MODELS || '')
+        .split(',')
+        .map((m: string) => m.trim())
+        .filter((m: string) => !!m)
+      const models = envModelsRaw.length > 0
+        ? envModelsRaw
+        : [
+            'claude-sonnet-4-20250514',
+            'claude-haiku-4-20250119',
+            'claude-3-5-sonnet-20241022'
+          ]
       
       let lastError: any = null
       
@@ -55,17 +67,14 @@ IMPORTANT COMMUNICATION POLICY:
           
           const requestOptions: any = {
             model: model,
-            max_tokens: 4000, // Reduced to avoid token limit issues
+            max_tokens: 2000,
             system: systemMessage,
-            messages: messages,
+            messages: messages.map(m => ({ role: m.role, content: [{ type: 'text', text: m.content }] })),
             temperature: 0.1
           }
 
-          // Add response_format for JSON-only responses when requested
           if (forceJsonResponse) {
-            // Note: Anthropic Claude doesn't support response_format like OpenAI
-            // But we can enforce JSON through system prompts
-            requestOptions.system = systemMessage + '\n\nCRITICAL: You must respond ONLY with valid JSON. Do not include any text outside the JSON object. Your response must start with { and end with } with no additional text, markdown formatting, or code blocks.'
+            requestOptions.system = systemMessage + '\n\nYou MUST return ONLY valid JSON. No explanations. No Markdown. No commentary. If you cannot produce valid JSON, return {}.'
           }
 
           const response = await anthropic.messages.create(requestOptions)
@@ -73,6 +82,11 @@ IMPORTANT COMMUNICATION POLICY:
           // Extract the text content from Claude's response
           const textContent = response.content.find(content => content.type === 'text')
           console.log(`✅ Successfully used model: ${model}`)
+          const duration = performance.now() - start
+          mixpanel.track('AI Response Sent', {
+            api_response_time: duration,
+            api_tokens_used: (response as any)?.usage?.output_tokens
+          })
           return textContent?.text || 'I apologize, but I was unable to generate a response.'
           
         } catch (modelError: any) {
@@ -94,6 +108,12 @@ IMPORTANT COMMUNICATION POLICY:
         message: error.message,
         error: error.error,
         headers: error.headers
+      })
+      
+      mixpanel.track('API Error', {
+        error_message: error.message,
+        error_type: 'claude_api',
+        status: error.status
       })
       
       // Better error handling for model deprecation and other API issues

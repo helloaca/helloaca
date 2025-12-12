@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Send, FileText, Loader2, Trash2, Download, Search } from 'lucide-react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import Header from '../components/layout/Header'
 import { useAuth } from '../contexts/AuthContext'
 import { messageService } from '../services/messageService'
+import { isContractCredited } from '@/lib/utils'
 
 interface Message {
   id: string
@@ -26,13 +27,15 @@ interface Contract {
 
 const ChatInterface: React.FC = () => {
   const { contractId } = useParams<{ contractId: string }>()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
+  const navigate = useNavigate()
   const [contract, setContract] = useState<Contract | null>(null)
   const [isLoadingContract, setIsLoadingContract] = useState(true)
   const [isLoadingChatHistory, setIsLoadingChatHistory] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [creditedDb, setCreditedDb] = useState<boolean>(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
   const [messageCount, setMessageCount] = useState(0)
@@ -111,6 +114,25 @@ const ChatInterface: React.FC = () => {
 
     loadChatHistory()
   }, [contract, user, isLoadingContract])
+
+  // Check DB-paid flag to keep contract unlocked after site data clear
+  useEffect(() => {
+    const checkPaid = async () => {
+      try {
+        if (!contract || !user) return
+        const { supabase } = await import('../lib/supabase')
+        const { data } = await supabase
+          .from('reports')
+          .select('analysis_data')
+          .eq('contract_id', contract.id)
+          .eq('user_id', user.id)
+          .single()
+        const paid = !!(data?.analysis_data?.paid_analysis || data?.analysis_data?.paid || data?.analysis_data?.credited_contract)
+        setCreditedDb(paid)
+      } catch { /* noop */ }
+    }
+    checkPaid()
+  }, [contract?.id, user?.id])
 
   // Initialize welcome message based on contract state
   const initializeWelcomeMessage = () => {
@@ -198,12 +220,12 @@ ${contract.extracted_text}
 
     // Include recent conversation history
     if (conversationContext.length > 0) {
-      prompt += `\n\nPrevious conversation:\n`
+      prompt += '\n\nPrevious conversation:\n'
       conversationContext.forEach(msg => {
         const speaker = msg.role === 'user' ? 'User' : 'Assistant'
         prompt += `${speaker}: ${msg.content}\n`
       })
-      prompt += `\n---\n`
+      prompt += '\n---\n'
     }
 
     // Add current user question
@@ -216,6 +238,21 @@ Please provide a helpful response based on the contract and our conversation.`
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || !contract || !contract.extracted_text) return
+
+    const userMsgCount = await messageService.getUserMessageCount(contract.id)
+    const freeChatLimit = 5
+    const creditedLocal = user?.id ? isContractCredited(user.id, contract.id) : false
+    const credited = creditedLocal || creditedDb
+    if (!credited && userMsgCount >= freeChatLimit) {
+      const limitMessage: Message = {
+        id: 'limit-reached',
+        type: 'ai',
+        content: `Free tier includes ${freeChatLimit} questions per contract. Buy credits to continue chatting and unlock full analysis.`,
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, limitMessage])
+      return
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -431,6 +468,20 @@ Please provide a helpful response based on the contract and our conversation.`
     }
   }
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+            <p className="text-gray-600">Checking authentication...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (isLoadingContract) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -464,7 +515,7 @@ Please provide a helpful response based on the contract and our conversation.`
       <Header />
       
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-lg h-[calc(100vh-12rem)] flex flex-col">
+        <div className="bg-white rounded-lg shadow-lg min-h-[70vh] sm:min-h-[60vh] md:h-[calc(100vh-12rem)] flex flex-col">
           {/* Chat Header */}
           <div className="border-b px-6 py-4 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center space-x-4">
@@ -558,7 +609,7 @@ Please provide a helpful response based on the contract and our conversation.`
                     className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-3xl rounded-lg px-4 py-3 ${
+                      className={`max-w-[85%] sm:max-w-2xl md:max-w-3xl rounded-lg px-4 py-3 ${
                         message.type === 'user'
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 text-gray-900'
@@ -602,6 +653,17 @@ Please provide a helpful response based on the contract and our conversation.`
                       ) : (
                         <p className="whitespace-pre-wrap">{message.content}</p>
                       )}
+
+                      {message.id === 'limit-reached' && (
+                        <div className="mt-2">
+                          <button
+                            onClick={() => navigate('/pricing')}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            Buy Credits
+                          </button>
+                        </div>
+                      )}
                       
                       <div className="text-xs opacity-70 mt-2">
                         {message.timestamp.toLocaleTimeString()}
@@ -641,8 +703,8 @@ Please provide a helpful response based on the contract and our conversation.`
                   onKeyPress={handleKeyPress}
                   placeholder={
                     contract && contract.extracted_text
-                      ? "Ask me anything about this contract..."
-                      : "Please upload a contract first..."
+                      ? 'Ask me anything about this contract...'
+                      : 'Please upload a contract first...'
                   }
                   disabled={!contract || !contract.extracted_text || isLoading}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-y-auto"

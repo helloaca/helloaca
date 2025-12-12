@@ -13,7 +13,7 @@ const Badge: React.FC<BadgeProps> = ({
   size = 'md',
   className = '' 
 }) => {
-  const baseClasses = 'inline-flex items-center font-medium rounded-full'
+  const baseClasses = 'inline-flex items-center font-medium rounded-full whitespace-nowrap flex-shrink-0'
   
   const variantClasses = {
     default: 'bg-gray-100 text-gray-800',
@@ -24,9 +24,9 @@ const Badge: React.FC<BadgeProps> = ({
   }
 
   const sizeClasses = {
-    sm: 'px-2 py-1 text-xs',
-    md: 'px-2.5 py-1.5 text-sm',
-    lg: 'px-3 py-2 text-base'
+    sm: 'px-2 py-1 text-[11px] sm:text-xs',
+    md: 'px-2.5 py-1.5 text-xs sm:text-sm',
+    lg: 'px-3 py-2 text-sm sm:text-base'
   }
 
   return (

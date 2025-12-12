@@ -1,28 +1,77 @@
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import Typewriter from 'typewriter-effect'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import Button from '@/components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Upload, Search, MessageCircle, CheckCircle, Star } from 'lucide-react'
+import { CheckCircle, Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { trackPricing } from '@/lib/analytics'
 
+const AnimateOnScroll: React.FC<{ children: React.ReactNode; className?: string; delay?: number }> = ({ children, className, delay = 0 }) => {
+  const ref = useRef<HTMLDivElement>(null)
+  const [show, setShow] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setShow(true)
+          obs.disconnect()
+        }
+      })
+    }, { threshold: 0.1 })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+  return (
+    <div ref={ref} className={`${className ?? ''} ${show ? 'animate-in fade-in slide-in-from-bottom duration-700' : 'opacity-0 translate-y-2'}`} style={{ animationDelay: `${delay}ms` }}>
+      {children}
+    </div>
+  )
+}
 const LandingPage: React.FC = () => {
   const navigate = useNavigate()
+  const worksTrackRef = useRef<HTMLDivElement>(null)
+  const worksSectionRef = useRef<HTMLDivElement>(null)
+  const [newsletterEmail, setNewsletterEmail] = useState('')
+  useEffect(() => {
+    const section = worksSectionRef.current
+    const track = worksTrackRef.current
+    if (!section || !track) return
+    const onWheel = (e: WheelEvent) => {
+      const rect = section.getBoundingClientRect()
+      const visible = rect.top < window.innerHeight && rect.bottom > 0
+      if (!visible) return
+      const max = track.scrollWidth - track.clientWidth
+      const left = track.scrollLeft
+      if ((e.deltaY > 0 && left < max) || (e.deltaY < 0 && left > 0)) {
+        e.preventDefault()
+        const step = e.deltaY * 1.2
+        track.scrollBy({ left: step, behavior: 'smooth' })
+      }
+    }
+    section.addEventListener('wheel', onWheel, { passive: false })
+    return () => {
+      section.removeEventListener('wheel', onWheel)
+    }
+  }, [])
   return (
     <div className="min-h-screen bg-white">
       <Header />
       
       {/* Hero Section */}
       <section className="bg-white py-12 sm:py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center mt-8 sm:mt-8">
+          <AnimateOnScroll>
           <h1 className="font-space-grotesk text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-black mb-6 flex items-center justify-center gap-2">
             <span className="mr-1">Built for</span>
             <span className="text-primary inline-block">
               <Typewriter
                 options={{
                   strings: [
+                    'you',
                     'founders',
                     'lawyers',
                     'procurement',
@@ -35,114 +84,289 @@ const LandingPage: React.FC = () => {
                   autoStart: true,
                   loop: true,
                   deleteSpeed: 30
-                }}
+              }}
               />
             </span>
           </h1>
+          </AnimateOnScroll>
+          <AnimateOnScroll delay={100}>
           <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Upload. Analyze. Understand. Make better legal decisions with AI-powered 
-            contract analysis that detects risks, clauses, and obligations instantly.
+            Upload. Analyze. Understand. Start free with 1 contract/month. Buy credits for additional analyses.
           </p>
+          </AnimateOnScroll>
+          <AnimateOnScroll delay={200}>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" className="text-base sm:text-lg px-8 py-4 min-h-[48px]" onClick={() => navigate('/register')}>
-              Try for Free
+              Try Free
             </Button>
-            <Button variant="secondary" size="lg" className="text-base sm:text-lg px-8 py-4 min-h-[48px]">
-              See Demo
+            <Button variant="secondary" size="lg" className="text-base sm:text-lg px-8 py-4 min-h-[48px]" onClick={() => navigate('/pricing')}>
+              Compare Plans
             </Button>
           </div>
+          </AnimateOnScroll>
           
-          {/* Hero Image Placeholder */}
-          <div className="mt-12 sm:mt-16 bg-gradient-to-br from-primary-50 to-primary-100 rounded-card p-4 sm:p-6 md:p-8 max-w-4xl mx-auto">
-            <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 text-left">
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              </div>
-              <div className="space-y-3">
-                <div className="h-3 sm:h-4 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-3 sm:h-4 bg-primary-200 rounded w-1/2"></div>
-                <div className="h-3 sm:h-4 bg-gray-200 rounded w-5/6"></div>
-                <div className="h-3 sm:h-4 bg-red-200 rounded w-2/3"></div>
-              </div>
-              <div className="mt-4 sm:mt-6 flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
-                <span className="text-xs sm:text-sm text-gray-600">Analysis complete in 12 seconds</span>
+          <AnimateOnScroll delay={300}>
+          <div className="mt-12 sm:mt-16 bg-gradient-to-br from-primary-50 to-primary-100 rounded-card p-2 sm:p-3 md:p-4 max-w-4xl mx-auto relative">
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden relative">
+              <img
+                src="/mobile-dashboard-screenshot.png"
+                alt="HelloACA mobile dashboard screenshot"
+                className="w-full h-auto object-cover block sm:hidden"
+              />
+              <img
+                src="/dashboard-screenshot.png"
+                alt="HelloACA dashboard screenshot"
+                className="w-full h-auto object-cover hidden sm:block"
+              />
+            </div>
+            <div className="hidden sm:block absolute -right-12 md:-right-16 lg:-right-24 bottom-6 z-20">
+              <div className="rounded-2xl border-4 border-primary-100 bg-primary-50 shadow-2xl p-1 overflow-hidden">
+                <div className="relative">
+                  <img
+                    src="/mobile-dashboard-screenshot.png"
+                    alt="HelloACA mobile dashboard screenshot"
+                    className="w-28 md:w-40 lg:w-48 rounded-xl"
+                  />
+                  <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 md:h-12 bg-gradient-to-t from-primary-50 to-transparent" />
+                </div>
               </div>
             </div>
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-20 sm:h-24 bg-gradient-to-t from-white to-transparent z-10" />
+          </div>
+          </AnimateOnScroll>
+        </div>
+      </section>
+
+        <section className="py-12 sm:py-16 md:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimateOnScroll>
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="font-space-grotesk text-2xl sm:text-3xl md:text-4xl font-bold text-black mb-4 flex items-center justify-center gap-2">
+              <span>How</span>
+              <img src="/helloaca.png" alt="helloaca" className="h-8 sm:h-10" />
+              <span>works</span>
+            </h2>
+            <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
+              Upload, analyze, and chat — three simple steps.
+            </p>
+          </div>
+          </AnimateOnScroll>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
+            <AnimateOnScroll>
+            <div className="relative rounded-2xl bg-white/60 backdrop-blur-md ring-1 ring-white/50 shadow-xl p-6 sm:p-7">
+              <span className="pointer-events-none absolute top-2 left-4 font-bold text-6xl sm:text-7xl md:text-8xl text-gray-500/20">01</span>
+              <h3 className="font-space-grotesk font-bold tracking-tight text-base sm:text-lg md:text-base lg:text-lg text-black leading-snug">
+                <span className="md:whitespace-nowrap">Upload</span>
+                <br className="hidden md:block" />
+                <span className="md:whitespace-nowrap">&amp; Scan</span>
+              </h3>
+              <p className="mt-2 text-gray-700 text-sm sm:text-base leading-relaxed">
+                Drag your contract or NDA. Supports PDF and DOCX with OCR.
+              </p>
+            </div>
+            </AnimateOnScroll>
+
+            <AnimateOnScroll delay={100}>
+            <div className="relative rounded-2xl bg-white/60 backdrop-blur-md ring-1 ring-white/50 shadow-xl p-6 sm:p-7">
+              <span className="pointer-events-none absolute top-2 left-4 font-bold text-6xl sm:text-7xl md:text-8xl text-gray-500/20">02</span>
+              <h3 className="font-space-grotesk font-bold tracking-tight text-base sm:text-lg md:text-base lg:text-lg text-black leading-snug">
+                <span className="md:whitespace-nowrap">Instant</span>
+                <br className="hidden md:block" />
+                <span className="md:whitespace-nowrap">AI Insights</span>
+              </h3>
+              <p className="mt-2 text-gray-700 text-sm sm:text-base leading-relaxed">
+                Comprehensive analysis in seconds: risks, clauses, obligations.
+              </p>
+            </div>
+            </AnimateOnScroll>
+
+            <AnimateOnScroll delay={200}>
+            <div className="relative rounded-2xl bg-white/60 backdrop-blur-md ring-1 ring-white/50 shadow-xl p-6 sm:p-7">
+              <span className="pointer-events-none absolute top-2 left-4 font-bold text-6xl sm:text-7xl md:text-8xl text-gray-500/20">03</span>
+              <h3 className="font-space-grotesk font-bold tracking-tight text-base sm:text-lg md:text-base lg:text-lg text-black leading-snug">
+                <span className="md:whitespace-nowrap">Chat with</span>
+                <br className="hidden md:block" />
+                <span className="md:whitespace-nowrap">Contract</span>
+              </h3>
+              <p className="mt-2 text-gray-700 text-sm sm:text-base leading-relaxed">
+                Ask questions and get instant answers about terms and duties.
+              </p>
+            </div>
+            </AnimateOnScroll>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-12 sm:py-16 md:py-20 bg-gray-50">
+      <section className="relative pt-12 sm:pt-16 md:pt-20 pb-24 sm:pb-28 md:pb-32 bg-gradient-to-br from-primary-50 to-primary-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimateOnScroll>
           <div className="text-center mb-12 sm:mb-16">
-            <h2 className="font-space-grotesk text-2xl sm:text-3xl md:text-4xl font-bold text-black mb-4">
-              How HelloACA Works
+            <h2 className="font-space-grotesk text-2xl sm:text-3xl md:text-4xl font-bold text-black mb-4 flex items-center justify-center gap-2">
+              <span>Why</span>
+              <img src="/helloaca.png" alt="helloaca" className="h-8 sm:h-10" />
             </h2>
             <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
-              Three simple steps to understand any contract completely
+              Clarity without complexity, instant risk detection, full control, and protection that’s always accessible.
             </p>
           </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
-            <Card className="text-center">
-              <CardHeader className="pb-4 sm:pb-6">
-                <div className="mx-auto mb-4 p-3 sm:p-4 bg-primary-100 rounded-full w-fit">
-                  <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
-                </div>
-                <CardTitle className="text-lg sm:text-xl">Upload &amp; Scan</CardTitle>
-                <CardDescription className="text-sm sm:text-base leading-relaxed">
-                  Drag your contract or NDA directly. We support PDF and DOCX files 
-                  with automatic OCR processing.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-            
-            <Card className="text-center">
-              <CardHeader className="pb-4 sm:pb-6">
-                <div className="mx-auto mb-4 p-3 sm:p-4 bg-primary-100 rounded-full w-fit">
-                  <Search className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
-                </div>
-                <CardTitle className="text-lg sm:text-xl">Instant AI Insights</CardTitle>
-                <CardDescription className="text-sm sm:text-base leading-relaxed">
-                  Get comprehensive analysis in 30 seconds. Risk assessment, 
-                  clause extraction, and obligation identification.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-            
-            <Card className="text-center">
-              <CardHeader className="pb-4 sm:pb-6">
-                <div className="mx-auto mb-4 p-3 sm:p-4 bg-primary-100 rounded-full w-fit">
-                  <MessageCircle className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
-                </div>
-                <CardTitle className="text-lg sm:text-xl">Chat with Contract</CardTitle>
-                <CardDescription className="text-sm sm:text-base leading-relaxed">
-                  Ask AI your legal questions. Get instant answers about 
-                  responsibilities, deadlines, and contract terms.
-                </CardDescription>
-              </CardHeader>
-            </Card>
+          </AnimateOnScroll>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <AnimateOnScroll>
+            <div className="relative rounded-2xl bg-white backdrop-blur-md ring-1 ring-white/50 shadow-xl p-6 sm:p-7">
+              <div className="absolute -top-3 left-6 h-6 w-20 rounded-t-xl bg-white ring-1 ring-white/50" />
+              <h3 className="font-space-grotesk font-bold tracking-tight text-base sm:text-lg md:text-base lg:text-lg text-black leading-snug">
+                <span className="md:whitespace-nowrap">Clarity</span>
+                <br className="hidden md:block" />
+                <span className="md:whitespace-nowrap">Without Complexity</span>
+              </h3>
+              <p className="mt-2 text-gray-700 text-sm sm:text-base leading-relaxed">
+                Understand exactly what your contract says — without legal jargon, confusion, or overwhelm. AI turns dense text into clear insights.
+              </p>
+            </div>
+            </AnimateOnScroll>
+            <AnimateOnScroll delay={100}>
+            <div className="relative rounded-2xl bg-white backdrop-blur-md ring-1 ring-white/50 shadow-xl p-6 sm:p-7">
+              <div className="absolute -top-3 left-6 h-6 w-20 rounded-t-xl bg-white ring-1 ring-white/50" />
+              <h3 className="font-space-grotesk font-bold tracking-tight text-base sm:text-lg md:text-base lg:text-lg text-black leading-snug">
+                <span className="md:whitespace-nowrap">Instant</span>
+                <br className="hidden md:block" />
+                <span className="md:whitespace-nowrap">Risk Detection</span>
+              </h3>
+              <p className="mt-2 text-gray-700 text-sm sm:text-base leading-relaxed">
+                Spot hidden clauses, unfair terms, and risky obligations in seconds. Know the danger zones before they become real problems.
+              </p>
+            </div>
+            </AnimateOnScroll>
+            <AnimateOnScroll delay={200}>
+            <div className="relative rounded-2xl bg-white backdrop-blur-md ring-1 ring-white/50 shadow-xl p-6 sm:p-7">
+              <div className="absolute -top-3 left-6 h-6 w-20 rounded-t-xl bg-white ring-1 ring-white/50" />
+              <h3 className="font-space-grotesk font-bold tracking-tight text-base sm:text-lg md:text-base lg:text-lg text-black leading-snug">
+                <span className="md:whitespace-nowrap">Control Over</span>
+                <br className="hidden md:block" />
+                <span className="md:whitespace-nowrap">Every Decision</span>
+              </h3>
+              <p className="mt-2 text-gray-700 text-sm sm:text-base leading-relaxed">
+                See your rights, duties, deadlines, and protections at a glance. Make confident choices backed by AI precision — not guesswork.
+              </p>
+            </div>
+            </AnimateOnScroll>
+            <AnimateOnScroll delay={300}>
+            <div className="relative rounded-2xl bg-white backdrop-blur-md ring-1 ring-white/50 shadow-xl p-6 sm:p-7">
+              <div className="absolute -top-3 left-6 h-6 w-20 rounded-t-xl bg-white ring-1 ring-white/50" />
+              <h3 className="font-space-grotesk font-bold tracking-tight text-base sm:text-lg md:text-base lg:text-lg text-black leading-snug">
+                <span className="md:whitespace-nowrap">Protection</span>
+                <br className="hidden md:block" />
+                <span className="md:whitespace-nowrap">That’s Always Accessible</span>
+              </h3>
+              <p className="mt-2 text-gray-700 text-sm sm:text-base leading-relaxed">
+                No delays, no appointments, no expensive legal fees. Upload a contract anytime and get lawyer-level clarity instantly.
+              </p>
+            </div>
+            </AnimateOnScroll>
           </div>
+        </div>
+        <div className="pointer-events-none absolute top-0 left-0 right-0 h-24 sm:h-28 md:h-32 bg-gradient-to-b from-white to-transparent" />
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 sm:h-28 md:h-32 bg-gradient-to-t from-white to-transparent" />
+      </section>
+
+      <section className="py-12 sm:py-16 md:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimateOnScroll>
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="font-space-grotesk text-2xl sm:text-3xl md:text-4xl font-bold text-black mb-4 flex items-center justify-center gap-2">
+              <span>Where</span>
+              <img src="/helloaca.png" alt="helloaca" className="h-8 sm:h-10" />
+              <span>works best</span>
+            </h2>
+            <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
+              The contract types we analyze most accurately and quickly.
+            </p>
+          </div>
+          </AnimateOnScroll>
+
+          <AnimateOnScroll>
+          <div ref={worksSectionRef} className="relative rounded-3xl bg-teal-700 text-white ring-1 ring-white/20 shadow-xl overflow-hidden">
+            <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-teal-700 to-transparent" />
+            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-teal-700 to-transparent" />
+            <button
+              type="button"
+              aria-label="Previous"
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-white/20 hover:bg-white/30 text-white ring-1 ring-white/30 rounded-full p-2 backdrop-blur"
+              onClick={() => {
+                const el = worksTrackRef.current
+                if (!el) return
+                const amt = Math.max(300, Math.floor(el.clientWidth * 0.9))
+                el.scrollBy({ left: -amt, behavior: 'smooth' })
+              }}
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            <button
+              type="button"
+              aria-label="Next"
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-white/20 hover:bg-white/30 text-white ring-1 ring-white/30 rounded-full p-2 backdrop-blur"
+              onClick={() => {
+                const el = worksTrackRef.current
+                if (!el) return
+                const amt = Math.max(300, Math.floor(el.clientWidth * 0.9))
+                el.scrollBy({ left: amt, behavior: 'smooth' })
+              }}
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+            <div ref={worksTrackRef} className="flex overflow-x-auto snap-x snap-mandatory divide-x divide-white/20">
+              {[
+                { l1: 'Non‑Disclosure', l2: 'Agreements (NDA)', d: 'Scope, duration, carve‑outs, mutuality, confidentiality.' },
+                { l1: 'Master Service', l2: 'Agreements (MSA)', d: 'Risk allocation, indemnity, liabilities, termination.' },
+                { l1: 'Statements of', l2: 'Work (SOW)', d: 'Deliverables, milestones, acceptance criteria, change‑orders.' },
+                { l1: 'SaaS/Subscription', l2: 'Agreements', d: 'SLAs, uptime, data rights, privacy terms, DPA compliance.' },
+                { l1: 'Vendor/Procurement', l2: 'Contracts', d: 'Pricing models, delivery, warranties, performance obligations.' },
+                { l1: 'Licensing and', l2: 'IP Agreements', d: 'Grant scope, exclusivity, royalties, field of use, ownership.' },
+                { l1: 'Employment', l2: 'Agreements', d: 'Compensation, termination, IP assignment, confidentiality.' },
+                { l1: 'Independent Contractor', l2: 'Agreements', d: 'Deliverables, payment, IP rights, non‑solicitation.' },
+                { l1: 'Lease and Rental', l2: 'Agreements', d: 'Term, obligations, maintenance, liability, exit provisions.' },
+                { l1: 'Partnership/Joint', l2: 'Venture Agreements', d: 'Capital, roles, profit splits, governance, exit rights.' },
+                { l1: 'Loan and', l2: 'Financing Agreements', d: 'Interest, covenants, security, events of default.' },
+                { l1: 'Consulting', l2: 'Agreements', d: 'Scope, deliverables, confidentiality, IP ownership.' },
+                { l1: 'Data Processing', l2: 'Agreements (DPA)', d: 'Roles, SCCs, audit, deletion, lawful basis.' },
+                { l1: 'End User License', l2: 'Agreements (EULA)', d: 'Use rights, restrictions, warranties, liability.' },
+                { l1: 'Distribution', l2: 'Agreements', d: 'Territory, exclusivity, performance targets, termination.' },
+                { l1: 'Reseller', l2: 'Agreements', d: 'Discounting, branding, support, obligations.' },
+                { l1: 'Service Level', l2: 'Agreements (SLA)', d: 'Availability, response times, remedies, reporting.' }
+              ].map((item) => (
+                <div key={`${item.l1}-${item.l2}`} className="snap-start shrink-0 w-[260px] sm:w-[300px] lg:w-[320px] p-6 sm:p-8">
+                  <h3 className="font-space-grotesk font-bold tracking-tight text-base sm:text-lg md:text-base lg:text-lg leading-snug">
+                    <span className="md:whitespace-nowrap">{item.l1}</span>
+                    <br className="hidden md:block" />
+                    <span className="md:whitespace-nowrap">{item.l2}</span>
+                  </h3>
+                  <p className="mt-2 text-white/80 text-sm sm:text-base leading-relaxed">{item.d}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          </AnimateOnScroll>
         </div>
       </section>
 
       {/* Testimonials Section */}
       <section className="py-12 sm:py-16 md:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimateOnScroll>
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="font-space-grotesk text-2xl sm:text-3xl md:text-4xl font-bold text-black mb-4">
               Trusted by Professionals
             </h2>
             <p className="text-lg sm:text-xl text-gray-600">
-              See what our users say about HelloACA
+              See what our users say about Helloaca
             </p>
           </div>
+          </AnimateOnScroll>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+            <AnimateOnScroll>
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center mb-4">
@@ -166,7 +390,9 @@ const LandingPage: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+            </AnimateOnScroll>
             
+            <AnimateOnScroll delay={100}>
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center mb-4">
@@ -190,6 +416,7 @@ const LandingPage: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+            </AnimateOnScroll>
           </div>
         </div>
       </section>
@@ -197,17 +424,20 @@ const LandingPage: React.FC = () => {
       {/* Pricing Section */}
       <section id="pricing" className="py-12 sm:py-16 md:py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimateOnScroll>
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="font-space-grotesk text-2xl sm:text-3xl md:text-4xl font-bold text-black mb-4">
-              Simple, Transparent Pricing
+              Simple Pricing
             </h2>
             <p className="text-lg sm:text-xl text-gray-600">
-              Choose the plan that fits your needs
+              Free: 1 analysis/month • Credits: Pay as you go
             </p>
           </div>
+          </AnimateOnScroll>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 sm:gap-8">
             {/* Free Plan */}
+            <AnimateOnScroll>
             <Card>
               <CardHeader className="pb-4 sm:pb-6">
                 <CardTitle className="text-lg sm:text-xl">Free Plan</CardTitle>
@@ -230,8 +460,7 @@ const LandingPage: React.FC = () => {
                   </li>
                 </ul>
                 <Button 
-                  variant="outline" 
-                  className="w-full min-h-[48px] text-base"
+                  className="w-full min-h-[48px] text-base bg-[#5ACEA8] text-white hover:bg-[#49C89A]"
                   onClick={() => {
                     trackPricing.selectPlan('free')
                     navigate('/register')
@@ -241,89 +470,83 @@ const LandingPage: React.FC = () => {
                 </Button>
               </CardContent>
             </Card>
+            </AnimateOnScroll>
             
-            {/* Pro Plan */}
+            {/* Credits */}
+            <AnimateOnScroll delay={100}>
             <Card className="border-2 border-primary relative">
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <span className="bg-primary text-white px-3 sm:px-4 py-1 rounded-full text-xs sm:text-sm font-medium">
+              <div className="absolute -top-3 right-4">
+                <span className="bg-[#5ACEA8] text-white px-3 sm:px-4 py-1 rounded-full text-xs sm:text-sm font-medium shadow">
                   Most Popular
                 </span>
               </div>
               <CardHeader className="pb-4 sm:pb-6">
-                <CardTitle className="text-lg sm:text-xl">Pro Plan</CardTitle>
-                <div className="text-2xl sm:text-3xl font-bold">$49<span className="text-base sm:text-lg font-normal">/month</span></div>
-                <CardDescription className="text-sm sm:text-base">For professionals and small teams</CardDescription>
+                <CardTitle className="text-lg sm:text-xl">Credits</CardTitle>
+                <div className="text-2xl sm:text-3xl font-bold">From $7</div>
+                <CardDescription className="text-sm sm:text-base">Buy credits for additional analyses</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2 sm:space-y-3 mb-6">
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-                    <span className="text-sm sm:text-base">10 contracts per month</span>
+                    <span className="text-sm sm:text-base">1 credit = 1 analysis + chat</span>
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-                    <span className="text-sm sm:text-base">AI chat functionality</span>
+                    <span className="text-sm sm:text-base">Bundles: 1 ($7), 5 ($30), 10 ($55)</span>
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-                    <span className="text-sm sm:text-base">Risk classification</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-                    <span className="text-sm sm:text-base">PDF report export</span>
+                    <span className="text-sm sm:text-base">No subscription — pay when needed</span>
                   </li>
                 </ul>
                 <Button 
-                  className="w-full min-h-[48px] text-base"
+                  className="w-full min-h-[48px] text-base bg-transparent border border-[#5ACEA8] text-[#5ACEA8] hover:bg-[#5ACEA8]/10"
                   onClick={() => {
-                    trackPricing.selectPlan('pro')
-                    navigate('/register')
+                    trackPricing.selectPlan('credits')
+                    navigate('/pricing')
                   }}
                 >
-                  Start Pro Trial
+                  Buy Credits
                 </Button>
               </CardContent>
             </Card>
+            </AnimateOnScroll>
             
-            {/* Business Plan */}
-            <Card>
-              <CardHeader className="pb-4 sm:pb-6">
-                <CardTitle className="text-lg sm:text-xl">Business Plan</CardTitle>
-                <div className="text-2xl sm:text-3xl font-bold">$299<span className="text-base sm:text-lg font-normal">/month</span></div>
-                <CardDescription className="text-sm sm:text-base">For growing businesses and law firms</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 sm:space-y-3 mb-6">
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-                    <span className="text-sm sm:text-base">Unlimited contracts</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-                    <span className="text-sm sm:text-base">Team collaboration</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-                    <span className="text-sm sm:text-base">Multilingual analysis</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-                    <span className="text-sm sm:text-base">White-label reports</span>
-                  </li>
-                </ul>
-                <Button 
-                  variant="outline" 
-                  className="w-full min-h-[48px] text-base"
-                  onClick={() => {
-                    trackPricing.selectPlan('business')
-                    navigate('/register')
-                  }}
-                >
-                  Contact Sales
-                </Button>
-              </CardContent>
-            </Card>
+            
           </div>
+        </div>
+      </section>
+
+      <section className="py-14 sm:py-16 md:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimateOnScroll>
+          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 sm:p-8 lg:p-10">
+            <div className="text-center mb-6">
+              <h2 className="font-space-grotesk text-2xl sm:text-3xl md:text-4xl font-bold text-black">Join our newsletter</h2>
+              <p className="text-gray-600 text-base sm:text-lg mt-2">No spam. Unsubscribe anytime.</p>
+            </div>
+            <form
+              className="mx-auto max-w-xl flex items-center gap-3"
+              onSubmit={(e) => {
+                e.preventDefault()
+                const valid = /.+@.+\..+/.test(newsletterEmail)
+                if (!valid) return
+                setNewsletterEmail('')
+              }}
+            >
+              <input
+                type="email"
+                required
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                placeholder="Email address"
+                className="flex-1 h-12 rounded-button border border-gray-300 bg-white px-4 text-base focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <Button type="submit" size="md" className="h-12 px-6">Subscribe</Button>
+            </form>
+          </div>
+          </AnimateOnScroll>
         </div>
       </section>
 

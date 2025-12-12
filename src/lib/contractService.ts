@@ -1,11 +1,11 @@
 import { supabase } from './supabase'
 import { FileProcessor, ProcessedFile } from './fileProcessor'
-import { claudeService } from './claude'
 import { 
   EnhancedContractAnalysis, 
   validateEnhancedAnalysis,
   LegacyAnalysisData
 } from '../types/contractAnalysis'
+import { addUserCredits, unmarkContractCredited } from './utils'
 
 export interface Contract {
   id: string
@@ -90,6 +90,7 @@ export class ContractService {
     userId: string,
     onProgress?: (stage: string, progress: number) => void
   ): Promise<{ contractId: string; analysisId: string }> {
+    let currentContractId: string | null = null
     try {
       // Stage 1: Validate and process file
       onProgress?.('Validating file...', 10)
@@ -106,6 +107,8 @@ export class ContractService {
       if (!processedFile.text || processedFile.text.trim().length === 0) {
         throw new Error('No text content could be extracted from the file')
       }
+
+      // Credit model: Do not block uploads by plan; frontend enforces
 
       // Stage 3: Save contract to database
       onProgress?.('Saving contract...', 40)
@@ -128,34 +131,121 @@ export class ContractService {
         throw new Error('Failed to save contract to database')
       }
 
-      const contractId = contractData.id
+      currentContractId = contractData.id
 
       // Stage 4: Analyze contract
       onProgress?.('Analyzing contract...', 60)
-      const analysisResult = await this.analyzeContractWithAI(processedFile.text)
+      const TIMEOUT_MS = 45000
+      const analysisResult = await Promise.race([
+        this.analyzeContractWithAI(processedFile.text),
+        new Promise<EnhancedContractAnalysis>((resolve) => {
+          setTimeout(() => {
+            resolve(this.generateLocalAnalysis(processedFile.text))
+          }, TIMEOUT_MS)
+        })
+      ])
 
       // Stage 5: Save analysis results
       onProgress?.('Saving analysis...', 80)
-      const analysisData = await this.saveAnalysisResults(contractId, userId, analysisResult)
+      if (!currentContractId) {
+        throw new Error('Contract ID is missing after insertion')
+      }
+      const analysisData = await this.saveAnalysisResults(currentContractId, userId, analysisResult)
 
       // Stage 6: Update contract status
       onProgress?.('Finalizing...', 90)
       await supabase
         .from('contracts')
         .update({ analysis_status: 'completed' })
-        .eq('id', contractId)
+        .eq('id', currentContractId)
+
+      try {
+        const baseEnv = import.meta.env.VITE_API_ORIGIN
+        const base = baseEnv && baseEnv.length > 0
+          ? baseEnv
+          : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+              ? 'https://helloaca.xyz'
+              : window.location.origin)
+        await fetch(`${base}/api/notify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event: 'analysis_complete', userId, contractId: currentContractId })
+        })
+        await fetch(`${base}/api/notify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event: 'email_report', userId, contractId: currentContractId })
+        })
+      } catch { /* noop */ }
 
       onProgress?.('Complete!', 100)
 
       return {
-        contractId: contractId,
+        contractId: currentContractId as string,
         analysisId: analysisData.id
       }
 
     } catch (error) {
       console.error('Contract upload and analysis failed:', error)
+      try {
+        if (typeof currentContractId === 'string' && currentContractId) {
+          await supabase
+            .from('contracts')
+            .update({ analysis_status: 'failed' })
+            .eq('id', currentContractId)
+          try {
+            const { data: report } = await supabase
+              .from('reports')
+              .select('id,user_id,analysis_data')
+              .eq('contract_id', currentContractId)
+              .single()
+            const paid = !!(report?.analysis_data?.paid_analysis || report?.analysis_data?.paid || report?.analysis_data?.credited_contract)
+            if (paid) {
+              const rid = report!.id
+              const auid = report!.user_id || userId
+              const patched = { ...(report!.analysis_data || {}), paid_analysis: false }
+              await supabase.from('reports').update({ analysis_data: patched }).eq('id', rid)
+              try {
+                const { data: profile } = await supabase
+                  .from('user_profiles')
+                  .select('id,credits_balance')
+                  .eq('id', auid)
+                  .single()
+                const current = typeof profile?.credits_balance === 'number' ? profile!.credits_balance : 0
+                await supabase
+                  .from('user_profiles')
+                  .update({ credits_balance: current + 1 })
+                  .eq('id', auid)
+                try { unmarkContractCredited(auid, currentContractId) } catch { /* noop */ }
+                try { addUserCredits(auid, 1) } catch { /* noop */ }
+              } catch { /* noop */ }
+            }
+          } catch { /* noop */ }
+        }
+      } catch (updateError) {
+        console.error('Failed to update contract status on error:', updateError)
+      }
+      onProgress?.('Failed', 100)
       throw error
     }
+  }
+
+  static async markContractPaid(contractId: string, userId: string): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('reports')
+        .select('id,analysis_data')
+        .eq('contract_id', contractId)
+        .eq('user_id', userId)
+        .single()
+      if (error || !data) return
+      const analysis_data = data.analysis_data || {}
+      const patched = { ...analysis_data, paid_analysis: true }
+      await supabase
+        .from('reports')
+        .update({ analysis_data: patched })
+        .eq('id', data.id)
+    } catch { /* noop */ }
   }
 
   /**
@@ -647,72 +737,21 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
 
       console.log('🔍 Sending contract to Claude AI for comprehensive analysis...')
       
+      const { claudeService } = await import('./claude')
       const response = await claudeService.sendMessage([
         { role: 'user', content: analysisPrompt }
       ], undefined, true)
 
       console.log('📝 Received comprehensive analysis from Claude AI')
       
-      // Parse the JSON response with robust error handling
       let enhancedAnalysis: EnhancedContractAnalysis
       try {
-        console.log('🧹 Starting JSON parsing with enhanced error handling...')
-        
-        // Step 1: Clean the response
-        let cleanResponse = this.sanitizeJsonResponse(response)
-        console.log('✅ Initial response sanitization completed')
-        
-        // Step 2: Attempt to parse JSON
-        try {
-          enhancedAnalysis = JSON.parse(cleanResponse)
-          console.log('✅ Successfully parsed comprehensive AI analysis result')
-        } catch (initialParseError) {
-          console.warn('⚠️ Initial JSON parse failed, attempting repair...', initialParseError)
-          
-          // Step 3: Attempt JSON repair
-          const repairedJson = this.repairMalformedJson(cleanResponse)
-          if (repairedJson) {
-            try {
-              enhancedAnalysis = JSON.parse(repairedJson)
-              console.log('✅ Successfully parsed repaired JSON')
-            } catch (repairParseError) {
-              console.error('❌ JSON repair failed:', repairParseError)
-              throw repairParseError
-            }
-          } else {
-            throw initialParseError
-          }
-        }
-        
-      } catch (parseError: any) {
-        console.error('❌ All JSON parsing attempts failed:', parseError)
-        console.log('📊 Error details:', {
-          message: parseError?.message || 'Unknown error',
-          position: parseError?.message?.match(/position (\d+)/)?.[1],
-          line: parseError?.message?.match(/line (\d+)/)?.[1],
-          column: parseError?.message?.match(/column (\d+)/)?.[1]
-        })
-        
-        // Enhanced logging for debugging
-        const errorPosition = parseError?.message?.match(/position (\d+)/)?.[1]
-        if (errorPosition) {
-          const pos = parseInt(errorPosition)
-          const context = response.substring(Math.max(0, pos - 100), pos + 100)
-          console.log('🔍 Error context around position', pos, ':', context)
-        }
-        
-        console.log('📄 Raw response preview (first 1000 chars):', response.substring(0, 1000))
-        console.log('📄 Raw response preview (last 500 chars):', response.substring(Math.max(0, response.length - 500)))
-        
-        // Fallback to local analysis if JSON parsing fails
-        console.log('🔄 Falling back to local analysis due to JSON parsing error')
+        enhancedAnalysis = JSON.parse(response)
+      } catch {
         return this.generateLocalAnalysis(contractText)
       }
 
-      // Validate the structure using the comprehensive validation function
       if (!validateEnhancedAnalysis(enhancedAnalysis)) {
-        console.error('❌ AI response structure validation failed')
-        console.log('🔄 Falling back to local analysis due to structure validation error')
         return this.generateLocalAnalysis(contractText)
       }
 
@@ -733,141 +772,6 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
     }
   }
 
-  /**
-   * Sanitize AI response to extract clean JSON
-   */
-  private static sanitizeJsonResponse(response: string): string {
-    let cleanResponse = response.trim()
-    
-    // Remove markdown code blocks (```json ... ```)
-    if (cleanResponse.startsWith('```json')) {
-      const startIndex = cleanResponse.indexOf('{')
-      const lastBraceIndex = cleanResponse.lastIndexOf('}')
-      if (startIndex !== -1 && lastBraceIndex !== -1) {
-        cleanResponse = cleanResponse.substring(startIndex, lastBraceIndex + 1)
-      }
-    } else if (cleanResponse.startsWith('```')) {
-      // Handle generic code blocks
-      const lines = cleanResponse.split('\n')
-      lines.shift() // Remove first line with ```
-      if (lines[lines.length - 1].trim() === '```') {
-        lines.pop() // Remove last line with ```
-      }
-      cleanResponse = lines.join('\n').trim()
-    }
-    
-    // Additional cleanup for common formatting issues
-    cleanResponse = cleanResponse
-      .replace(/^```json\s*/i, '') // Remove ```json at start
-      .replace(/\s*```\s*$/i, '')  // Remove ``` at end
-      .replace(/^\s*json\s*/i, '') // Remove standalone 'json' at start
-      .trim()
-    
-    // Find the JSON object boundaries more reliably
-    const firstBrace = cleanResponse.indexOf('{')
-    const lastBrace = cleanResponse.lastIndexOf('}')
-    
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      cleanResponse = cleanResponse.substring(firstBrace, lastBrace + 1)
-    }
-    
-    return cleanResponse
-  }
-
-  /**
-   * Attempt to repair common JSON formatting issues
-   */
-  private static repairMalformedJson(jsonString: string): string | null {
-    try {
-      console.log('🔧 Attempting JSON repair...')
-      
-      let repaired = jsonString
-      
-      // Common repairs
-      const repairs = [
-        // Fix missing commas in arrays
-        { pattern: /(\])\s*(\[)/g, replacement: '$1,$2' },
-        { pattern: /(\})\s*(\{)/g, replacement: '$1,$2' },
-        { pattern: /(\})\s*(\[)/g, replacement: '$1,$2' },
-        { pattern: /(\])\s*(\{)/g, replacement: '$1,$2' },
-        
-        // Fix missing commas after string values
-        { pattern: /(")\s*\n\s*(")/g, replacement: '$1,$2' },
-        { pattern: /(true|false|null|\d+)\s*\n\s*"/g, replacement: '$1,"' },
-        
-        // Fix trailing commas
-        { pattern: /,(\s*[\}\]])/g, replacement: '$1' },
-        
-        // Fix unescaped quotes in strings
-        { pattern: /(?<!\\)"(?=.*".*:)/g, replacement: '\\"' },
-        
-        // Fix missing quotes around property names
-        { pattern: /([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, replacement: '$1"$2":' },
-        
-        // Fix single quotes to double quotes
-        { pattern: /'/g, replacement: '"' },
-        
-        // Fix missing closing brackets/braces (basic attempt)
-        { pattern: /(\{[^}]*$)/, replacement: '$1}' },
-        { pattern: /(\[[^\]]*$)/, replacement: '$1]' }
-      ]
-      
-      // Apply repairs
-      for (const repair of repairs) {
-        const before = repaired
-        repaired = repaired.replace(repair.pattern, repair.replacement)
-        if (before !== repaired) {
-          console.log('🔧 Applied repair:', repair.pattern.toString())
-        }
-      }
-      
-      // Try to balance braces and brackets
-      const openBraces = (repaired.match(/\{/g) || []).length
-      const closeBraces = (repaired.match(/\}/g) || []).length
-      const openBrackets = (repaired.match(/\[/g) || []).length
-      const closeBrackets = (repaired.match(/\]/g) || []).length
-      
-      // Add missing closing braces
-      if (openBraces > closeBraces) {
-        repaired += '}'.repeat(openBraces - closeBraces)
-        console.log('🔧 Added missing closing braces:', openBraces - closeBraces)
-      }
-      
-      // Add missing closing brackets
-      if (openBrackets > closeBrackets) {
-        repaired += ']'.repeat(openBrackets - closeBrackets)
-        console.log('🔧 Added missing closing brackets:', openBrackets - closeBrackets)
-      }
-      
-      // Validate the repair by attempting to parse
-      try {
-        JSON.parse(repaired)
-        console.log('✅ JSON repair successful')
-        return repaired
-      } catch (testError: any) {
-         console.log('❌ JSON repair validation failed:', testError?.message || 'Unknown error')
-         
-         // Try a more aggressive approach: extract just the main object
-         const mainObjectMatch = repaired.match(/\{[\s\S]*\}/);
-         if (mainObjectMatch) {
-           const mainObject = mainObjectMatch[0];
-           try {
-             JSON.parse(mainObject);
-             console.log('✅ Extracted main object successfully');
-             return mainObject;
-           } catch (extractError: any) {
-             console.log('❌ Main object extraction failed:', extractError?.message || 'Unknown error');
-           }
-         }
-        
-        return null
-      }
-      
-    } catch (error) {
-      console.error('❌ JSON repair process failed:', error)
-      return null
-    }
-  }
 
   /**
    * Convert enhanced 11-section analysis to legacy format for backward compatibility
@@ -1090,11 +994,11 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
         contract_id: contractId,
         user_id: userId,
         analysis_data: { ...analysisResult, ...legacy },
-        risk_score: analysisResult.executive_summary.key_metrics.risk_score,
-        key_clauses: analysisResult.clause_analysis.missing_clauses.map(clause => clause.clauseType),
+        risk_score: (analysisResult.executive_summary?.key_metrics?.risk_score ?? analysisResult.risk_assessment?.overall_score ?? 0),
+        key_clauses: (analysisResult.clause_analysis?.missing_clauses || []).map(clause => clause.clauseType),
         recommendations: [
-          ...analysisResult.legal_insights.action_items.map(item => item.description),
-          ...analysisResult.legal_insights.contextual_recommendations.map(rec => rec.description)
+          ...(analysisResult.legal_insights?.action_items || []).map(item => item.description),
+          ...(analysisResult.legal_insights?.contextual_recommendations || []).map(rec => rec.description)
         ]
       })
       .select()
@@ -1112,7 +1016,7 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
     try {
       const { data: contracts, error: contractsError } = await supabase
         .from('contracts')
-        .select('*')
+        .select('id,user_id,title,file_name,file_size,upload_date,analysis_status,created_at,updated_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
 
@@ -1129,7 +1033,7 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
       const contractIds = contracts.map(c => c.id)
       const { data: analyses, error: analysesError } = await supabase
         .from('reports')
-        .select('*')
+        .select('id,contract_id,user_id,analysis_data,risk_score,created_at,updated_at')
         .in('contract_id', contractIds)
 
       if (analysesError) {
@@ -1139,7 +1043,7 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
 
       // Combine contracts with their analysis data and merge legacy fields if needed
       const contractsWithAnalysis = contracts.map(contract => {
-        const analysis = analyses?.find(a => a.contract_id === contract.id)
+        let analysis: any = analyses?.find(a => a.contract_id === contract.id)
         if (analysis?.analysis_data && validateEnhancedAnalysis(analysis.analysis_data)) {
           analysis.analysis_data = { 
             ...analysis.analysis_data, 
@@ -1172,6 +1076,91 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
       return data || []
     } catch (error) {
       console.error('Error fetching user contracts:', error)
+      throw error
+    }
+  }
+
+  static async getDashboardSummary(userId: string): Promise<{
+    totalContracts: number
+    thisMonth: number
+    risksIdentified: number
+    recentContracts: Array<Contract & { analysis?: any }>
+  }> {
+    try {
+      const contracts = await this.getUserContractsWithAnalysis(userId)
+      const now = new Date()
+      const thisMonth = now.getMonth()
+      const thisYear = now.getFullYear()
+
+      const thisMonthContracts = contracts.filter(c => {
+        const d = new Date(c.created_at)
+        return d.getMonth() === thisMonth && d.getFullYear() === thisYear
+      })
+
+      let totalRisks = 0
+      contracts.forEach(contract => {
+        const sections = contract.analysis?.analysis_data?.sections
+        if (sections) {
+          const count = Object.values(sections).reduce((acc: number, section: any) => acc + (section.keyFindings?.length || 0), 0)
+          totalRisks += count
+        }
+      })
+
+      return {
+        totalContracts: contracts.length,
+        thisMonth: thisMonthContracts.length,
+        risksIdentified: totalRisks,
+        recentContracts: contracts.slice(0, 5)
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard summary:', error)
+      throw error
+    }
+  }
+
+  static async createContractFromTemplate(
+    userId: string,
+    template: { name: string; content: string }
+  ): Promise<{ contractId: string }> {
+    try {
+      // Create contract record
+      const { data: contract, error: contractError } = await supabase
+        .from('contracts')
+        .insert({
+          user_id: userId,
+          title: template.name,
+          file_name: `${template.name}.txt`,
+          file_size: template.content.length,
+          extracted_text: template.content,
+          upload_date: new Date().toISOString(),
+          analysis_status: 'processing'
+        })
+        .select()
+        .single()
+
+      if (contractError || !contract) {
+        throw new Error('Failed to create contract from template')
+      }
+
+      // Start analysis in background
+      this.analyzeContractWithAI(template.content)
+        .then(async (analysisResult) => {
+          await this.saveAnalysisResults(contract.id, userId, analysisResult)
+          await supabase
+            .from('contracts')
+            .update({ analysis_status: 'completed' })
+            .eq('id', contract.id)
+        })
+        .catch(async () => {
+          await supabase
+            .from('contracts')
+            .update({ analysis_status: 'failed' })
+            .eq('id', contract.id)
+        })
+
+      return { contractId: contract.id }
+    } catch (error) {
+      console.error('Error creating contract from template:', error)
       throw error
     }
   }
@@ -1278,21 +1267,8 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
             } catch {}
 
             if (enhanced) {
-              const legacy = toLegacyAnalysis(enhanced)
-              return {
-                id: `fallback-${contract.id}`,
-                contract_id: contract.id,
-                user_id: contract.user_id,
-                analysis_data: { ...enhanced, ...legacy },
-                risk_score: enhanced.executive_summary.key_metrics.risk_score,
-                key_clauses: enhanced.clause_analysis.missing_clauses.map(c => c.clauseType),
-                recommendations: [
-                  ...enhanced.legal_insights.action_items.map(i => i.description),
-                  ...enhanced.legal_insights.contextual_recommendations.map(r => r.description)
-                ],
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              }
+              const saved = await this.saveAnalysisResults(contract.id, contract.user_id, enhanced)
+              return saved
             }
           }
           return null
@@ -1470,32 +1446,77 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
         throw new Error('Contract or analysis not found')
       }
 
-      // Create a comprehensive report
-      const reportData = {
-        contractTitle: contract.title,
-        analysisDate: analysis.created_at,
-        riskScore: analysis.risk_score,
-        analysisData: analysis.analysis_data,
-        exportDate: new Date().toISOString()
+      const data = analysis.analysis_data as EnhancedContractAnalysis
+      const { default: jsPDF } = await import('jspdf')
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+      doc.setFillColor('#4ECCA3')
+      doc.rect(0, 0, doc.internal.pageSize.getWidth(), 48, 'F')
+      doc.setTextColor('#000000')
+      doc.setFontSize(20)
+      doc.text('HelloACA', 40, 30)
+      doc.setFontSize(12)
+      doc.text(`Contract Report: ${contract.title}`, 160, 30)
+      doc.setTextColor('#111827')
+      let y = 96
+      const subtitle = `Contract Report: ${contract.title}`
+      const ensurePage = () => { if (y > 780) { doc.addPage(); doc.setFillColor('#4ECCA3'); doc.rect(0, 0, doc.internal.pageSize.getWidth(), 48, 'F'); doc.setTextColor('#000000'); doc.setFontSize(20); doc.text('HelloACA', 40, 30); doc.setFontSize(12); doc.text(subtitle, 160, 30); doc.setTextColor('#111827'); y = 96 } }
+      const addText = (text: string) => {
+        const wrapped = doc.splitTextToSize(text, 515)
+        wrapped.forEach((t: string) => { ensurePage(); doc.text(t, 40, y); y += 18 })
       }
-
-      // Convert to JSON and create downloadable file
-      const reportJson = JSON.stringify(reportData, null, 2)
-      const blob = new Blob([reportJson], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
+      const addHeading = (text: string) => {
+        doc.setFillColor('#4ECCA3')
+        doc.rect(40, y - 12, 6, 18, 'F')
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(14)
+        doc.text(text, 60, y)
+        doc.setFont('helvetica', 'normal')
+        y += 30
+      }
+      const addLabelValue = (label: string, value: string) => {
+        ensurePage()
+        doc.setFont('helvetica', 'bold')
+        doc.text(`${label}:`, 40, y)
+        doc.setFont('helvetica', 'normal')
+        doc.text(value, 120, y)
+        y += 18
+      }
+      const addItalicPara = (text: string) => {
+        const lines = doc.splitTextToSize(text, 515)
+        doc.setFont('times', 'italic')
+        doc.setFontSize(12)
+        lines.forEach((t: string) => { ensurePage(); doc.text(t, 40, y); y += 18 })
+        doc.setFont('helvetica', 'normal')
+        y += 8
+      }
+      const overview = (data?.executive_summary as any)?.contract_overview?.purpose_summary || ''
+      if (overview) { addHeading('Executive Summary'); addItalicPara(overview) }
+      const score = analysis.risk_score ?? data?.executive_summary?.key_metrics?.risk_score
+      if (typeof score === 'number') { addHeading('Key Metrics'); addLabelValue('Risk Score', String(score)) }
+      const dist = data?.risk_assessment?.risk_distribution
+      if (dist) { addLabelValue('Risk Distribution', `Critical ${dist.critical}, High ${dist.high}, Medium ${dist.medium}, Low ${dist.low}, Safe ${dist.safe}`) }
+      const missing = data?.clause_analysis?.missing_clauses || []
+      if (missing.length > 0) { addHeading('Missing Clauses'); missing.map(m => m.clauseType).forEach(item => addText(`• ${item}`)); y += 8 }
+      const recs = [
+        ...(data?.legal_insights?.contextual_recommendations || []).map(r => `• ${r.title}: ${r.description}`),
+        ...(data?.legal_insights?.action_items || []).map(a => `• ${a.title}: ${a.description}`)
+      ]
+      if (recs.length > 0) {
+        addHeading('Recommendations')
+        recs.forEach(addText)
+        y += 8
+      }
+      const w = doc.internal.pageSize.getWidth()
+      const h = doc.internal.pageSize.getHeight()
+      doc.setFontSize(10)
+      doc.setTextColor('#6B7280')
+      doc.text('© 2025 HelloACA • helloaca.xyz', 40, h - 24)
+      doc.setDrawColor('#E5E7EB')
+      doc.line(40, h - 36, w - 40, h - 36)
+      doc.setTextColor('#111827')
+      doc.save(`contract-analysis-${contract.title.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`)
       
-      // Create download link
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `contract-analysis-${contract.title.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.json`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      
-      // Cleanup
-      URL.revokeObjectURL(url)
-      
-      console.log('✅ Analysis report downloaded successfully')
+      console.log('✅ Analysis PDF downloaded successfully')
     } catch (error) {
       console.error('Failed to download analysis report:', error)
       throw error
@@ -1506,8 +1527,8 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
 // Legacy adapter: map EnhancedContractAnalysis to legacy analysis_data shape used by UI
 function toLegacyAnalysis(analysis: EnhancedContractAnalysis): LegacyAnalysisData {
   const overall_risk_level = (() => {
-    const score = analysis.risk_assessment?.overall_score ?? analysis.executive_summary.key_metrics.risk_score
-    const safety = analysis.executive_summary.key_metrics.safety_rating
+    const score = analysis.risk_assessment?.overall_score ?? analysis.executive_summary?.key_metrics?.risk_score ?? 0
+    const safety = analysis.executive_summary?.key_metrics?.safety_rating || 'Moderate'
     if (safety === 'Dangerous' || score >= 80) return 'Critical'
     if (safety === 'Risky' || score >= 60) return 'High'
     if (safety === 'Moderate' || score >= 40) return 'Medium'
@@ -1538,11 +1559,11 @@ function toLegacyAnalysis(analysis: EnhancedContractAnalysis): LegacyAnalysisDat
   const sections = (analysis.clause_analysis?.clauses_by_section || []).reduce((acc: any, section) => {
     acc[section.section_name] = {
       keyFindings: section.summary ? [section.summary] : [],
-      recommendations: section.clauses.flatMap(c => {
+      recommendations: (section.clauses || []).flatMap(c => {
         const recs = c.recommendations || []
         return recs.map((r: any) => typeof r === 'string' ? r : r.description)
       }),
-      redFlags: section.clauses
+      redFlags: (section.clauses || [])
         .filter(c => c.risk_level === 'High' || c.risk_level === 'Critical')
         .map(c => {
           const firstRec = (c.recommendations || [])[0] as any
@@ -1557,8 +1578,13 @@ function toLegacyAnalysis(analysis: EnhancedContractAnalysis): LegacyAnalysisDat
 
   return {
     overall_risk_level,
-    riskScore: analysis.executive_summary.key_metrics.risk_score,
-    executiveSummary: analysis.executive_summary.contract_overview?.purpose_summary,
+    riskScore: (analysis.executive_summary?.key_metrics?.risk_score ?? analysis.risk_assessment?.overall_score ?? 0),
+    executiveSummary: analysis.executive_summary?.contract_overview?.purpose_summary,
+    ...(analysis.executive_summary?.summary
+      ? { summary: analysis.executive_summary.summary }
+      : analysis.executive_summary?.contract_overview?.purpose_summary
+        ? { summary: analysis.executive_summary.contract_overview.purpose_summary }
+        : {}),
     criticalIssues,
     missingClauses,
     overallRecommendations,

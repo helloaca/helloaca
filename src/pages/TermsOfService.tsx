@@ -37,7 +37,7 @@ const TermsOfService: React.FC = () => {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Acceptance of Terms</h2>
                 <p>
-                  By accessing or using HelloACA ("Service"), you agree to be bound by these Terms of Service ("Terms"). 
+                  By accessing or using Helloaca ("Service"), you agree to be bound by these Terms of Service ("Terms"). 
                   If you disagree with any part of these terms, you may not access the Service.
                 </p>
               </section>
@@ -45,7 +45,7 @@ const TermsOfService: React.FC = () => {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">2. Description of Service</h2>
                 <p>
-                  HelloACA is an AI-powered contract analysis platform that provides:
+                  Helloaca is an AI-powered contract analysis platform that provides:
                 </p>
                 <ul>
                   <li>Automated contract review and analysis</li>
@@ -99,7 +99,7 @@ const TermsOfService: React.FC = () => {
                   <div className="flex">
                     <div className="ml-3">
                       <p className="text-sm text-yellow-700">
-                        <strong>Important Legal Disclaimer:</strong> HelloACA uses artificial intelligence for contract analysis. 
+                        <strong>Important Legal Disclaimer:</strong> Helloaca uses artificial intelligence for contract analysis. 
                         AI analysis is provided as a tool to assist, not replace, professional legal advice.
                       </p>
                     </div>
@@ -108,7 +108,7 @@ const TermsOfService: React.FC = () => {
                 
                 <h3 className="text-xl font-semibold text-gray-800 mb-3">5.1 AI Technology Disclaimer</h3>
                 <ul>
-                  <li>HelloACA uses artificial intelligence for contract analysis</li>
+                  <li>Helloaca uses artificial intelligence for contract analysis</li>
                   <li>AI analysis is provided as a tool to assist, not replace, professional legal advice</li>
                   <li>Results may contain errors or omissions</li>
                   <li>Users should verify all AI-generated insights</li>
@@ -116,7 +116,7 @@ const TermsOfService: React.FC = () => {
                 
                 <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">5.2 No Legal Advice</h3>
                 <ul>
-                  <li>HelloACA does not provide legal advice</li>
+                  <li>Helloaca does not provide legal advice</li>
                   <li>The Service is not a substitute for professional legal counsel</li>
                   <li>Users should consult qualified attorneys for legal matters</li>
                   <li>We are not responsible for legal decisions based on our analysis</li>
@@ -143,29 +143,32 @@ const TermsOfService: React.FC = () => {
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Subscription and Billing</h2>
-                <h3 className="text-xl font-semibold text-gray-800 mb-3">7.1 Subscription Plans</h3>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Credits, Plans and Billing</h2>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">7.1 Pay‑Per‑Use Credits</h3>
                 <ul>
-                  <li>Free Plan: Limited features and usage</li>
-                  <li>Pro Plan: $49/month for individual users</li>
-                  <li>Business Plan: $299/month for teams</li>
-                  <li>Enterprise Plan: Custom pricing</li>
+                  <li>Free access includes 1 contract analysis per month</li>
+                  <li>Additional analyses require credits purchased in bundles or custom amounts</li>
+                  <li>One credit covers one full analysis plus AI chat</li>
+                  <li>Credits do not expire</li>
                 </ul>
-                
-                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">7.2 Billing Terms</h3>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">7.2 Subscription Plans</h3>
                 <ul>
-                  <li>Subscriptions are billed monthly or annually in advance</li>
-                  <li>All fees are non-refundable except as required by law</li>
-                  <li>Prices may change with 30 days' notice</li>
-                  <li>Automatic renewal unless cancelled</li>
+                  <li>Pro: $24/month, includes 5 credits per month; unused credits roll over up to 10</li>
+                  <li>Team: $79/month, includes 5 seats and 30 analyses/month (team‑wide pool)</li>
+                  <li>Business: $199/month, includes 15 seats and 100 analyses/month (team‑wide pool)</li>
+                  <li>Enterprise: $499/month, includes 50 seats and 500 analyses/month with additional enterprise features</li>
                 </ul>
-                
-                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">7.3 Cancellation</h3>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">7.3 Billing Terms</h3>
                 <ul>
-                  <li>You may cancel your subscription at any time</li>
-                  <li>Cancellation takes effect at the end of the current billing period</li>
-                  <li>No refunds for partial months</li>
-                  <li>Data may be deleted after account closure</li>
+                  <li>Charges are billed at the time of purchase or renewal</li>
+                  <li>All fees are non‑refundable except as required by law</li>
+                  <li>Prices may change with reasonable notice</li>
+                  <li>Additional seat and contract packs are billed separately where applicable</li>
+                </ul>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">7.4 Account Changes</h3>
+                <ul>
+                  <li>You may switch plans at any time; changes take effect at next billing period unless stated otherwise</li>
+                  <li>Account deletion removes associated personal data according to our Privacy Policy</li>
                 </ul>
               </section>
 
@@ -173,7 +176,7 @@ const TermsOfService: React.FC = () => {
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">8. Intellectual Property</h2>
                 <h3 className="text-xl font-semibold text-gray-800 mb-3">8.1 Service IP</h3>
                 <ul>
-                  <li>HelloACA owns all rights to the Service, including AI models</li>
+                  <li>Helloaca owns all rights to the Service, including AI models</li>
                   <li>Users receive a limited license to use the Service</li>
                   <li>No rights are granted beyond the scope of these Terms</li>
                 </ul>
@@ -214,7 +217,7 @@ const TermsOfService: React.FC = () => {
                 
                 <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">10.2 Indemnification</h3>
                 <ul>
-                  <li>Users agree to indemnify HelloACA against claims arising from their use</li>
+                  <li>Users agree to indemnify Helloaca against claims arising from their use</li>
                   <li>This includes violations of Terms or applicable laws</li>
                 </ul>
               </section>
@@ -227,7 +230,7 @@ const TermsOfService: React.FC = () => {
                   <li>Data export tools are available before termination</li>
                 </ul>
                 
-                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">11.2 Termination by HelloACA</h3>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">11.2 Termination by Helloaca</h3>
                 <ul>
                   <li>We may terminate accounts for Terms violations</li>
                   <li>We may suspend Service for non-payment</li>
@@ -263,7 +266,7 @@ const TermsOfService: React.FC = () => {
                   <div className="flex">
                     <div className="ml-3">
                       <p className="text-sm text-blue-700">
-                        <strong>Security Standards:</strong> HelloACA maintains SOC 2 Type II compliance, 
+                        <strong>Security Standards:</strong> Helloaca maintains SOC 2 Type II compliance, 
                         end-to-end encryption (AES-256), and GDPR/CCPA compliance to protect your data.
                       </p>
                     </div>

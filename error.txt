@@ -1,1819 +1,267 @@
-
-import { VercelRequest, VercelResponse } from '@vercel/node'
-import Anthropic from '@anthropic-ai/sdk'
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || process.env.VITE_CLAUDE_API_KEY,
-})
-
-const MODEL = 'claude-sonnet-4-20250514'
-
-// ========================================
-// TYPES & INTERFACES
-// ========================================
-
-interface ContractAnalysisResult {
-  success: boolean
-  analysis: {
-    // Core Assessment
-    overallRiskLevel: 'Low Risk' | 'Medium Risk' | 'High Risk' | 'Critical Risk'
-    riskScore: number
-    riskScoreBreakdown: {
-      financial: number
-      legal: number
-      operational: number
-      reputational: number
-    }
-    
-    // Contract Context
-    contractMetadata: {
-      type: string
-      subtype: string
-      parties: {
-        partyA: { name: string; role: string; position: 'stronger' | 'weaker' | 'equal' }
-        partyB: { name: string; role: string; position: 'stronger' | 'weaker' | 'equal' }
-      }
-      estimatedValue: string
-      jurisdiction: string
-      effectiveDate: string
-      term: string
-    }
-    
-    // Executive Summary (Top of page)
-    executiveSummary: {
-      headline: string
-      criticalIssuesCount: number
-      dealBreakers: string[]
-      quickVerdict: string
-      topThreeActions: string[]
-    }
-    
-    // Key Findings (For main dashboard)
-    keyFindings: Array<{
-      id: string
-      severity: 'critical' | 'high' | 'medium' | 'low'
-      category: 'payment' | 'liability' | 'termination' | 'scope' | 'ip' | 'confidentiality' | 'other'
-      title: string
-      shortDescription: string
-      fullDescription: string
-      realWorldImpact: string
-      financialExposure: string
-      specificClauseReference: string
-      comparisonToStandard: string
-    }>
-    
-    // Detailed Clause Analysis
-    clauseAnalysis: Array<{
-      id: string
-      clauseTitle: string
-      sectionReference: string
-      clauseText: string
-      plainEnglishSummary: string
-      detailedAnalysis: string
-      riskLevel: 'critical' | 'high' | 'medium' | 'low' | 'none'
-      riskScore: number
-      issues: Array<{
-        issue: string
-        explanation: string
-        consequence: string
-      }>
-      strengths: string[]
-      weaknesses: string[]
-      redFlags: string[]
-      comparisonToIndustryStandard: string
-      recommendations: Array<{
-        priority: 'must-fix' | 'strongly-recommended' | 'nice-to-have'
-        change: string
-        reasoning: string
-        suggestedLanguage: string
-      }>
-    }>
-    
-    // Missing & Problematic Elements
-    missingClauses: Array<{
-      clauseType: string
-      importance: 'critical' | 'high' | 'medium'
-      explanation: string
-      typicalLanguage: string
-      riskOfOmission: string
-    }>
-    
-    contradictions: Array<{
-      clause1: string
-      clause2: string
-      contradiction: string
-      resolution: string
-    }>
-    
-    ambiguities: Array<{
-      location: string
-      ambiguousText: string
-      problem: string
-      clarification: string
-    }>
-    
-    // Recommendations (Actionable)
-    recommendations: {
-      mustChangeBeforeSigning: Array<{
-        issue: string
-        currentState: string
-        proposedChange: string
-        suggestedLanguage: string
-        negotiationTip: string
-      }>
-      stronglyRecommended: Array<{
-        issue: string
-        currentState: string
-        proposedChange: string
-        suggestedLanguage: string
-      }>
-      niceToHave: Array<{
-        improvement: string
-        benefit: string
-      }>
-    }
-    
-    // Negotiation Strategy
-    negotiationGuidance: {
-      overallStrategy: string
-      powerDynamicAssessment: string
-      leveragePoints: string[]
-      commonObjections: Array<{
-        objection: string
-        response: string
-      }>
-      emailTemplate: string
-    }
-    
-    // Worst Case Scenarios
-    worstCaseScenarios: Array<{
-      scenario: string
-      likelihood: 'high' | 'medium' | 'low'
-      impact: string
-      mitigation: string
-    }>
-    
-    // Comparison Data (for benchmarking)
-    industryBenchmarks: {
-      contractType: string
-      thisContract: string
-      industryStandard: string
-      verdict: string
-    }
-    
-    // Role-Specific Advice
-    roleBasedAdvice: {
-      [role: string]: {
-        specificConcerns: string[]
-        mustNegotiate: string[]
-        commonPitfalls: string[]
-      }
-    }
-    
-    // Legal Insights
-    legalInsights: {
-      jurisdictionSpecificIssues: string[]
-      enforceabilityQuestions: string[]
-      complianceRequirements: string[]
-      statutoryRights: string[]
-    }
-    
-    // Timeline & Financial Summary
-    financialSummary: {
-      totalContractValue: string
-      paymentSchedule: Array<{
-        milestone: string
-        amount: string
-        timing: string
-        risk: string
-      }>
-      maximumLiabilityExposure: string
-      terminationCosts: string
-    }
-    
-    timelineSummary: {
-      keyDates: Array<{
-        date: string
-        event: string
-        importance: string
-      }>
-      noticePeriods: Array<{
-        purpose: string
-        period: string
-        consequence: string
-      }>
-    }
-  }
-  contractId?: string
-  timestamp: string
-  processingTime?: number
-}
-
-// ========================================
-// MAIN HANDLER
-// ========================================
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end()
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
-
-  const startTime = Date.now()
-
-  try {
-    const { contractText, contractId, userRole } = req.body
-
-    if (!contractText || typeof contractText !== 'string') {
-      return res.status(400).json({ error: 'Contract text is required' })
-    }
-
-    if (contractText.length > 100000) {
-      return res.status(400).json({ error: 'Contract text too long (max 100,000 characters)' })
-    }
-
-    console.log('🚀 Starting comprehensive contract analysis')
-    console.log('📄 Contract length:', contractText.length, 'characters')
-    console.log('👤 User role:', userRole || 'not specified')
-
-    // Run comprehensive analysis
-    const analysis = await runComprehensiveAnalysis(contractText, userRole)
-    
-    const processingTime = Date.now() - startTime
-    console.log(`✅ Analysis complete in ${processingTime}ms`)
-
-    return res.status(200).json({
-      success: true,
-      analysis,
-      contractId,
-      timestamp: new Date().toISOString(),
-      processingTime
-    })
-
-  } catch (error) {
-    console.error('❌ Analysis error:', error)
-    return res.status(200).json(getFallbackAnalysis())
-  }
-}
-
-// ========================================
-// COMPREHENSIVE ANALYSIS FUNCTION
-// ========================================
-
-async function runComprehensiveAnalysis(contractText: string, userRole?: string) {
-  const prompt = `You are an elite contract attorney with 20+ years of experience reviewing thousands of contracts. You will perform the most thorough, professional contract analysis possible.
-
-**CRITICAL INSTRUCTIONS:**
-1. You MUST return ONLY valid JSON - no markdown, no code blocks, no extra text
-2. Your response must start with { and end with }
-3. Provide substantial, detailed analysis - not placeholders
-4. Be specific, cite exact clause text, explain real-world impacts
-5. Compare every clause to industry standards
-6. Identify both obvious and subtle risks
-7. Provide actionable, specific recommendations with exact language
-8. Never use emojis or informal language
-
-**USER CONTEXT:**
-${userRole ? `The user is a: ${userRole}` : 'User role not specified - provide general analysis'}
-
-**CONTRACT TO ANALYZE:**
-${contractText}
-
-**OUTPUT FORMAT - Return this EXACT JSON structure with complete, detailed content:**
-
-{
-  "overallRiskLevel": "Low Risk" | "Medium Risk" | "High Risk" | "Critical Risk",
-  "riskScore": <number 0-100>,
-  "riskScoreBreakdown": {
-    "financial": <number 0-100>,
-    "legal": <number 0-100>,
-    "operational": <number 0-100>,
-    "reputational": <number 0-100>
-  },
-  
-  "contractMetadata": {
-    "type": "<main contract type>",
-    "subtype": "<specific subtype if applicable>",
-    "parties": {
-      "partyA": {
-        "name": "<exact party name>",
-        "role": "<their role, e.g. Client, Employer, Vendor>",
-        "position": "stronger" | "weaker" | "equal"
-      },
-      "partyB": {
-        "name": "<exact party name>",
-        "role": "<their role>",
-        "position": "stronger" | "weaker" | "equal"
-      }
-    },
-    "estimatedValue": "<total contract value or 'Not specified'>",
-    "jurisdiction": "<governing jurisdiction>",
-    "effectiveDate": "<effective date or 'Not specified'>",
-    "term": "<contract duration or 'Not specified'>"
-  },
-  
-  "executiveSummary": {
-    "headline": "<one-sentence verdict: Is this a good/bad/risky contract?>",
-    "criticalIssuesCount": <number of critical issues>,
-    "dealBreakers": ["<list 1-3 issues so serious the contract shouldn't be signed as-is>"],
-    "quickVerdict": "<2-3 sentence summary: Should they sign? What's most important to know?>",
-    "topThreeActions": [
-      "<action 1: most critical thing to fix>",
-      "<action 2: second most critical>",
-      "<action 3: third most critical>"
-    ]
-  },
-  
-  "keyFindings": [
-    {
-      "id": "finding_1",
-      "severity": "critical" | "high" | "medium" | "low",
-      "category": "payment" | "liability" | "termination" | "scope" | "ip" | "confidentiality" | "other",
-      "title": "<concise title>",
-      "shortDescription": "<one-sentence description>",
-      "fullDescription": "<detailed 3-4 sentence explanation of the issue>",
-      "realWorldImpact": "<what this means in practice - real consequences>",
-      "financialExposure": "<potential dollar impact or scope>",
-      "specificClauseReference": "<quote the exact problematic clause text>",
-      "comparisonToStandard": "<how this differs from typical contracts>"
-    }
-    // Include 5-10 key findings covering all major issues
-  ],
-  
-  "clauseAnalysis": [
-    {
-      "id": "clause_1",
-      "clauseTitle": "<clause name>",
-      "sectionReference": "<section number or location>",
-      "clauseText": "<quote the full clause exactly as written>",
-      "plainEnglishSummary": "<explain what this clause means in simple terms>",
-      "detailedAnalysis": "<comprehensive analysis of how this clause works, its implications, interactions with other clauses>",
-      "riskLevel": "critical" | "high" | "medium" | "low" | "none",
-      "riskScore": <number 0-100>,
-      "issues": [
-        {
-          "issue": "<specific problem>",
-          "explanation": "<why this is a problem>",
-          "consequence": "<what could happen because of this>"
-        }
-      ],
-      "strengths": ["<positive aspects of this clause>"],
-      "weaknesses": ["<negative aspects>"],
-      "redFlags": ["<serious warning signs>"],
-      "comparisonToIndustryStandard": "<detailed comparison to how this clause typically appears>",
-      "recommendations": [
-        {
-          "priority": "must-fix" | "strongly-recommended" | "nice-to-have",
-          "change": "<what to change>",
-          "reasoning": "<why this change is needed>",
-          "suggestedLanguage": "<exact replacement clause text>"
-        }
-      ]
-    }
-    // Analyze 8-15 key clauses covering: payment, scope, IP, liability, termination, confidentiality, warranties, dispute resolution
-  ],
-  
-  "missingClauses": [
-    {
-      "clauseType": "<type of missing clause>",
-      "importance": "critical" | "high" | "medium",
-      "explanation": "<why this clause should be present>",
-      "typicalLanguage": "<standard clause text that should be added>",
-      "riskOfOmission": "<what could go wrong without this clause>"
-    }
-    // Include 3-7 missing clauses
-  ],
-  
-  "contradictions": [
-    {
-      "clause1": "<reference to first clause>",
-      "clause2": "<reference to second clause>",
-      "contradiction": "<how they conflict>",
-      "resolution": "<how to fix the conflict>"
-    }
-  ],
-  
-  "ambiguities": [
-    {
-      "location": "<where in contract>",
-      "ambiguousText": "<quote the vague language>",
-      "problem": "<why this is ambiguous>",
-      "clarification": "<suggested clearer language>"
-    }
-  ],
-  
-  "recommendations": {
-    "mustChangeBeforeSigning": [
-      {
-        "issue": "<critical issue>",
-        "currentState": "<what the contract currently says>",
-        "proposedChange": "<what it should say>",
-        "suggestedLanguage": "<exact replacement text>",
-        "negotiationTip": "<how to present this change to the other party>"
-      }
-    ],
-    "stronglyRecommended": [
-      {
-        "issue": "<important issue>",
-        "currentState": "<current language>",
-        "proposedChange": "<recommended change>",
-        "suggestedLanguage": "<suggested text>"
-      }
-    ],
-    "niceToHave": [
-      {
-        "improvement": "<enhancement>",
-        "benefit": "<value of this change>"
-      }
-    ]
-  },
-  
-  "negotiationGuidance": {
-    "overallStrategy": "<2-3 paragraphs on negotiation approach given the power dynamic>",
-    "powerDynamicAssessment": "<analysis of relative negotiating positions>",
-    "leveragePoints": ["<things the user can use as leverage>"],
-    "commonObjections": [
-      {
-        "objection": "<likely pushback from other party>",
-        "response": "<how to respond>"
-      }
-    ],
-    "emailTemplate": "<complete professional email template requesting key changes>"
-  },
-  
-  "worstCaseScenarios": [
-    {
-      "scenario": "<specific bad outcome>",
-      "likelihood": "high" | "medium" | "low",
-      "impact": "<consequences>",
-      "mitigation": "<how to prevent this>"
-    }
-  ],
-  
-  "industryBenchmarks": {
-    "contractType": "<type being analyzed>",
-    "thisContract": "<key terms in this contract>",
-    "industryStandard": "<typical terms for this type>",
-    "verdict": "<how this compares>"
-  },
-  
-  "roleBasedAdvice": {
-    "${userRole || 'general'}": {
-      "specificConcerns": ["<concerns specific to this role>"],
-      "mustNegotiate": ["<non-negotiable items for this role>"],
-      "commonPitfalls": ["<typical mistakes people in this role make>"]
-    }
-  },
-  
-  "legalInsights": {
-    "jurisdictionSpecificIssues": ["<issues specific to governing jurisdiction>"],
-    "enforceabilityQuestions": ["<clauses that may not be enforceable>"],
-    "complianceRequirements": ["<regulatory compliance issues>"],
-    "statutoryRights": ["<rights that can't be waived by contract>"]
-  },
-  
-  "financialSummary": {
-    "totalContractValue": "<total monetary value>",
-    "paymentSchedule": [
-      {
-        "milestone": "<when payment is due>",
-        "amount": "<how much>",
-        "timing": "<conditions>",
-        "risk": "<payment risk assessment>"
-      }
-    ],
-    "maximumLiabilityExposure": "<worst-case financial liability>",
-    "terminationCosts": "<cost to exit the contract>"
-  },
-  
-  "timelineSummary": {
-    "keyDates": [
-      {
-        "date": "<date or timeframe>",
-        "event": "<what happens>",
-        "importance": "<why this matters>"
-      }
-    ],
-    "noticePeriods": [
-      {
-        "purpose": "<what the notice is for>",
-        "period": "<how much notice>",
-        "consequence": "<what happens if notice not given>"
-      }
-    ]
-  }
-}
-
-**ANALYSIS REQUIREMENTS:**
-
-1. **Be Thorough**: Analyze every significant clause. Don't skip sections.
-
-2. **Be Specific**: Always quote exact clause text. Don't paraphrase.
-
-3. **Be Practical**: Explain real-world consequences, not just legal theory.
-
-4. **Be Comparative**: Compare every term to industry standards.
-
-5. **Be Actionable**: Give specific language to fix problems, not vague suggestions.
-
-6. **Be Contextual**: Consider the contract type, value, parties, and power dynamic.
-
-7. **Find the Hidden Issues**: Look for:
-   - Vague language that could be exploited
-   - One-sided terms
-   - Missing protections
-   - Unrealistic obligations
-   - Undefined terms
-   - Conflicting clauses
-   - Terms that favor one party heavily
-
-8. **Calculate Risk Accurately**:
-   - Critical (80-100): Don't sign without major changes
-   - High (60-79): Significant risks requiring negotiation
-   - Medium (40-59): Some concerns, review carefully
-   - Low (0-39): Generally acceptable terms
-
-9. **Provide Complete Recommendations**: Include exact replacement language for every problematic clause.
-
-10. **Write Professionally**: No emojis, no casual language, maintain expert attorney tone.
-
-Remember: This analysis could prevent the user from making a costly mistake. Be thorough, accurate, and helpful.
-
-Return ONLY the JSON object. No markdown. No code blocks. Start with { and end with }.`
-
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 16000,
-    temperature: 0.3,
-    messages: [{ role: 'user', content: prompt }]
-  })
-
-  if (!response.content || !response.content[0] || response.content[0].type !== 'text') {
-    throw new Error('Invalid response from Claude API')
-  }
-
-  const aiResponse = response.content[0].text
-  
-  // Parse JSON response
-  let parsed
-  try {
-    // Clean the response
-    let jsonString = aiResponse.trim()
-    
-    // Remove markdown code blocks if present
-    jsonString = jsonString.replace(/```json\s*/g, '').replace(/```\s*/g, '')
-    
-    // Extract JSON object
-    const firstBrace = jsonString.indexOf('{')
-    const lastBrace = jsonString.lastIndexOf('}')
-    
-    if (firstBrace === -1 || lastBrace === -1) {
-      throw new Error('No JSON object found in response')
-    }
-    
-    jsonString = jsonString.substring(firstBrace, lastBrace + 1)
-    
-    parsed = JSON.parse(jsonString)
-    console.log('✅ Analysis parsed successfully')
-    
-    // Validate structure
-    validateAnalysisStructure(parsed)
-    
-    return parsed
-    
-  } catch (error) {
-    console.error('❌ Failed to parse analysis:', error)
-    console.log('📄 Raw response preview:', aiResponse.substring(0, 500))
-    throw error
-  }
-}
-
-// ========================================
-// VALIDATION
-// ========================================
-
-function validateAnalysisStructure(analysis: any): void {
-  const requiredFields = [
-    'overallRiskLevel',
-    'riskScore',
-    'contractMetadata',
-    'executiveSummary',
-    'keyFindings',
-    'clauseAnalysis',
-    'missingClauses',
-    'recommendations',
-    'negotiationGuidance',
-    'worstCaseScenarios',
-    'financialSummary',
-    'timelineSummary'
-  ]
-  
-  for (const field of requiredFields) {
-    if (!(field in analysis)) {
-      throw new Error(`Missing required field: ${field}`)
-    }
-  }
-  
-  // Validate risk level
-  const validRiskLevels = ['Low Risk', 'Medium Risk', 'High Risk', 'Critical Risk']
-  if (!validRiskLevels.includes(analysis.overallRiskLevel)) {
-    throw new Error(`Invalid risk level: ${analysis.overallRiskLevel}`)
-  }
-  
-  // Validate risk score
-  if (typeof analysis.riskScore !== 'number' || analysis.riskScore < 0 || analysis.riskScore > 100) {
-    throw new Error('Invalid risk score')
-  }
-  
-  // Validate arrays
-  if (!Array.isArray(analysis.keyFindings) || analysis.keyFindings.length === 0) {
-    throw new Error('keyFindings must be a non-empty array')
-  }
-  
-  if (!Array.isArray(analysis.clauseAnalysis) || analysis.clauseAnalysis.length === 0) {
-    throw new Error('clauseAnalysis must be a non-empty array')
-  }
-  
-  console.log('✅ Analysis structure validated')
-}
-
-// ========================================
-// FALLBACK ANALYSIS
-// ========================================
-
-function getFallbackAnalysis() {
-  return {
-    success: false,
-    analysis: {
-      overallRiskLevel: 'Medium Risk',
-      riskScore: 50,
-      riskScoreBreakdown: {
-        financial: 50,
-        legal: 50,
-        operational: 50,
-        reputational: 50
-      },
-      contractMetadata: {
-        type: 'Unknown',
-        subtype: 'Unable to determine',
-        parties: {
-          partyA: { name: 'Party A', role: 'Unknown', position: 'equal' },
-          partyB: { name: 'Party B', role: 'Unknown', position: 'equal' }
-        },
-        estimatedValue: 'Not available',
-        jurisdiction: 'Not specified',
-        effectiveDate: 'Not specified',
-        term: 'Not specified'
-      },
-      executiveSummary: {
-        headline: 'Analysis system temporarily unavailable',
-        criticalIssuesCount: 0,
-        dealBreakers: [],
-        quickVerdict: 'The automated analysis system is currently unavailable. Please try again in a few minutes or contact support.',
-        topThreeActions: [
-          'Try re-uploading your contract',
-          'Ensure document is in a supported format',
-          'Contact support if issue persists'
-        ]
-      },
-      keyFindings: [],
-      clauseAnalysis: [],
-      missingClauses: [],
-      contradictions: [],
-      ambiguities: [],
-      recommendations: {
-        mustChangeBeforeSigning: [],
-        stronglyRecommended: [],
-        niceToHave: []
-      },
-      negotiationGuidance: {
-        overallStrategy: 'Analysis unavailable',
-        powerDynamicAssessment: 'Unable to assess',
-        leveragePoints: [],
-        commonObjections: [],
-        emailTemplate: ''
-      },
-      worstCaseScenarios: [],
-      industryBenchmarks: {
-        contractType: 'Unknown',
-        thisContract: 'Unable to analyze',
-        industryStandard: 'Unable to determine',
-        verdict: 'Analysis unavailable'
-      },
-      roleBasedAdvice: {},
-      legalInsights: {
-        jurisdictionSpecificIssues: [],
-        enforceabilityQuestions: [],
-        complianceRequirements: [],
-        statutoryRights: []
-      },
-      financialSummary: {
-        totalContractValue: 'Unable to determine',
-        paymentSchedule: [],
-        maximumLiabilityExposure: 'Unable to assess',
-        terminationCosts: 'Unable to calculate'
-      },
-      timelineSummary: {
-        keyDates: [],
-        noticePeriods: []
-      }
-    },
-    timestamp: new Date().toISOString(),
-    fallback: true
-  }
-}
-
-
-
--------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-
-import React, { useState } from 'react';
-import { AlertTriangle, CheckCircle, XCircle, Info, TrendingUp, TrendingDown, DollarSign, Calendar, FileText, Scale, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
-
-// Sample comprehensive analysis data
-const sampleAnalysis = {
-  overallRiskLevel: "High Risk",
-  riskScore: 72,
-  riskScoreBreakdown: {
-    financial: 68,
-    legal: 85,
-    operational: 70,
-    reputational: 65
-  },
-  contractMetadata: {
-    type: "Freelance Service Agreement",
-    subtype: "Web Development Contract",
-    parties: {
-      partyA: { name: "Digital Innovations Corp", role: "Client", position: "stronger" },
-      partyB: { name: "Individual Freelancer", role: "Contractor", position: "weaker" }
-    },
-    estimatedValue: "$15,000",
-    jurisdiction: "California",
-    effectiveDate: "November 1, 2025",
-    term: "Project-based, no fixed end date"
-  },
-  executiveSummary: {
-    headline: "High-risk contract with significant power imbalance and missing critical protections",
-    criticalIssuesCount: 5,
-    dealBreakers: [
-      "No termination rights for contractor",
-      "Unlimited scope creep potential",
-      "Client controls all payment milestones"
-    ],
-    quickVerdict: "This contract heavily favors the client and exposes the contractor to significant risk. Without substantial revisions, signing this agreement could result in months of unpaid work with no recourse. The three most critical issues must be resolved before signing.",
-    topThreeActions: [
-      "Add clear termination clause with 14-day notice period",
-      "Define specific project scope and completion criteria",
-      "Change payment milestone from 'client-determined' to objective deliverables"
-    ]
-  },
-  keyFindings: [
-    {
-      id: "finding_1",
-      severity: "critical",
-      category: "termination",
-      title: "No Termination Rights",
-      shortDescription: "Contract contains no termination clause",
-      fullDescription: "This contract completely lacks any termination provisions. Neither party has a defined mechanism to exit the agreement. This is extremely unusual and dangerous, particularly for the contractor who has the weaker bargaining position.",
-      realWorldImpact: "If the working relationship becomes untenable (client becomes difficult, changes demands constantly, hostile work environment), you have no legal way to exit without potentially breaching the contract. The client could refuse to release you while also refusing to pay for completed work.",
-      financialExposure: "Potential loss of all unpaid work (up to $10,000) plus liability for breach of contract",
-      specificClauseReference: "No termination clause exists in the contract",
-      comparisonToStandard: "Standard freelance contracts include termination clauses allowing either party to exit with 14-30 days notice, with payment for completed work up to termination date"
-    },
-    {
-      id: "finding_2",
-      severity: "critical",
-      category: "scope",
-      title: "Unlimited Scope Creep",
-      shortDescription: "Vague, open-ended scope of work",
-      fullDescription: "The scope of work states 'services include...ongoing maintenance as needed' and requires contractor to 'work on tasks as assigned by Client's project manager.' This creates unlimited obligation with no defined endpoint.",
-      realWorldImpact: "The client can assign infinite additional work beyond the original project scope, all for the same $15,000 fee. There's no mechanism to say 'this is out of scope' or negotiate additional payment for extra work.",
-      financialExposure: "Effective hourly rate could drop to minimum wage or below if scope expands significantly",
-      specificClauseReference: "Section 1: 'Services include...ongoing maintenance as needed' and 'work on tasks as assigned'",
-      comparisonToStandard: "Professional freelance contracts define specific deliverables in detail, with change order process for scope changes requiring written approval and additional payment"
-    },
-    {
-      id: "finding_3",
-      severity: "critical",
-      category: "payment",
-      title: "Client-Controlled Payment Milestones",
-      shortDescription: "Payment triggers are entirely subjective",
-      fullDescription: "Payment is tied to 'project midpoint (as determined by Client)' and 'final delivery and approval.' The client unilaterally decides when these milestones are met, giving them complete control over when or if you get paid.",
-      realWorldImpact: "Even after completing 90% of the work, the client could claim 'midpoint hasn't been reached yet' and you've only received $5,000. They control the definitions, so they control your payment.",
-      financialExposure: "Up to $10,000 in payment could be withheld indefinitely at client's discretion",
-      specificClauseReference: "Section 2: '$5,000 at project midpoint (as determined by Client)' and 'upon final delivery and approval by the Client'",
-      comparisonToStandard: "Standard contracts tie payments to objective, measurable deliverables: '50% upfront, 25% upon completion of frontend development, 25% upon final deployment.' Not subjective client opinion."
-    }
-  ],
-  clauseAnalysis: [
-    {
-      id: "clause_1",
-      clauseTitle: "Scope of Work",
-      sectionReference: "Section 1",
-      clauseText: "The Contractor agrees to provide web development and design services for the Client's e-commerce platform redesign project. Services include frontend development, UI/UX design, database optimization, and ongoing maintenance as needed.",
-      plainEnglishSummary: "You'll do web development work including frontend, design, database work, and ongoing maintenance whenever the client wants it.",
-      detailedAnalysis: "This clause establishes an open-ended service relationship without clear boundaries. The phrase 'as needed' creates unlimited obligation. There's no definition of what constitutes the 'project' or when it's considered complete. The inclusion of 'ongoing maintenance' suggests perpetual obligation beyond the initial development work.",
-      riskLevel: "critical",
-      riskScore: 90,
-      issues: [
-        {
-          issue: "Undefined scope boundaries",
-          explanation: "No clear list of specific deliverables or definition of project completion",
-          consequence: "Client can continuously add requirements claiming they're part of the original scope"
-        },
-        {
-          issue: "'Ongoing maintenance as needed'",
-          explanation: "Creates perpetual obligation with no time limit or additional compensation",
-          consequence: "You could be obligated to provide maintenance support indefinitely for the same $15K fee"
-        }
-      ],
-      strengths: ["Identifies general service categories"],
-      weaknesses: [
-        "No specific deliverables listed",
-        "No definition of 'maintenance'",
-        "No scope change process",
-        "No completion criteria"
-      ],
-      redFlags: [
-        "'As needed' language creates unlimited obligation",
-        "No distinction between initial project and ongoing support",
-        "No process for out-of-scope requests"
-      ],
-      comparisonToIndustryStandard: "Professional contracts include Attachment A with detailed deliverable list: 'Homepage redesign (5 pages), Product catalog (database integration), Shopping cart (Stripe integration).' They separate initial project from maintenance and define maintenance as 'bug fixes for 90 days, not feature additions.'",
-      recommendations: [
-        {
-          priority: "must-fix",
-          change: "Define specific deliverables and remove open-ended obligations",
-          reasoning: "Without defined scope, you have no protection against infinite work requests",
-          suggestedLanguage: "Contractor shall deliver the following specific items: (1) Homepage design and frontend implementation, (2) Product catalog with database integration, (3) Shopping cart system, (4) User authentication system. Project is considered complete upon delivery of these four items. Any additional work beyond these deliverables shall be negotiated separately with additional compensation. 'Ongoing maintenance' is limited to bug fixes for delivered features for 60 days post-launch only."
-        }
-      ]
-    },
-    {
-      id: "clause_2",
-      clauseTitle: "Payment Terms",
-      sectionReference: "Section 2",
-      clauseText: "The Client agrees to pay the Contractor a total project fee of $15,000. Payment will be made in installments as follows: $5,000 upon signing this agreement, $5,000 at project midpoint (as determined by Client), $5,000 upon final delivery and approval. Invoices shall be paid within 30 days of receipt and approval by the Client.",
-      plainEnglishSummary: "You get $15K total: $5K upfront, $5K when the client decides it's halfway done, and $5K when the client decides it's finished and approved.",
-      detailedAnalysis: "This payment structure gives the client complete control over payment timing. Both milestone payments are subjectively determined by the client: they decide when 'midpoint' is reached and when work is 'approved.' The 30-day payment term includes 'and approval,' meaning the clock doesn't start until the client approves the invoice, which they can delay indefinitely.",
-      riskLevel: "critical",
-      riskScore: 85,
-      issues: [
-        {
-          issue: "Subjective payment milestones",
-          explanation: "Client unilaterally determines when milestones are met",
-          consequence: "You could complete 90% of work but client claims 'midpoint not reached' and you've only received $5K"
-        },
-        {
-          issue: "Low upfront payment",
-          explanation: "Only 33% upfront is below industry standard",
-          consequence: "Significant financial risk if client relationship deteriorates"
-        },
-        {
-          issue: "Undefined 'approval' process",
-          explanation: "No criteria for what constitutes approval or timeframe for decision",
-          consequence: "Client can withhold approval indefinitely to avoid payment"
-        }
-      ],
-      strengths: ["Total amount is specified", "Upfront payment exists"],
-      weaknesses: [
-        "Heavily weighted toward completion",
-        "Client controls all milestone definitions",
-        "No objective criteria for payments",
-        "30-day payment term includes approval delay"
-      ],
-      redFlags: [
-        "'As determined by Client' gives them unilateral control",
-        "Payment 'and approval' allows indefinite delays",
-        "No recourse if client refuses to approve"
-      ],
-      comparisonToIndustryStandard: "Standard freelance payment: 50% upfront ($7,500), 25% at defined milestone ($3,750), 25% on completion ($3,750). Milestones tied to objective deliverables: 'upon completion of frontend development' not subjective client opinion. Approval required within 5 business days or deemed accepted.",
-      recommendations: [
-        {
-          priority: "must-fix",
-          change: "Tie payments to objective deliverables and increase upfront payment",
-          reasoning: "Current structure exposes you to significant non-payment risk",
-          suggestedLanguage: "Payment: $7,500 (50%) upon contract signing, $3,750 upon delivery of items 1-2 from Scope of Work, $3,750 upon delivery of items 3-4. Client shall approve or provide detailed rejection within 5 business days of delivery. If no response within 5 days, deliverable is deemed accepted and payment is due immediately."
-        }
-      ]
-    }
-  ],
-  missingClauses: [
-    {
-      clauseType: "Termination Rights",
-      importance: "critical",
-      explanation: "Every professional service contract must include termination provisions allowing parties to exit the relationship. Without this, you could be trapped in an untenable situation with no legal recourse.",
-      typicalLanguage: "TERMINATION: Either party may terminate this Agreement with fourteen (14) days written notice to the other party. Upon termination, Contractor shall deliver all completed work and work-in-progress to Client. Client shall pay Contractor for all work completed up to the termination date at the pro-rata rate based on the total contract value.",
-      riskOfOmission: "You have no way to exit if the client becomes abusive, stops paying, or the project becomes impossible. You're legally obligated to continue indefinitely or breach the contract."
-    },
-    {
-      clauseType: "Liability Cap",
-      importance: "critical",
-      explanation: "The contract includes unlimited liability warranty for IP infringement but no cap on your liability exposure. This means you could owe far more than the contract value if something goes wrong.",
-      typicalLanguage: "LIMITATION OF LIABILITY: Contractor's total liability under this Agreement for any claims, damages, or causes of action shall not exceed the total fees paid by Client under this Agreement. This limitation applies regardless of the form of action, whether in contract, tort, or otherwise.",
-      riskOfOmission: "If a third party claims copyright infringement, you could be liable for millions in damages despite only earning $15,000 from this contract."
-    },
-    {
-      clauseType: "Change Order Process",
-      importance: "high",
-      explanation: "Without a formal process for scope changes, you have no mechanism to negotiate additional payment for additional work. Everything becomes a dispute.",
-      typicalLanguage: "CHANGES: Any changes to the Scope of Work must be documented in a written Change Order signed by both parties. Change Orders shall specify the additional deliverables, timeline impact, and additional fees. No additional work shall commence without an executed Change Order.",
-      riskOfOmission: "Client can continuously request 'small changes' that add up to massive additional work, all claiming it's part of the original scope."
-    }
-  ],
-  recommendations: {
-    mustChangeBeforeSigning: [
-      {
-        issue: "Add Termination Clause",
-        currentState: "No termination provisions exist",
-        proposedChange: "Add mutual termination rights with notice period",
-        suggestedLanguage: "Either party may terminate this Agreement with fourteen (14) days written notice. Upon termination, Client shall pay for all work completed to date at pro-rata rate.",
-        negotiationTip: "Frame this as protecting both parties: 'To ensure we're both comfortable moving forward, I'd like to add standard termination language that's mutual and protects us both if circumstances change.'"
-      },
-      {
-        issue: "Define Objective Payment Milestones",
-        currentState: "Milestones are subjectively determined by client",
-        proposedChange: "Tie payments to specific, measurable deliverables",
-        suggestedLanguage: "Payment schedule: $7,500 upfront, $3,750 upon completion of frontend development and UI mockups, $3,750 upon final deployment and launch.",
-        negotiationTip: "Explain that objective milestones prevent misunderstandings: 'To ensure we're aligned on expectations, I'd like to tie payments to specific deliverables so we both know exactly when each payment is due.'"
-      }
-    ],
-    stronglyRecommended: [
-      {
-        issue: "Cap Liability Exposure",
-        currentState: "Unlimited liability for IP infringement",
-        proposedChange: "Add liability cap equal to contract value",
-        suggestedLanguage: "Contractor's total liability shall not exceed fees paid under this Agreement ($15,000)."
-      }
-    ],
-    niceToHave: [
-      {
-        improvement: "Add late payment penalty",
-        benefit: "Incentivizes timely payment and compensates you for payment delays"
-      }
-    ]
-  },
-  negotiationGuidance: {
-    overallStrategy: "You're in a weaker position as an individual contractor vs. a company, but you have leverage because they need your skills. Focus on presenting changes as 'industry standard' and 'protecting both parties.' Don't be aggressive, but be firm on the critical issues. Be willing to compromise on nice-to-have items but don't budge on termination rights, payment terms, and scope definition.",
-    powerDynamicAssessment: "Client has stronger position (company vs. individual, they control payments). However, you have leverage: they've chosen you for your skills, and finding a replacement would delay their project. Use this leverage strategically.",
-    leveragePoints: [
-      "They need your specialized skills",
-      "Replacing you would delay their project",
-      "Your requests are industry-standard, not unusual",
-      "You can walk away if terms are unacceptable"
-    ],
-    commonObjections: [
-      {
-        objection: "This is our standard contract, everyone signs it",
-        response: "I understand you've used this template before. However, professional service contracts in the development industry typically include the protections I'm requesting. Would you be open to reviewing what's standard for our industry?"
-      },
-      {
-        objection: "We can't change payment terms",
-        response: "I appreciate that payment terms are important to you. The changes I'm suggesting actually benefit both of us by creating clear, objective milestones. This prevents any confusion about when payments are due."
-      }
-    ],
-    emailTemplate: "Subject: Contract Review - Requested Clarifications\n\nHi [Client Name],\n\nThank you for the contract. I'm excited to work on this project. I've reviewed the agreement and would like to discuss a few clarifications to ensure we're both protected and aligned on expectations.\n\nKey items:\n\n1. Termination Clause: I'd like to add standard mutual termination language (14-day notice) to protect both parties if circumstances change.\n\n2. Payment Milestones: To prevent any confusion, I'd like to tie payments to specific deliverables rather than subjective milestones. This ensures we're both clear on when each payment is due.\n\n3. Scope Definition: I'd like to add a detailed deliverable list to Attachment A so we're aligned on exactly what's included in the $15K.\n\nThese are standard provisions in professional development contracts. I've attached suggested language for your review. Would you be available for a brief call to discuss?\n\nLooking forward to working together.\n\nBest regards,\n[Your Name]"
-  },
-  worstCaseScenarios: [
-    {
-      scenario: "Client continuously expands scope, claims all work is 'part of original project,' and you work for 6 months but only receive $5,000",
-      likelihood: "medium",
-      impact: "Financial loss of $10,000+ in unpaid work, effective hourly rate drops to $10-15/hour, no recourse because contract allows unlimited scope",
-      mitigation: "Add detailed scope definition and change order process before signing"
-    },
-    {
-      scenario: "Working relationship becomes toxic, client becomes abusive, but you have no way to exit without breaching contract",
-      likelihood: "low",
-      impact: "Forced to either continue working in hostile environment or breach contract and face legal action",
-      mitigation: "Add termination clause with notice period"
-    }
-  ],
-  financialSummary: {
-    totalContractValue: "$15,000",
-    paymentSchedule: [
-      {
-        milestone: "Upon signing",
-        amount: "$5,000",
-        timing: "Immediate",
-        risk: "Low - should receive this payment"
-      },
-      {
-        milestone: "Project midpoint (client-determined)",
-        amount: "$5,000",
-        timing: "Client decides when",
-        risk: "HIGH - Client controls definition of 'midpoint'"
-      },
-      {
-        milestone: "Final delivery and approval",
-        amount: "$5,000",
-        timing: "Client decides when complete + 30 days",
-        risk: "CRITICAL - Client controls completion and approval"
-      }
-    ],
-    maximumLiabilityExposure: "UNLIMITED - No liability cap means you could owe millions if sued for IP infringement",
-    terminationCosts: "UNKNOWN - No termination clause means unclear what happens if you need to exit"
-  }
-};
-
-const ContractAnalysisUI = () => {
-  const [activeTab, setActiveTab] = useState('executive');
-  const [expandedFindings, setExpandedFindings] = useState({});
-  const [expandedClauses, setExpandedClauses] = useState({});
-
-  const getRiskColor = (level) => {
-    switch(level) {
-      case 'critical': return 'bg-red-100 border-red-500 text-red-900';
-      case 'high': return 'bg-orange-100 border-orange-500 text-orange-900';
-      case 'medium': return 'bg-yellow-100 border-yellow-500 text-yellow-900';
-      case 'low': return 'bg-blue-100 border-blue-500 text-blue-900';
-      default: return 'bg-gray-100 border-gray-500 text-gray-900';
-    }
-  };
-
-  const getRiskIcon = (level) => {
-    switch(level) {
-      case 'critical': return <XCircle className="w-5 h-5 text-red-600" />;
-      case 'high': return <AlertTriangle className="w-5 h-5 text-orange-600" />;
-      case 'medium': return <AlertCircle className="w-5 h-5 text-yellow-600" />;
-      case 'low': return <Info className="w-5 h-5 text-blue-600" />;
-      default: return <CheckCircle className="w-5 h-5 text-green-600" />;
-    }
-  };
-
-  const toggleFinding = (id) => {
-    setExpandedFindings(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const toggleClause = (id) => {
-    setExpandedClauses(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Contract Analysis Report</h1>
-              <p className="text-gray-600">{sampleAnalysis.contractMetadata.type}</p>
-            </div>
-            <div className="text-right">
-              <div className={`inline-block px-4 py-2 rounded-lg font-semibold ${
-                sampleAnalysis.overallRiskLevel === 'Critical Risk' ? 'bg-red-600 text-white' :
-                sampleAnalysis.overallRiskLevel === 'High Risk' ? 'bg-orange-500 text-white' :
-                sampleAnalysis.overallRiskLevel === 'Medium Risk' ? 'bg-yellow-500 text-white' :
-                'bg-green-500 text-white'
-              }`}>
-                {sampleAnalysis.overallRiskLevel}
-              </div>
-              <div className="text-4xl font-bold text-gray-900 mt-2">{sampleAnalysis.riskScore}/100</div>
-            </div>
-          </div>
-
-          {/* Risk Breakdown */}
-          <div className="grid grid-cols-4 gap-4 mt-6">
-            {Object.entries(sampleAnalysis.riskScoreBreakdown).map(([key, value]) => (
-              <div key={key} className="bg-gray-50 p-4 rounded-lg">
-                <div className="text-sm text-gray-600 capitalize mb-1">{key} Risk</div>
-                <div className="text-2xl font-bold text-gray-900">{value}/100</div>
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                  <div 
-                    className={`h-2 rounded-full ${
-                      value >= 70 ? 'bg-red-500' : 
-                      value >= 50 ? 'bg-yellow-500' : 
-                      'bg-green-500'
-                    }`}
-                    style={{ width: `${value}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Navigation Tabs */}
-        <div className="bg-white rounded-lg shadow-sm mb-6">
-          <div className="flex border-b overflow-x-auto">
-            {[
-              { id: 'executive', label: 'Executive Summary', icon: FileText },
-              { id: 'findings', label: 'Key Findings', icon: AlertTriangle },
-              { id: 'clauses', label: 'Clause Analysis', icon: Scale },
-              { id: 'recommendations', label: 'Recommendations', icon: CheckCircle },
-              { id: 'financial', label: 'Financial Summary', icon: DollarSign }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Tab Content */}
-        <div className="space-y-6">
-          {/* Executive Summary Tab */}
-          {activeTab === 'executive' && (
-            <>
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Executive Summary</h2>
-                <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
-                  <p className="text-lg font-semibold text-red-900">{sampleAnalysis.executiveSummary.headline}</p>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Critical Issues Found</h3>
-                    <div className="text-4xl font-bold text-red-600">{sampleAnalysis.executiveSummary.criticalIssuesCount}</div>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Contract Value</h3>
-                    <div className="text-4xl font-bold text-gray-900">{sampleAnalysis.contractMetadata.estimatedValue}</div>
-                  </div>
-                </div>
-
-                <div className="mb-6">
-                  <h3 className="font-semibold text-gray-900 mb-3">Quick Verdict</h3>
-                  <p className="text-gray-700 leading-relaxed">{sampleAnalysis.executiveSummary.quickVerdict}</p>
-                </div>
-
-                {sampleAnalysis.executiveSummary.dealBreakers.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      <XCircle className="w-5 h-5 text-red-600" />
-                      Deal Breakers - Do Not Sign Without Fixing These
-                    </h3>
-                    <ul className="space-y-2">
-                      {sampleAnalysis.executiveSummary.dealBreakers.map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-2 bg-red-50 p-3 rounded">
-                          <span className="font-bold text-red-600">{idx + 1}.</span>
-                          <span className="text-red-900">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">Top Three Actions Required</h3>
-                  <div className="space-y-3">
-                    {sampleAnalysis.executiveSummary.topThreeActions.map((action, idx) => (
-                      <div key={idx} className="flex items-start gap-3 bg-blue-50 p-4 rounded-lg">
-                        <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
-                          {idx + 1}
-                        </div>
-                        <p className="text-gray-900 pt-1">{action}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Key Findings Tab */}
-          {activeTab === 'findings' && (
-            <div className="space-y-4">
-              {sampleAnalysis.keyFindings.map((finding) => (
-                <div key={finding.id} className={`bg-white rounded-lg shadow-sm border-l-4 ${getRiskColor(finding.severity)}`}>
-                  <div 
-                    className="p-6 cursor-pointer"
-                    onClick={() => toggleFinding(finding.id)}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3 flex-1">
-                        {getRiskIcon(finding.severity)}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-lg font-bold text-gray-900">{finding.title}</h3>
-                            <span className={`px-2 py-1 text-xs rounded uppercase font-semibold ${getRiskColor(finding.severity)}`}>
-                              {finding.severity}
-                            </span>
-                            <span className="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded uppercase font-semibold">
-                              {finding.category}
-                            </span>
-                          </div>
-                          <p className="text-gray-700">{finding.shortDescription}</p>
-                        </div>
-                      </div>
-                      {expandedFindings[finding.id] ? <ChevronUp /> : <ChevronDown />}
-                    </div>
-                    
-                    {expandedFindings[finding.id] && (
-                      <div className="mt-4 space-y-4 pl-8">
-                        <div>
-                          <h4 className="font-semibold text-gray-900 mb-2">Full Description</h4>
-                          <p className="text-gray-700">{finding.fullDescription}</p>
-                        </div>
-                        
-                        <div>
-                          <h4 className="font-semibold text-gray-900 mb-2">Real-World Impact</h4>
-                          <p className="text-gray-700">{finding.realWorldImpact}</p>
-                        </div>
-                        
-                        <div>
-                          <h4 className="font-semibold text-gray-900 mb-2">Financial Exposure</h4>
-                          <p className="text-red-700 font-medium">{finding.financialExposure}</p>
-                        </div>
-                        
-                        <div>
-                          <h4 className="font-semibold text-gray-900 mb-2">Specific Clause Reference</h4>
-                          <div className="bg-gray-50 p-3 rounded border border-gray-200">
-                            <p className="text-sm text-gray-700 italic">{finding.specificClauseReference}</p>
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <h4 className="font-semibold text-gray-900 mb-2">Comparison to Standard</h4>
-                          <p className="text-gray-700">{finding.comparisonToStandard}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div
-
-
-
-
-----------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-
-# Ultimate Contract Analysis AI - Complete Implementation Guide
-
-## 🎯 Executive Summary
-
-This guide provides everything you need to transform your contract analysis AI from generic to exceptional. The system has been redesigned from the ground up with insights from 20+ years of contract law practice.
-
----
-
-## 📊 What You'll Get
-
-### Current State (Helloaca Now)
-- ❌ Generic "liability missing" warnings
-- ❌ Risk score doesn't match reality (45/100 for a high-risk contract)
-- ❌ Missing critical issues (no termination clause marked as "present")
-- ❌ Vague recommendations ("add liability provisions")
-- ❌ No context awareness
-- ❌ Surface-level analysis
-
-### Target State (After Implementation)
-- ✅ Specific, actionable insights with exact clause quotes
-- ✅ Accurate risk assessment calibrated to contract type
-- ✅ Catches ALL issues (obvious AND subtle)
-- ✅ Provides exact replacement language
-- ✅ Explains real-world consequences
-- ✅ Compares every term to industry standards
-- ✅ Includes negotiation strategies
-- ✅ Role-based advice
-- ✅ Financial impact modeling
-
----
-
-## 🏗️ Architecture Overview
-
-### Old Approach (Single-Pass)
-```
-Contract → Generic Analysis Prompt → JSON Output → Display
-```
-**Problem:** AI tries to do everything at once, resulting in shallow analysis
-
-### New Approach (Comprehensive Single-Pass with Rich Prompt)
-```
-Contract → Comprehensive Structured Prompt → Deep Analysis → Validated JSON → Rich UI Display
-```
-**Benefit:** Structured prompt guides AI through methodical analysis like a real attorney would perform
-
----
-
-## 📝 The Comprehensive Analysis Prompt
-
-### Key Improvements
-
-#### 1. **Context-Aware Analysis**
-The prompt now requires the AI to:
-- Identify contract type and subtype
-- Assess party power dynamics
-- Understand jurisdiction
-- Consider contract value
-- Tailor analysis to context
-
-**Example Output:**
-```json
-{
-  "contractMetadata": {
-    "type": "Freelance Service Agreement",
-    "parties": {
-      "partyA": {
-        "name": "Digital Innovations Corp",
-        "role": "Client",
-        "position": "stronger"
-      },
-      "partyB": {
-        "name": "Individual Freelancer",
-        "role": "Contractor",
-        "position": "weaker"
-      }
-    }
-  }
-}
-```
-
-#### 2. **Severity Stratification**
-Every finding is categorized by severity with clear criteria:
-- **Critical (80-100):** Don't sign without major changes
-- **High (60-79):** Significant risks requiring negotiation
-- **Medium (40-59):** Some concerns, review carefully
-- **Low (0-39):** Generally acceptable terms
-
-#### 3. **Real-World Impact Focus**
-Every issue includes:
-- What the clause says (exact quote)
-- What it means in practice
-- What could go wrong
-- Financial exposure
-- How to fix it
-
-**Example:**
-```json
-{
-  "keyFindings": [{
-    "title": "No Termination Rights",
-    "specificClauseReference": "No termination clause exists",
-    "realWorldImpact": "If the working relationship becomes untenable, you have no legal way to exit without breaching the contract",
-    "financialExposure": "Potential loss of $10,000 in unpaid work plus liability for breach"
-  }]
-}
-```
-
-#### 4. **Clause-by-Clause Deep Dive**
-For each significant clause:
-- Full text quote
-- Plain English summary
-- Detailed legal analysis
-- Issues, strengths, weaknesses
-- Red flags
-- Comparison to standard
-- Specific recommendations with exact replacement language
-
-#### 5. **Actionable Recommendations**
-Three priority levels with specific guidance:
-- **Must-fix:** Critical changes with negotiation tips
-- **Strongly recommended:** Important improvements
-- **Nice-to-have:** Optional enhancements
-
-Each includes:
-- Current problematic language
-- Proposed change
-- Exact replacement text
-- How to negotiate it
-
-#### 6. **Negotiation Strategy**
-- Overall approach given power dynamic
-- Leverage points
-- Common objections and responses
-- Ready-to-send email template
-
-#### 7. **Financial & Timeline Summary**
-- Payment schedule with risk assessment
-- Maximum liability exposure
-- Termination costs
-- Key dates and notice periods
-
----
-
-## 🔧 Implementation Steps
-
-### Step 1: Update Your API Endpoint
-
-Replace your current `api/analyze-contract.ts` with the new implementation provided in the artifacts. Key changes:
-
-1. **Upgraded Model:** Use Claude Sonnet 4 for better analysis
-```typescript
-const MODEL = 'claude-sonnet-4-20250514'
-```
-
-2. **Comprehensive Prompt:** The new prompt is 10x more detailed and structured
-
-3. **Robust Validation:** Validates all required fields and data types
-
-4. **Better Error Handling:** Returns informative fallback analysis
-
-### Step 2: Update Frontend to Handle Rich Data
-
-The new API returns a much richer data structure. Update your frontend components to display:
-
-1. **Executive Summary Dashboard:**
-   - Prominent risk score with breakdown
-   - Critical issues count
-   - Deal-breakers highlighted
-   - Quick verdict
-   - Top 3 actions
-
-2. **Key Findings Section:**
-   - Expandable cards for each finding
-   - Severity badges
-   - Full description with real-world impact
-   - Exact clause quotes
-   - Comparison to standard
-
-3. **Clause Analysis:**
-   - Full clause text in quoted blocks
-   - Plain English translation
-   - Detailed analysis
-   - Issues with explanations and consequences
-   - Strengths/weaknesses/red flags
-   - Specific recommendations with replacement language
-
-4. **Recommendations Tab:**
-   - Priority-sorted action items
-   - Current vs. proposed language side-by-side
-   - Suggested replacement text (copy-paste ready)
-   - Negotiation tips
-   - Email template
-
-5. **Financial Summary:**
-   - Contract value
-   - Payment schedule with risk levels
-   - Maximum liability
-   - Worst-case scenarios
-
-### Step 3: Testing Protocol
-
-Test with these contract types to ensure quality:
-
-#### Test Case 1: Freelance Agreement
-**Expected Behavior:**
-- Identifies power imbalance
-- Flags low upfront payment (< 50%)
-- Catches vague scope language
-- Identifies missing termination clause
-- Compares to freelance industry standards
-
-#### Test Case 2: Employment Contract
-**Expected Behavior:**
-- Analyzes non-compete enforceability by jurisdiction
-- Evaluates equity compensation terms
-- Reviews termination provisions
-- Assesses IP assignment reasonableness
-
-#### Test Case 3: SaaS Agreement
-**Expected Behavior:**
-- Reviews liability limitations
-- Analyzes data protection clauses
-- Evaluates SLA terms
-- Checks auto-renewal provisions
-
-### Step 4: Quality Assurance Checklist
-
-For each analysis, verify:
-
-- [ ] Risk score matches severity of issues found
-- [ ] All critical problems are identified
-- [ ] Recommendations include specific replacement language
-- [ ] Comparisons to industry standards are provided
-- [ ] No generic/placeholder content
-- [ ] Real-world impacts are explained
-- [ ] Financial exposure is quantified
-- [ ] Negotiation guidance is practical
-
----
-
-## 🎨 UI/UX Best Practices
-
-### 1. Progressive Disclosure
-Don't overwhelm users with everything at once:
-- Show executive summary first
-- Expandable sections for detailed analysis
-- "Quick view" vs. "Detailed view" options
-
-### 2. Visual Hierarchy
-Use color coding consistently:
-- 🔴 Red: Critical issues that must be fixed
-- 🟠 Orange: High-priority concerns
-- 🟡 Yellow: Medium-priority items
-- 🔵 Blue: Informational notes
-- 🟢 Green: Positive findings
-
-### 3. Action-Oriented Design
-Make it easy for users to act:
-- Copy buttons for suggested language
-- Download negotiation email template
-- Export full report as PDF
-- Print-friendly views
-
-### 4. Educational Elements
-Help users learn:
-- "Why this matters" explanations
-- Tooltips for legal terms
-- "Compared to standard" sections
-- Best practices guidance
-
-### 5. Mobile Responsiveness
-Ensure the interface works on all devices:
-- Collapsible sections
-- Touch-friendly expand/collapse
-- Readable font sizes
-- Horizontal scroll for tables
-
----
-
-## 📈 Measuring Success
-
-### Key Metrics to Track
-
-#### Quality Metrics
-- **Accuracy Rate:** % of critical issues correctly identified
-- **False Positive Rate:** % of flagged items that aren't actually problems
-- **Completeness:** % of contracts where all major clauses are analyzed
-
-#### User Metrics
-- **User Satisfaction:** Post-analysis survey scores
-- **Action Rate:** % of users who act on recommendations
-- **Negotiation Success:** % who successfully negotiate changes
-- **Return Rate:** % who upload multiple contracts
-
-#### Business Metrics
-- **Conversion Rate:** Free → Paid users
-- **Time Saved:** Average time saved vs. manual review
-- **Cost Savings:** Estimated legal fees saved
-- **Referral Rate:** % who recommend to others
-
-### Success Criteria
-
-Your AI is working well when:
-1. Users say "This caught things I missed"
-2. Risk scores match attorney assessments
-3. Recommendations are actually used in negotiations
-4. Users trust the analysis enough to act on it
-5. Complex contracts get thorough analysis (not just simple ones)
-
----
-
-## 🚀 Advanced Features (Phase 2)
-
-Once core functionality is solid, consider adding:
-
-### 1. Contract Comparison
-Compare multiple versions to track changes:
-```
-Version 1 vs Version 2:
-- Added: Liability cap of $100,000
-- Removed: Your termination rights
-- Changed: Payment from 50% upfront to 33%
-```
-
-### 2. Industry-Specific Templates
-Pre-loaded knowledge for specific industries:
-- Tech/software development
-- Creative services
-- Consulting
-- Real estate
-- Employment
-
-### 3. Jurisdiction Database
-Detailed knowledge of state-specific laws:
-- Non-compete enforceability by state
-- Independent contractor tests
-- Required statutory disclosures
-- Mandatory arbitration limitations
-
-### 4. Collaboration Features
-- Share analysis with attorney for review
-- Team commenting on specific clauses
-- Track which recommendations were implemented
-- Version history
-
-### 5. Learning System
-- User feedback on accuracy
-- Track which recommendations are most often accepted
-- Improve analysis based on outcomes
-- Build case library of good vs. bad clauses
-
----
-
-## 💡 Pro Tips for Best Results
-
-### For the AI Prompt
-
-1. **Be Specific in Instructions:** The more detailed your prompt requirements, the better the output
-
-2. **Provide Examples:** Show the AI what good analysis looks like
-
-3. **Require Citations:** Make it quote exact clause text
-
-4. **Demand Comparisons:** Always compare to industry standards
-
-5. **Insist on Specificity:** Ban generic phrases like "may be problematic"
-
-### For the Implementation
-
-1. **Start with High-Value Contracts:** Focus on contract types your users upload most
-
-2. **Iterate Based on Feedback:** Track which findings users agree/disagree with
-
-3. **Maintain Human Review Option:** Always offer escalation to real attorney
-
-4. **Set Expectations:** Be clear this is AI analysis, not legal advice
-
-5. **Provide Context:** Show users how to use the analysis effectively
-
-### For User Trust
-
-1. **Explain Your Methodology:** Show users how the analysis works
-
-2. **Show Confidence Levels:** Indicate when AI is uncertain
-
-3. **Cite Sources:** Reference industry standards and common practices
-
-4. **Admit Limitations:** Be clear about what AI can't do
-
-5. **Offer Guarantees:** Consider money-back if analysis misses critical issues
-
----
-
-## 🔐 Legal & Compliance Considerations
-
-### Disclaimers Required
-
-Your product must include:
-
-1. **Not Legal Advice Disclaimer:**
-```
-This analysis is provided by AI and does not constitute legal advice. 
-For legal advice, consult a licensed attorney in your jurisdiction.
-```
-
-2. **No Attorney-Client Relationship:**
-```
-Use of this service does not create an attorney-client relationship.
-```
-
-3. **Accuracy Limitations:**
-```
-While our AI strives for accuracy, it may not identify all issues. 
-Do not rely solely on this analysis for important contracts.
-```
-
-4. **Jurisdiction Limitations:**
-```
-Analysis is based on general contract principles. Specific laws vary by 
-jurisdiction. Consult local counsel for jurisdiction-specific advice.
-```
-
-### Data Protection
-
-- **Encryption:** All contracts must be encrypted in transit and at rest
-- **Retention:** Clear policy on how long contracts are stored
-- **Access:** Strict controls on who can access user contracts
-- **Deletion:** Easy way for users to delete their data
-- **GDPR Compliance:** If serving EU users
-
-### Professional Liability
-
-Consider:
-- **E&O Insurance:** Errors and omissions coverage
-- **Terms of Service:** Clear limitations of liability
-- **User Agreement:** Explicit acknowledgment of limitations
-- **Quality Assurance:** Regular audits of analysis accuracy
-
----
-
-## 📚 Resources & References
-
-### Contract Analysis Best Practices
-- ABA Model Rules of Professional Conduct (for attorneys)
-- Common contract clauses and their meanings
-- Industry-specific contract standards
-- Negotiation tactics and strategies
-
-### Technical Resources
-- Anthropic Claude API documentation
-- JSON schema validation libraries
-- React best practices for complex UIs
-- Accessible web design guidelines
-
-### Legal Knowledge Bases
-- Contract Standards for specific industries
-- State-by-state legal variations
-- Recent case law affecting contract enforcement
-- Regulatory compliance requirements
-
----
-
-## 🎯 Implementation Checklist
-
-### Phase 1: Core Functionality (Week 1-2)
-- [ ] Deploy new API endpoint
-- [ ] Update frontend to handle rich data structure
-- [ ] Implement basic error handling
-- [ ] Add loading states and user feedback
-- [ ] Test with 10-20 real contracts
-- [ ] Fix any parsing or display issues
-
-### Phase 2: Refinement (Week 3-4)
-- [ ] Improve clause extraction accuracy
-- [ ] Add contract type detection
-- [ ] Implement role-based analysis
-- [ ] Create printable PDF reports
-- [ ] Add copy-to-clipboard for suggestions
-- [ ] Optimize mobile experience
-
-### Phase 3: Enhancement (Week 5-6)
-- [ ] Add negotiation email templates
-- [ ] Implement comparison to past contracts
-- [ ] Create user feedback mechanism
-- [ ] Build analytics dashboard
-- [ ] Add export options (Word, PDF)
-- [ ] Implement team collaboration features
-
-### Phase 4: Scale (Week 7-8)
-- [ ] Optimize API performance
-- [ ] Add caching layer
-- [ ] Implement rate limiting
-- [ ] Create admin dashboard
-- [ ] Set up monitoring and alerts
-- [ ] Conduct security audit
-
----
-
-## 🏆 Success Story Preview
-
-**Before Implementation:**
-User uploads freelance contract → Gets generic "Medium Risk" analysis → Misses critical termination clause issue → Signs contract → Gets stuck in bad situation
-
-**After Implementation:**
-User uploads freelance contract → Gets "High Risk" with detailed analysis → Sees "NO TERMINATION CLAUSE" flagged as critical → Gets exact language to add → Negotiates successfully → Avoids disaster
-
-**The difference:** Specific, actionable intelligence that prevents costly mistakes.
-
----
-
-## 📞 Support & Maintenance
-
-### Ongoing Maintenance Required
-
-1. **Monitor Analysis Quality:** Review random sample weekly
-2. **Update Legal Knowledge:** Stay current on law changes
-3. **Improve Prompt:** Refine based on user feedback
-4. **Fix Edge Cases:** Address unusual contract formats
-5. **Scale Infrastructure:** As usage grows
-
-### User Support Strategy
-
-- **Knowledge Base:** Common questions and scenarios
-- **Video Tutorials:** How to use the analysis
-- **Live Chat:** For urgent questions
-- **Attorney Network:** Referrals for complex cases
-- **Community Forum:** Users helping users
-
----
-
-## 🎓 Final Thoughts
-
-You're not just building a contract analyzer - you're building a tool that protects people from making costly mistakes. Every improvement you make could save someone from:
-- Losing money on unfair payment terms
-- Getting trapped in an abusive contract
-- Missing critical legal protections
-- Signing away valuable rights
-
-**The Standard You're Aiming For:**
-
-When a startup founder uploads their first client contract and your AI catches the one clause that would have bankrupted them if they'd signed it as-is - that's when you know you've built something exceptional.
-
-**Remember:** In contract analysis, thoroughness matters more than speed. A slow, accurate analysis that catches everything is infinitely more valuable than a fast analysis that misses critical issues.
-
-Good luck building the best contract AI in the market! 🚀
-
----
-
-*Last Updated: November 2025*
-*Version: 2.0*
-*Author: Senior Contract Attorney + AI Architect*
-
-
-
----------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-
-
-
-
+installHook.js:1 initEternlDomAPI: domId 313169-439681-929018 false
+overrideMethod @ installHook.js:1
+initEternlDomAPI @ dom.js?token=176439-85644-237216:893
+(anonymous) @ dom.js?token=176439-85644-237216:932
+(anonymous) @ dom.js?token=176439-85644-237216:934
+installHook.js:1 initEternlDomAPI: href https://preview.helloaca.xyz/pricing
+overrideMethod @ installHook.js:1
+initEternlDomAPI @ dom.js?token=176439-85644-237216:894
+(anonymous) @ dom.js?token=176439-85644-237216:932
+(anonymous) @ dom.js?token=176439-85644-237216:934
+[Violation] Forced reflow while executing JavaScript took 42ms
+index-CznOs-Sc.js:176 🔄 Initializing authentication...
+index-CznOs-Sc.js:176 📦 Using cached auth data
+index-CznOs-Sc.js:176 🔄 Auth state changed: SIGNED_IN nokthelegend@gmail.com
+index-CznOs-Sc.js:176 🔄 Handling auth state change for user: nokthelegend@gmail.com
+index-CznOs-Sc.js:176 📦 Using cached profile data
+index-CznOs-Sc.js:176 🔄 Fetching fresh profile data
+index-CznOs-Sc.js:170 initEternlDomAPI: domId 224658-778380-532315 true
+(anonymous) @ index-CznOs-Sc.js:170
+initEternlDomAPI @ dom.js?token=126948-519044-535549:893
+(anonymous) @ dom.js?token=126948-519044-535549:932
+(anonymous) @ dom.js?token=126948-519044-535549:934
+index-CznOs-Sc.js:170 initEternlDomAPI: href https://preview.helloaca.xyz/pricing
+(anonymous) @ index-CznOs-Sc.js:170
+initEternlDomAPI @ dom.js?token=126948-519044-535549:894
+(anonymous) @ dom.js?token=126948-519044-535549:932
+(anonymous) @ dom.js?token=126948-519044-535549:934
+popup:1  GET https://www.googletagmanager.com/gtag/js?id=G-0WCTF5FP66 net::ERR_SSL_PROTOCOL_ERROR
+dom.js?token=432598-961118-49549:893 initEternlDomAPI: domId 415493-100415-163339 true
+initEternlDomAPI @ dom.js?token=432598-961118-49549:893
+(anonymous) @ dom.js?token=432598-961118-49549:932
+(anonymous) @ dom.js?token=432598-961118-49549:934
+dom.js?token=432598-961118-49549:894 initEternlDomAPI: href https://checkout.paystack.com/popup
+initEternlDomAPI @ dom.js?token=432598-961118-49549:894
+(anonymous) @ dom.js?token=432598-961118-49549:932
+(anonymous) @ dom.js?token=432598-961118-49549:934
+vendor-C31BE1_7.js:1 Datadog Browser SDK: No storage available for session. We will not send any data.
+h @ vendor-C31BE1_7.js:1
+init @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:1
+Ti @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:1
+(anonymous) @ index-D3C1ACEk.js:37
+dom.js?token=582447-8133-591615:893 initEternlDomAPI: domId 510744-226950-440878 true
+initEternlDomAPI @ dom.js?token=582447-8133-591615:893
+(anonymous) @ dom.js?token=582447-8133-591615:932
+(anonymous) @ dom.js?token=582447-8133-591615:934
+dom.js?token=582447-8133-591615:894 initEternlDomAPI: href about:blank
+initEternlDomAPI @ dom.js?token=582447-8133-591615:894
+(anonymous) @ dom.js?token=582447-8133-591615:932
+(anonymous) @ dom.js?token=582447-8133-591615:934
+vendor-C31BE1_7.js:1 [Violation] 'setTimeout' handler took 85ms
+[Violation] Forced reflow while executing JavaScript took 79ms
+vendor-C31BE1_7.js:1 ba {message: 'Network Error', name: 'AxiosError', code: 'ERR_NETWORK', config: {…}, request: XMLHttpRequest, …}
+C.w.<computed> @ vendor-C31BE1_7.js:1
+setupTransaction @ index-D3C1ACEk.js:37
+await in setupTransaction
+(anonymous) @ index-D3C1ACEk.js:37
+(anonymous) @ index-D3C1ACEk.js:37
+vendor-C31BE1_7.js:1  POST https://api.paystack.co/checkout/request_inline net::ERR_SSL_PROTOCOL_ERROR
+(anonymous) @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:1
+PU @ vendor-C31BE1_7.js:1
+P0 @ vendor-C31BE1_7.js:1
+ia.request @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:1
+wj @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:26
+d @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:1
+cm @ vendor-C31BE1_7.js:1
+o @ vendor-C31BE1_7.js:1
+Promise.then
+cm @ vendor-C31BE1_7.js:1
+o @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:1
+(anonymous) @ vendor-C31BE1_7.js:1
+request @ vendor-C31BE1_7.js:26
+requestTransaction @ index-D3C1ACEk.js:37
+setupTransaction @ index-D3C1ACEk.js:37
+(anonymous) @ index-D3C1ACEk.js:37
+(anonymous) @ index-D3C1ACEk.js:37
+index-CznOs-Sc.js:170 Starting contract load for user: ab94ba1a-14d1-4845-86c9-c1ddd3217b42 (retry: 0)
+index-CznOs-Sc.js:170 Loading contracts for user: ab94ba1a-14d1-4845-86c9-c1ddd3217b42
+installHook.js:1 Contract loading timeout after 12s on retry 0 - using cache if available
+overrideMethod @ installHook.js:1
+(anonymous) @ index-CznOs-Sc.js:170
+E @ index-CznOs-Sc.js:532
+await in E
+(anonymous) @ index-CznOs-Sc.js:532
+k0 @ index-CznOs-Sc.js:40
+ad @ index-CznOs-Sc.js:40
+(anonymous) @ index-CznOs-Sc.js:40
+C @ index-CznOs-Sc.js:25
+T @ index-CznOs-Sc.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+$ @ index-CznOs-Sc.js:25
+T @ index-CznOs-Sc.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+$ @ index-CznOs-Sc.js:25
+K @ index-CznOs-Sc.js:25
+e.unstable_scheduleCallback @ index-CznOs-Sc.js:25
+hE @ index-CznOs-Sc.js:40
+ls @ index-CznOs-Sc.js:40
+EM @ index-CznOs-Sc.js:40
+Promise.then
+lS @ index-CznOs-Sc.js:40
+aE @ index-CznOs-Sc.js:40
+sE @ index-CznOs-Sc.js:40
+C @ index-CznOs-Sc.js:25
+T @ index-CznOs-Sc.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+$ @ index-CznOs-Sc.js:25
+T @ index-CznOs-Sc.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+$ @ index-CznOs-Sc.js:25
+T @ index-CznOs-Sc.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+$ @ index-CznOs-Sc.js:25
+K @ index-CznOs-Sc.js:25
+e.unstable_scheduleCallback @ index-CznOs-Sc.js:25
+hE @ index-CznOs-Sc.js:40
+ls @ index-CznOs-Sc.js:40
+ma @ index-CznOs-Sc.js:40
+dM @ index-CznOs-Sc.js:38
+(anonymous) @ index-CznOs-Sc.js:67
+nr.startTransition @ index-CznOs-Sc.js:9
+(anonymous) @ index-CznOs-Sc.js:67
+p @ index-CznOs-Sc.js:49
+(anonymous) @ index-CznOs-Sc.js:58
+(anonymous) @ index-CznOs-Sc.js:67
+w @ index-CznOs-Sc.js:67
+G8 @ index-CznOs-Sc.js:37
+Y8 @ index-CznOs-Sc.js:37
+J8 @ index-CznOs-Sc.js:37
+Vk @ index-CznOs-Sc.js:37
+dA @ index-CznOs-Sc.js:37
+(anonymous) @ index-CznOs-Sc.js:37
+Y2 @ index-CznOs-Sc.js:40
+R3 @ index-CznOs-Sc.js:37
+Jv @ index-CznOs-Sc.js:37
+k2 @ index-CznOs-Sc.js:37
+hR @ index-CznOs-Sc.js:37
+index-CznOs-Sc.js:170 Contract loading process completed
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ❌ No summary found in analysis data, using fallback based on title
+index-D3C1ACEk.js:37 Uncaught TypeError: Cannot destructure property 'language' of 'object null' as it is null.
+    at index-D3C1ACEk.js:37:883030
+    at index-D3C1ACEk.js:37:37052
+(anonymous) @ index-D3C1ACEk.js:37
+(anonymous) @ index-D3C1ACEk.js:37
+index-CznOs-Sc.js:170 Starting contract load for user: ab94ba1a-14d1-4845-86c9-c1ddd3217b42 (retry: 0)
+index-CznOs-Sc.js:170 Loading contracts for user: ab94ba1a-14d1-4845-86c9-c1ddd3217b42
+installHook.js:1 Contract loading timeout after 12s on retry 0 - using cache if available
+overrideMethod @ installHook.js:1
+(anonymous) @ index-CznOs-Sc.js:170
+E @ index-CznOs-Sc.js:532
+await in E
+(anonymous) @ index-CznOs-Sc.js:532
+k0 @ index-CznOs-Sc.js:40
+ad @ index-CznOs-Sc.js:40
+(anonymous) @ index-CznOs-Sc.js:40
+C @ index-CznOs-Sc.js:25
+T @ index-CznOs-Sc.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+$ @ index-CznOs-Sc.js:25
+T @ index-CznOs-Sc.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+$ @ index-CznOs-Sc.js:25
+T @ index-CznOs-Sc.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+$ @ index-CznOs-Sc.js:25
+K @ index-CznOs-Sc.js:25
+e.unstable_scheduleCallback @ index-CznOs-Sc.js:25
+hE @ index-CznOs-Sc.js:40
+ls @ index-CznOs-Sc.js:40
+ma @ index-CznOs-Sc.js:40
+dM @ index-CznOs-Sc.js:38
+(anonymous) @ index-CznOs-Sc.js:67
+nr.startTransition @ index-CznOs-Sc.js:9
+(anonymous) @ index-CznOs-Sc.js:67
+p @ index-CznOs-Sc.js:49
+(anonymous) @ index-CznOs-Sc.js:58
+(anonymous) @ index-CznOs-Sc.js:67
+w @ index-CznOs-Sc.js:67
+G8 @ index-CznOs-Sc.js:37
+Y8 @ index-CznOs-Sc.js:37
+J8 @ index-CznOs-Sc.js:37
+Vk @ index-CznOs-Sc.js:37
+dA @ index-CznOs-Sc.js:37
+(anonymous) @ index-CznOs-Sc.js:37
+Y2 @ index-CznOs-Sc.js:40
+R3 @ index-CznOs-Sc.js:37
+Jv @ index-CznOs-Sc.js:37
+k2 @ index-CznOs-Sc.js:37
+hR @ index-CznOs-Sc.js:37
+index-CznOs-Sc.js:170 Contract loading process completed
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT 2
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ✅ Found summary at root level: Detected potential gaps: Liability. Review and add standard provisions to reduce risk....
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: true, hasAnalysisData: true, hasDirectSummary: true, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ✅ Found summary at root level: Key protections present with no major gaps detected....
+index-CznOs-Sc.js:170 🔍 Getting summary for contract: FREELANCE SERVICE AGREEMENT (Perfect) - Google Docs
+index-CznOs-Sc.js:170 📊 Analysis data structure: {hasAnalysis: false, hasAnalysisData: false, hasDirectSummary: false, hasStructuredAnalysis: false, hasStructuredSummary: false}
+index-CznOs-Sc.js:170 ❌ No summary found in analysis data, using fallback based on title

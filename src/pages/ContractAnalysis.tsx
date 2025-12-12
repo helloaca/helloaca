@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Button from '@/components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
-import { FileText, AlertTriangle, MessageCircle, Download, CheckCircle, XCircle, AlertCircle, Info, ChevronDown, ChevronRight, Users, FileCheck, Briefcase, CreditCard, Calendar, Shield, Lock, Scale, Gavel, FileSignature, PenTool } from 'lucide-react'
+import { FileText, AlertTriangle, MessageCircle, Download, CheckCircle, XCircle, AlertCircle, Info, ChevronDown, ChevronRight, ChevronLeft, Users, FileCheck, Briefcase, CreditCard, Calendar, Shield, Lock, Scale, Gavel, FileSignature, PenTool } from 'lucide-react'
 import { ContractService, Contract, ContractAnalysis as ContractAnalysisType } from '@/lib/contractService'
 import { EnhancedContractAnalysis } from '@/types/contractAnalysis'
 import { ExecutiveSummary } from '@/components/contract-analysis/ExecutiveSummary'
@@ -11,6 +11,8 @@ import { RiskAssessmentComponent } from '@/components/contract-analysis/RiskAsse
 import { LegalInsightsComponent } from '@/components/contract-analysis/LegalInsights'
 import { ExportCenter } from '@/components/contract-analysis/ExportCenter'
 import { SectionAnalysis, RedFlag, CheckItem } from '@/types/contractAnalysis'
+import { useAuth } from '@/contexts/AuthContext'
+import { isContractCredited } from '@/lib/utils'
 
 // Section icons mapping
 const sectionIcons = {
@@ -44,8 +46,26 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
   onDownloadReport,
   onChatWithAI
 }) => {
+  const nav = useNavigate()
+  const auth = useAuth() as any
+  const user = auth.user
+  const profile = auth.profile
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
-  const [activeTab, setActiveTab] = useState<'executive' | 'clauses' | 'risk' | 'legal' | 'export'>('executive')
+  const [activeTab, setActiveTab] = useState<'executive' | 'clauses' | 'risk' | 'legal' | 'export' | 'playbook'>('executive')
+  const proOrAbove = ['pro','team','business','enterprise'].includes(String(profile?.plan || user?.plan || 'free'))
+  const tabs: { id: 'executive' | 'clauses' | 'risk' | 'legal' | 'export' | 'playbook'; label: string; icon: any }[] = [
+    { id: 'executive', label: 'Executive Summary', icon: FileText },
+    { id: 'clauses', label: 'Clause Analysis', icon: Scale },
+    { id: 'risk', label: 'Risk Assessment', icon: AlertTriangle },
+    { id: 'legal', label: 'Legal Insights', icon: Gavel },
+    { id: 'export', label: 'Export Center', icon: Download }
+  ]
+  if (proOrAbove) {
+    tabs.splice(4, 0, { id: 'playbook', label: 'Negotiation Playbook', icon: MessageCircle })
+  }
+  const currentIndex = tabs.findIndex(t => t.id === activeTab)
+  const handlePrev = () => { if (currentIndex > 0) setActiveTab(tabs[currentIndex - 1].id) }
+  const handleNext = () => { if (currentIndex < tabs.length - 1) setActiveTab(tabs[currentIndex + 1].id) }
 
   const toggleSection = (sectionName: string) => {
     const newExpanded = new Set(expandedSections)
@@ -73,21 +93,42 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
     checkItems: []
   }))
 
+  const creditedLocal = user?.id ? isContractCredited(user.id, contract.id) : false
+  const creditedDb = !!((analysis?.analysis_data as any)?.paid_analysis || (analysis?.analysis_data as any)?.paid || (analysis?.analysis_data as any)?.credited_contract)
+  const credited = creditedLocal || creditedDb
+  const isLocked = proOrAbove ? false : !credited
+
   return (
     <div className="space-y-8">
       {/* Tab Navigation */}
       <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {[
-            { id: 'executive', label: 'Executive Summary', icon: FileText },
-            { id: 'clauses', label: 'Clause Analysis', icon: Scale },
-            { id: 'risk', label: 'Risk Assessment', icon: AlertTriangle },
-            { id: 'legal', label: 'Legal Insights', icon: Gavel },
-            { id: 'export', label: 'Export Center', icon: Download }
-          ].map(({ id, label, icon: Icon }) => (
+        <div className="py-2">
+          <Button variant="outline" size="sm" onClick={() => nav('/dashboard')} className="min-h-[36px]">
+            <ChevronLeft className="h-4 w-4 mr-2" /> Back to Dashboard
+          </Button>
+        </div>
+        <div className="sm:hidden flex items-center gap-2 py-2">
+          <select
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value as any)}
+            className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
+          >
+            {tabs.map(t => (
+              <option key={t.id} value={t.id}>{t.label}</option>
+            ))}
+          </select>
+          <Button variant="outline" size="sm" onClick={handlePrev} disabled={currentIndex <= 0} className="min-h-[36px]">
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleNext} disabled={currentIndex >= tabs.length - 1} className="min-h-[36px]">
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        <nav className="hidden sm:flex -mb-px space-x-8">
+          {tabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
-              onClick={() => setActiveTab(id as any)}
+              onClick={() => setActiveTab(id)}
               className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === id
                   ? 'border-primary text-primary'
@@ -114,13 +155,15 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
 
       {/* Clause Analysis Tab */}
       {activeTab === 'clauses' && (
-        <div className="space-y-4">
+        <div className="relative">
+          <div className={isLocked ? 'pointer-events-none select-none filter blur-sm space-y-4' : 'space-y-4'}>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Section-by-Section Analysis</h2>
             <div className="flex space-x-2">
               <Button 
                 variant="outline" 
                 size="sm"
+                className="whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 flex-shrink-0"
                 onClick={() => setExpandedSections(new Set(sectionsArray.map(s => s.sectionName)))}
               >
                 Expand All
@@ -128,6 +171,7 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
               <Button 
                 variant="outline" 
                 size="sm"
+                className="whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 flex-shrink-0"
                 onClick={() => setExpandedSections(new Set())}
               >
                 Collapse All
@@ -289,19 +333,31 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
                 )}
               </Card>
             )
-          })
-        ) : (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Section Analysis Available</h3>
-              <p className="text-gray-600">
-                The contract analysis is using the legacy format. Please re-upload the contract for the new section-by-section analysis.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            })
+          ) : (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Section Analysis Available</h3>
+                <p className="text-gray-600">
+                  The contract analysis is using the legacy format. Please re-upload the contract for the new section-by-section analysis.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+          </div>
+          {isLocked ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-white/85 backdrop-blur-sm rounded-lg p-6 text-center">
+                <h3 className="text-lg font-semibold text-gray-900">Upgrade to unlock Clause Analysis</h3>
+                <p className="text-sm text-gray-600 mt-2">Buy credits to view detailed clause analysis.</p>
+                <div className="mt-4 flex justify-center">
+                  <Button onClick={() => nav('/pricing')} className="min-h-[44px] px-6">Upgrade</Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
       )}
 
       {activeTab === 'clauses' && analysis.analysis_data?.criticalIssues && analysis.analysis_data.criticalIssues.length > 0 && (
@@ -410,17 +466,79 @@ const ContractAnalysisResults: React.FC<ContractAnalysisResultsProps> = ({
       )}
 
       {activeTab === 'risk' && enhancedData?.risk_assessment && (
-        <RiskAssessmentComponent riskAssessment={enhancedData.risk_assessment} />
+        <RiskAssessmentComponent 
+          riskAssessment={enhancedData.risk_assessment} 
+          blurCategories={isLocked}
+          onUpgrade={() => nav('/pricing')}
+        />
       )}
 
       {activeTab === 'legal' && enhancedData?.legal_insights && (
         <LegalInsightsComponent legalInsights={enhancedData.legal_insights} />
       )}
 
+      {activeTab === 'playbook' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <MessageCircle className="h-5 w-5 text-gray-900 mr-2" />
+              Negotiation Playbook
+            </CardTitle>
+            <CardDescription>Priority moves and suggested counters</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3">Priorities</h4>
+                <div className="space-y-2">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-blue-900 text-sm">{enhancedData?.executive_summary?.quick_insights?.negotiation_priority || 'Focus on high‑risk clauses and payment terms.'}</p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3">Tips by role</h4>
+                <div className="space-y-2">
+                  {(enhancedData?.legal_insights?.role_based_advice || []).map((r: any, idx: number) => (
+                    <div key={`rb-${idx}`} className="bg-white rounded-lg p-3 border border-gray-200">
+                      <div className="text-sm font-medium text-gray-900 mb-2">{String(r?.role || 'General')}</div>
+                      <ul className="list-disc ml-5 space-y-1">
+                        {(r?.negotiation_tips || []).map((t: string, i: number) => (
+                          <li key={`tip-${idx}-${i}`} className="text-sm text-gray-700">{t}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3">Suggested language</h4>
+                <div className="space-y-2">
+                  {(enhancedData?.clause_analysis?.clauses_by_section || []).slice(0,6).flatMap((s: any) => (s?.clauses || [])).map((c: any, idx: number) => {
+                    const recs = Array.isArray(c?.recommendations) ? c.recommendations : []
+                    const langs = recs.filter((r: any) => typeof r === 'object' && r?.suggested_language).slice(0,1)
+                    if (langs.length === 0) return null
+                    return (
+                      <div key={`lang-${idx}`} className="bg-white rounded-lg p-3 border border-gray-200">
+                        <div className="text-sm font-medium text-gray-900 mb-1">Clause</div>
+                        <p className="text-sm text-gray-700">{String(langs[0].suggested_language)}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {activeTab === 'export' && enhancedData?.export_data && contract && (
         <ExportCenter 
           exportData={enhancedData.export_data} 
           contractTitle={contract.title}
+          analysis={enhancedData}
+          locked={isLocked}
+          onUpgrade={() => nav('/pricing')}
         />
       )}
 
@@ -452,6 +570,26 @@ const ContractAnalysis: React.FC = () => {
   const [analysis, setAnalysis] = useState<ContractAnalysisType | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const getContractCacheKey = (id: string) => `contract_cache_${id}`
+  const getAnalysisCacheKey = (id: string) => `analysis_cache_${id}`
+  const readCachedContract = (id: string): Contract | null => {
+    try {
+      const raw = localStorage.getItem(getContractCacheKey(id))
+      return raw ? JSON.parse(raw) : null
+    } catch { return null }
+  }
+  const writeCachedContract = (id: string, data: Contract) => {
+    try { localStorage.setItem(getContractCacheKey(id), JSON.stringify(data)) } catch { void 0 }
+  }
+  const readCachedAnalysis = (id: string): ContractAnalysisType | null => {
+    try {
+      const raw = localStorage.getItem(getAnalysisCacheKey(id))
+      return raw ? JSON.parse(raw) : null
+    } catch { return null }
+  }
+  const writeCachedAnalysis = (id: string, data: ContractAnalysisType) => {
+    try { localStorage.setItem(getAnalysisCacheKey(id), JSON.stringify(data)) } catch { void 0 }
+  }
   
   useEffect(() => {
     const loadContractData = async () => {
@@ -460,30 +598,48 @@ const ContractAnalysis: React.FC = () => {
         setIsLoading(false)
         return
       }
-
-      try {
-        setIsLoading(true)
-        const contractData = await ContractService.getContract(contractId)
-        if (!contractData) {
-          setError('Contract not found')
-          return
-        }
-
-        setContract(contractData)
-
-        // Load analysis if contract is completed
-        if (contractData.analysis_status === 'completed') {
-          const analysisData = await ContractService.getContractAnalysis(contractId)
-          setAnalysis(analysisData)
-        }
-      } catch (err) {
-        console.error('Error loading contract:', err)
-        setError('Failed to load contract data')
-      } finally {
+      const cachedContract = readCachedContract(contractId)
+      const cachedAnalysis = readCachedAnalysis(contractId)
+      if (cachedContract) {
+        setContract(cachedContract)
+        if (cachedAnalysis) setAnalysis(cachedAnalysis)
         setIsLoading(false)
       }
+      const timeoutMs = 12000
+      const timeoutPromise = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), timeoutMs))
+      const fetchPromise = (async () => {
+        try {
+          const c = await ContractService.getContract(contractId)
+          if (!c) return { error: new Error('Contract not found') }
+          let a: ContractAnalysisType | null = null
+          if (c.analysis_status === 'completed') {
+            a = await ContractService.getContractAnalysis(contractId)
+          }
+          return { contract: c, analysis: a }
+        } catch (e) {
+          return { error: e }
+        }
+      })()
+      const result = await Promise.race([fetchPromise, timeoutPromise])
+      if ('timedOut' in result) {
+        setIsLoading(false)
+        return
+      }
+      if ('error' in result && result.error) {
+        setError('Failed to load contract data')
+        setIsLoading(false)
+        return
+      }
+      const finalContract = (result as any).contract as Contract
+      const finalAnalysis = (result as any).analysis as ContractAnalysisType | null
+      setContract(finalContract)
+      writeCachedContract(contractId, finalContract)
+      if (finalAnalysis) {
+        setAnalysis(finalAnalysis)
+        writeCachedAnalysis(contractId, finalAnalysis)
+      }
+      setIsLoading(false)
     }
-
     loadContractData()
   }, [contractId])
 

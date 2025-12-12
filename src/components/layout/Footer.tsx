@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Scale } from 'lucide-react'
+import { Linkedin, Twitter, Mail } from 'lucide-react'
 
 const Footer: React.FC = () => {
   return (
@@ -9,11 +9,10 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 sm:gap-8">
           {/* Logo and Description */}
           <div className="col-span-1 md:col-span-2 mb-6 md:mb-0">
-            <div className="flex items-center space-x-2 mb-4">
-              <Scale className="h-8 w-8 text-primary" />
-              <span className="font-space-grotesk font-bold text-2xl">
-                Hello<span className="text-primary">ACA</span>
-              </span>
+            <div className="flex items-center space-x-0 mb-4">
+              <img src="/logo.png" alt="HelloACA" className="h-8 w-8 object-contain" />
+              <span className="font-space-grotesk font-bold text-2xl -ml-1">ello</span>
+              <span className="font-space-grotesk font-bold text-2xl text-primary">aca</span>
             </div>
             <p className="text-gray-300 mb-4 max-w-md text-sm sm:text-base">
               AI-powered contract analysis that helps small law firms, real estate agents, 
@@ -21,7 +20,6 @@ const Footer: React.FC = () => {
             </p>
           </div>
 
-          {/* Mobile: Side by side menus, Desktop: Individual columns */}
           <div className="col-span-1 grid grid-cols-2 gap-6 md:gap-0 md:grid-cols-1 md:col-span-1">
             {/* Quick Links */}
             <div>
@@ -78,7 +76,6 @@ const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Support - Desktop only (separate column) */}
           <div className="hidden md:block">
             <h3 className="font-space-grotesk font-semibold text-lg mb-4">Support</h3>
             <ul className="space-y-2">
@@ -103,6 +100,37 @@ const Footer: React.FC = () => {
                 </Link>
               </li>
             </ul>
+          </div>
+
+          <div className="hidden md:block">
+            <h3 className="font-space-grotesk font-semibold text-lg mb-4">Connect</h3>
+            <div className="flex items-center gap-3">
+              <a
+                href="https://linkedin.com/company/helloaca"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-gray-300 hover:text-primary transition-colors"
+                aria-label="HelloACA on LinkedIn"
+              >
+                <Linkedin className="h-5 w-5" />
+              </a>
+              <a
+                href="https://x.com/helloacaxyz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-gray-300 hover:text-primary transition-colors"
+                aria-label="HelloACA on X"
+              >
+                <Twitter className="h-5 w-5" />
+              </a>
+              <a
+                href="mailto:support@helloaca.xyz"
+                className="p-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-gray-300 hover:text-primary transition-colors"
+                aria-label="Email HelloACA support"
+              >
+                <Mail className="h-5 w-5" />
+              </a>
+            </div>
           </div>
         </div>
 

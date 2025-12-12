@@ -29,10 +29,17 @@ export interface Database {
           first_name: string | null
           last_name: string | null
           email: string
-          plan: 'free' | 'pro' | 'business'
+          plan: 'free' | 'pro' | 'team' | 'business' | 'enterprise'
+          plan_expires_at: string | null
           company: string | null
           role: string | null
           timezone: string | null
+          avatar_seed: string | null
+          credits_balance: number | null
+          notify_email_reports: boolean | null
+          notify_analysis_complete: boolean | null
+          notify_weekly_digest: boolean | null
+          notify_low_credits: boolean | null
           created_at: string
           updated_at: string
         }
@@ -41,10 +48,17 @@ export interface Database {
           first_name?: string | null
           last_name?: string | null
           email: string
-          plan?: 'free' | 'pro' | 'business'
+          plan?: 'free' | 'pro' | 'team' | 'business' | 'enterprise'
+          plan_expires_at?: string | null
           company?: string | null
           role?: string | null
           timezone?: string | null
+          avatar_seed?: string | null
+          credits_balance?: number | null
+          notify_email_reports?: boolean | null
+          notify_analysis_complete?: boolean | null
+          notify_weekly_digest?: boolean | null
+          notify_low_credits?: boolean | null
           created_at?: string
           updated_at?: string
         }
@@ -53,10 +67,17 @@ export interface Database {
           first_name?: string | null
           last_name?: string | null
           email?: string
-          plan?: 'free' | 'pro' | 'business'
+          plan?: 'free' | 'pro' | 'team' | 'business' | 'enterprise'
+          plan_expires_at?: string | null
           company?: string | null
           role?: string | null
           timezone?: string | null
+          avatar_seed?: string | null
+          credits_balance?: number | null
+          notify_email_reports?: boolean | null
+          notify_analysis_complete?: boolean | null
+          notify_weekly_digest?: boolean | null
+          notify_low_credits?: boolean | null
           created_at?: string
           updated_at?: string
         }
@@ -165,7 +186,7 @@ export interface AuthUser {
   name?: string
   firstName?: string
   lastName?: string
-  plan?: 'free' | 'pro' | 'business'
+  plan?: 'free' | 'pro' | 'team' | 'business' | 'enterprise'
   company?: string
   role?: string
   timezone?: string
@@ -175,7 +196,7 @@ export interface AuthUser {
 // Utility functions for common operations
 export const authHelpers = {
   // Sign up new user
-  async signUp(email: string, password: string, userData: { firstName: string; lastName: string; plan?: 'free' | 'pro' | 'business' }) {
+  async signUp(email: string, password: string, userData: { firstName: string; lastName: string; plan?: 'free' | 'pro' | 'team' | 'business' | 'enterprise' }) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -225,7 +246,7 @@ export const authHelpers = {
   // Reset password
   async resetPassword(email: string) {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`
+      redirectTo: `${window.location.origin}/reset-password`
     })
     return { data, error }
   }
@@ -234,7 +255,7 @@ export const authHelpers = {
 // Database helpers
 export const dbHelpers = {
   // User profile operations
-  async createUserProfile(userId: string, email: string, firstName: string, lastName: string, plan: 'free' | 'pro' | 'business' = 'free') {
+  async createUserProfile(userId: string, email: string, firstName: string, lastName: string, plan: 'free' | 'pro' | 'team' | 'business' | 'enterprise' = 'free') {
     const { data, error } = await supabase
       .from('user_profiles')
       .insert({

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/layout/Header'
 import { Footer } from '../components/layout/Footer'
-import { Mail, Phone, MapPin, Send, ArrowLeft, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
+import { Mail, Phone, MapPin, Send, ArrowLeft, Loader2, AlertCircle, CheckCircle, Linkedin, Twitter } from 'lucide-react'
 import { toast } from 'sonner'
 import { 
   submitContactForm, 
@@ -130,7 +130,7 @@ const Contact: React.FC = () => {
               Contact Us
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Have questions about HelloACA? We're here to help. Reach out to our team 
+              Have questions about Helloaca? We're here to help. Reach out to our team 
               and we'll get back to you as soon as possible.
             </p>
           </div>
@@ -423,8 +423,12 @@ const Contact: React.FC = () => {
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-1">Email</h3>
-                      <p className="text-gray-600">support@helloaca.xyz</p>
-                <p className="text-gray-600">sales@helloaca.xyz</p>
+                      <p className="text-gray-600">
+                        <a href="mailto:support@helloaca.xyz" className="hover:text-primary">support@helloaca.xyz</a>
+                      </p>
+                      <p className="text-gray-600">
+                        <a href="mailto:sales@helloaca.xyz" className="hover:text-primary">sales@helloaca.xyz</a>
+                      </p>
                     </div>
                   </div>
 
@@ -450,6 +454,34 @@ const Contact: React.FC = () => {
                       </p>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Connect</h2>
+                <div className="flex items-center gap-3">
+                  <a
+                    href="https://linkedin.com/company/helloaca"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-primary transition-colors"
+                  >
+                    <Linkedin className="h-5 w-5" />
+                  </a>
+                  <a
+                    href="https://x.com/helloacaxyz"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-primary transition-colors"
+                  >
+                    <Twitter className="h-5 w-5" />
+                  </a>
+                  <a
+                    href="mailto:support@helloaca.xyz"
+                    className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-primary transition-colors"
+                  >
+                    <Mail className="h-5 w-5" />
+                  </a>
                 </div>
               </div>
 

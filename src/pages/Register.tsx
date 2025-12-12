@@ -18,7 +18,7 @@ const Register: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [acceptTerms, setAcceptTerms] = useState(false)
-  const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'business'>('free')
+  const [selectedPlan, setSelectedPlan] = useState<'free' | 'credits'>('free')
   const [errors, setErrors] = useState<{
     firstName?: string
     lastName?: string
@@ -137,22 +137,15 @@ const Register: React.FC = () => {
       id: 'free' as const,
       name: 'Free',
       price: '$0',
-      period: 'forever',
-      features: ['1 contract per month', 'Basic clause analysis', 'Email support']
+      period: 'month',
+      features: ['1 contract per month', 'Basic AI-powered analysis']
     },
     {
-      id: 'pro' as const,
-      name: 'Pro',
-      price: '$49',
-      period: 'per month',
-      features: ['10 contracts per month', 'AI chat', 'Risk classification', 'PDF reports', 'Priority support']
-    },
-    {
-      id: 'business' as const,
-      name: 'Business',
-      price: '$299',
-      period: 'per month',
-      features: ['Unlimited contracts', 'Team collaboration', 'Multilingual analysis', 'White-label reports', 'Dedicated support']
+      id: 'credits' as const,
+      name: 'Credits',
+      price: 'Pay as you go',
+      period: '',
+      features: ['Buy credits for more analyses', 'Includes chat with each credit']
     }
   ]
 
@@ -162,11 +155,9 @@ const Register: React.FC = () => {
         {/* Logo and Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-6">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-[#4ECCA3] rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">H</span>
-              </div>
-              <span className="text-2xl font-bold text-gray-900">HelloACA</span>
+            <div className="flex items-center space-x-0">
+              <img src="/logo.png" alt="HelloACA" className="w-8 h-8 rounded-lg object-contain" />
+              <span className="text-2xl font-bold text-gray-900 -ml-1 tracking-tight">elloaca</span>
             </div>
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Create your account</h2>
@@ -201,7 +192,8 @@ const Register: React.FC = () => {
               
               <button
                 onClick={handleMicrosoftSignup}
-                className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                disabled={true}
+                className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 opacity-50 cursor-not-allowed transition-colors"
               >
                 <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
                   <path fill="#F25022" d="M1 1h10v10H1z"/>
@@ -209,7 +201,7 @@ const Register: React.FC = () => {
                   <path fill="#7FBA00" d="M1 13h10v10H1z"/>
                   <path fill="#FFB900" d="M13 13h10v10H13z"/>
                 </svg>
-                Sign up with Microsoft
+                Sign up with Microsoft (Coming Soon)
               </button>
             </div>
 
@@ -436,7 +428,7 @@ const Register: React.FC = () => {
                     <div className="flex-1">
                       <div className="flex items-center mb-2">
                         <h4 className="text-lg font-semibold text-gray-900">{plan.name}</h4>
-                        {plan.id === 'pro' && (
+                        {plan.id === 'credits' && (
                           <span className="ml-2 px-2 py-1 text-xs bg-[#4ECCA3] text-white rounded-full">
                             Popular
                           </span>
@@ -444,7 +436,9 @@ const Register: React.FC = () => {
                       </div>
                       <div className="flex items-baseline mb-4">
                         <span className="text-2xl font-bold text-gray-900">{plan.price}</span>
-                        <span className="ml-1 text-gray-500">/{plan.period}</span>
+                        {plan.period ? (
+                          <span className="ml-1 text-gray-500">/{plan.period}</span>
+                        ) : null}
                       </div>
                       <ul className="space-y-2">
                         {plan.features.map((feature, index) => (

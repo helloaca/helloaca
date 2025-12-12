@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import Button from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('')
@@ -15,6 +16,11 @@ const Login: React.FC = () => {
 
   const { signIn, signInWithGoogle } = useAuth()
   const navigate = useNavigate()
+  const [requireMfa, setRequireMfa] = useState(false)
+  const [factorId, setFactorId] = useState<string | null>(null)
+  const [totpCode, setTotpCode] = useState('')
+  const [mfaError, setMfaError] = useState<string | null>(null)
+  const [isVerifying, setIsVerifying] = useState(false)
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {}
@@ -47,13 +53,34 @@ const Login: React.FC = () => {
 
     try {
       const result = await signIn(email, password)
-      
+
       if (result.success) {
+        setIsLoading(false)
         navigate('/dashboard')
       } else {
-        setErrors({ general: result.error || 'Login failed' })
+        const msg = result.error || 'Login failed'
+        const mayNeedMfa = /mfa|two[- ]?factor|otp|verification code/i.test(msg)
+        if (mayNeedMfa) {
+          try {
+            const mfaTimeout = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), 5000))
+            const factorsResult = await Promise.race([
+              (supabase as any).auth.mfa.listFactors(),
+              mfaTimeout
+            ])
+            if (!('timedOut' in factorsResult) && Array.isArray(factorsResult?.data)) {
+              const totp = factorsResult.data.find((f: any) => f.factorType === 'totp')
+              if (totp) {
+                setFactorId(totp.id)
+                setRequireMfa(true)
+                setIsLoading(false)
+                return
+              }
+            }
+          } catch { /* noop */ }
+        }
+        setErrors({ general: msg })
       }
-    } catch (error) {
+    } catch {
       setErrors({ general: 'An unexpected error occurred' })
     } finally {
       setIsLoading(false)
@@ -78,6 +105,36 @@ const Login: React.FC = () => {
     }
   }
 
+  const verifyMfa = async () => {
+    try {
+      if (!factorId || !totpCode) {
+        setMfaError('Enter the code from your app')
+        return
+      }
+      setIsVerifying(true)
+      const { data: challenge, error: cErr } = await (supabase as any).auth.mfa.challenge({ factorId })
+      if (cErr) {
+        setMfaError('Challenge failed')
+        setIsVerifying(false)
+        return
+      }
+      const { error: vErr } = await (supabase as any).auth.mfa.verify({ factorId, code: totpCode, challengeId: challenge?.id })
+      if (vErr) {
+        setMfaError('Invalid code')
+        setIsVerifying(false)
+        return
+      }
+      setRequireMfa(false)
+      setTotpCode('')
+      setFactorId(null)
+      setIsVerifying(false)
+      navigate('/dashboard')
+    } catch (e) {
+      setMfaError('Verification failed')
+      setIsVerifying(false)
+    }
+  }
+
   const handleMicrosoftLogin = () => {
     // TODO: Implement Microsoft OAuth with Supabase
     console.log('Microsoft login clicked - To be implemented')
@@ -89,11 +146,9 @@ const Login: React.FC = () => {
         {/* Logo and Header */}
         <div className="text-center">
           <div className="flex items-center justify-center mb-6">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-[#4ECCA3] rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">H</span>
-              </div>
-              <span className="text-2xl font-bold text-gray-900">HelloACA</span>
+            <div className="flex items-center space-x-0">
+              <img src="/logo.png" alt="HelloACA" className="w-8 h-8 rounded-lg object-contain" />
+              <span className="text-2xl font-bold text-gray-900 -ml-1 tracking-tight">elloaca</span>
             </div>
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h2>
@@ -126,7 +181,8 @@ const Login: React.FC = () => {
             
             <button
               onClick={handleMicrosoftLogin}
-              className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              disabled={true}
+              className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 opacity-50 cursor-not-allowed transition-colors"
             >
               <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
                 <path fill="#F25022" d="M1 1h10v10H1z"/>
@@ -134,7 +190,7 @@ const Login: React.FC = () => {
                 <path fill="#7FBA00" d="M1 13h10v10H1z"/>
                 <path fill="#FFB900" d="M13 13h10v10H13z"/>
               </svg>
-              Continue with Microsoft
+              Continue with Microsoft (Coming Soon)
             </button>
           </div>
 
@@ -247,6 +303,18 @@ const Login: React.FC = () => {
               )}
             </Button>
           </form>
+
+          {requireMfa && (
+            <div className="mt-6 p-6 border border-gray-200 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Two‑Factor Authentication Required</h3>
+              <p className="text-sm text-gray-600 mb-4">Open your authenticator app and enter the 6‑digit code.</p>
+              <div className="flex items-center gap-3">
+                <input type="text" value={totpCode} onChange={(e) => setTotpCode(e.target.value)} placeholder="123456" className="flex-1 px-4 py-3 border border-gray-300 rounded-lg" />
+                <Button onClick={verifyMfa} disabled={isVerifying}>{isVerifying ? 'Verifying…' : 'Verify'}</Button>
+              </div>
+              {mfaError && <p className="mt-2 text-sm text-red-600">{mfaError}</p>}
+            </div>
+          )}
 
           {/* Sign up link */}
           <div className="mt-6 text-center">

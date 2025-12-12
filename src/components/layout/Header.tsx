@@ -1,9 +1,12 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Menu, X, Settings, LogOut } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import { getUserCredits } from '@/lib/utils'
 import Button from '../ui/Button'
+import Avatar from '../ui/Avatar'
 import { toast } from 'sonner'
+import { supabase } from '@/lib/supabase'
 
 interface HeaderProps {
   showAuth?: boolean
@@ -12,6 +15,10 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [isNotifOpen, setIsNotifOpen] = useState(false)
+  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; body?: string; read?: boolean; created_at?: string }>>([])
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
+  const hasUnread = notifications.some(n => !n.read)
   const { user, profile, isAuthenticated, signOut } = useAuth()
   const navigate = useNavigate()
 
@@ -21,6 +28,73 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
 
   const toggleUserMenu = () => {
     setIsUserMenuOpen(!isUserMenuOpen)
+  }
+
+  // Notifications: load on mount/auth changes
+  useEffect(() => {
+    const loadNotifs = async () => {
+      try {
+        if (!isAuthenticated || !user?.id) return
+        const { data } = await supabase
+          .from('notifications')
+          .select('id,title,body,read,created_at')
+          .eq('user_id', String(user.id))
+          .order('created_at', { ascending: false })
+          .limit(7)
+        setNotifications(Array.isArray(data) ? data : [])
+      } catch {
+        setNotifications([])
+      }
+    }
+    loadNotifs()
+
+    let sub: any
+    try {
+      if (isAuthenticated && user?.id) {
+        // Subscribe to live notifications for instant updates
+        sub = supabase
+          .channel(`notif_${user.id}`)
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, (payload: any) => {
+            const n = payload?.new
+            if (n && n.id) {
+              setNotifications((prev) => [{ id: String(n.id), title: String(n.title || ''), body: String(n.body || ''), read: Boolean(n.read), created_at: String(n.created_at || new Date().toISOString()) }, ...prev])
+            }
+          })
+          .subscribe()
+      }
+    } catch {}
+
+    return () => {
+      try { if (sub) supabase.removeChannel(sub) } catch {}
+    }
+  }, [isAuthenticated, user?.id])
+
+  const toggleNotif = async () => {
+    const next = !isNotifOpen
+    setIsNotifOpen(next)
+    if (next && isAuthenticated && user?.id) {
+      try {
+        const { data } = await supabase
+          .from('notifications')
+          .select('id,title,body,read,created_at')
+          .eq('user_id', String(user.id))
+          .order('created_at', { ascending: false })
+          .limit(7)
+        setNotifications(Array.isArray(data) ? data : [])
+      } catch {}
+    }
+  }
+
+  const markAllRead = async () => {
+    try {
+      if (!isAuthenticated || !user?.id) return
+      await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', String(user.id))
+        .eq('read', false)
+      setNotifications(notifications.map((n) => ({ ...n, read: true })))
+    } catch {}
   }
 
   // Get the display name - prefer profile data, then user.name, then fallback
@@ -54,19 +128,6 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
     return 'User'
   }
 
-  // Get initials for avatar
-  const getInitials = () => {
-    if (profile?.first_name && profile?.last_name) {
-      return `${profile.first_name.charAt(0)}${profile.last_name.charAt(0)}`.toUpperCase()
-    }
-    if (user?.firstName && user?.lastName) {
-      return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()
-    }
-    if (user?.name && typeof user.name === 'string') {
-      return user.name.charAt(0).toUpperCase()
-    }
-    return 'U'
-  }
 
   // Handle sign out
   const handleSignOut = async () => {
@@ -85,13 +146,11 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-14 sm:h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="flex items-center space-x-2">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-[#4ECCA3] rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm sm:text-lg">H</span>
-              </div>
-              <span className="font-bold text-xl sm:text-2xl text-gray-900">
-                HelloACA
+          <Link to="/" className="flex items-center">
+            <div className="flex items-center space-x-0">
+              <img src="/logo.png" alt="HelloACA" className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg object-contain" />
+              <span className="font-bold text-xl sm:text-2xl text-gray-900 -ml-1 tracking-tight">
+                elloaca
               </span>
             </div>
           </Link>
@@ -135,16 +194,27 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
                 </Link>
               </>
             ) : isAuthenticated && user ? (
-              <div className="relative">
+              <>
+                {/* Notification Icon (sibling, aligned with avatar) */}
+                <button
+                  onClick={toggleNotif}
+                  className="flex items-center justify-center p-2 rounded-lg hover:bg-gray-100 transition-colors min-h-[44px]"
+                  aria-label="Notifications"
+                  title="Notifications"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-gray-700">
+                    <path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2Z" />
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 5-3 7h18c0-2-3 0-3-7" />
+                  </svg>
+                  {hasUnread && <span className="inline-block ml-1 w-2 h-2 bg-[#4ECCA3] rounded-full" />}
+                </button>
+                
+                <div className="relative">
                 <button
                   onClick={toggleUserMenu}
                   className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors min-h-[44px]"
                 >
-                  <div className="w-8 h-8 bg-[#4ECCA3] rounded-full flex items-center justify-center">
-                    <span className="text-white font-semibold text-sm">
-                      {getInitials()}
-                    </span>
-                  </div>
+                  <Avatar seed={profile?.avatar_seed || user.id} size={32} className="w-8 h-8 rounded-full" />
                   <span className="text-gray-700 font-medium">{getDisplayName()}</span>
                 </button>
 
@@ -154,6 +224,7 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
                     <div className="px-4 py-2 border-b border-gray-100">
                       <p className="text-sm font-medium text-gray-900">{getDisplayName()}</p>
                       <p className="text-sm text-gray-500">{user.email || ''}</p>
+                      <p className="text-xs text-gray-600 mt-1">Credits: {user?.id ? getUserCredits(user.id) : 0}</p>
                     </div>
                     <Link
                       to="/settings"
@@ -176,11 +247,25 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
                   </div>
                 )}
               </div>
+              </>
             ) : null}
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          {/* Mobile Menu & Notifications */}
+          <div className="md:hidden flex items-center space-x-2">
+            {isAuthenticated && user && (
+              <button
+                onClick={toggleNotif}
+                className="p-2 rounded-lg text-gray-700 hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                aria-label="Notifications"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                  <path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2Z" />
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 5-3 7h18c0-2-3 0-3-7" />
+                </svg>
+                {hasUnread && <span className="inline-block ml-1 w-2 h-2 bg-[#4ECCA3] rounded-full" />}
+              </button>
+            )}
             <button
               onClick={toggleMobileMenu}
               className="p-2 rounded-lg text-gray-700 hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
@@ -193,6 +278,46 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
             </button>
           </div>
         </div>
+
+        {/* Notifications Dropdown (Shared) */}
+        {isNotifOpen && (
+          <div className="fixed top-14 sm:top-16 right-2 sm:right-4 w-[calc(100vw-1rem)] sm:w-96 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100">
+              <p className="text-sm font-medium text-gray-900">Notifications</p>
+              <button onClick={markAllRead} className="text-xs text-[#4ECCA3] hover:underline">Mark all read</button>
+            </div>
+            <div className="max-h-64 overflow-auto">
+              {notifications.length === 0 ? (
+                <p className="px-4 py-3 text-sm text-gray-500">No notifications</p>
+              ) : notifications.map((n) => (
+                <button
+                  key={n.id}
+                  className="w-full text-left px-4 py-3 hover:bg-gray-50"
+                  onClick={async () => {
+                    try {
+                      if (!n.read && isAuthenticated && user?.id) {
+                        await supabase
+                          .from('notifications')
+                          .update({ read: true })
+                          .eq('id', n.id)
+                          .eq('user_id', String(user.id))
+                        setNotifications(notifications.map((x) => (x.id === n.id ? { ...x, read: true } : x)))
+                      }
+                      setExpanded((prev) => ({ ...prev, [n.id]: !prev[n.id] }))
+                    } catch {}
+                  }}
+                >
+                  <div className="flex items-start justify-between">
+                    <p className="text-sm font-medium text-gray-900">{n.title}</p>
+                    {!n.read && <span className="inline-block w-2 h-2 bg-[#4ECCA3] rounded-full" />}
+                  </div>
+                  {n.body && expanded[n.id] && <p className="text-sm text-gray-600 mt-1">{n.body}</p>}
+                  <p className="text-xs text-gray-400 mt-1">{n.created_at ? new Date(n.created_at).toLocaleString() : ''}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Mobile Menu with backdrop and animations */}
         {isMobileMenuOpen && (
@@ -281,11 +406,7 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
                   {isAuthenticated && user && (
                     <div className="pt-4 border-t border-gray-100">
                       <div className="flex items-center space-x-3 mb-4 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-10 h-10 bg-[#4ECCA3] rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold">
-                            {getInitials()}
-                          </span>
-                        </div>
+                        <Avatar seed={profile?.avatar_seed || user.id} size={40} className="w-10 h-10 rounded-full" />
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-gray-900 truncate">{getDisplayName()}</p>
                           <p className="text-sm text-gray-500 truncate">{user.email || ''}</p>
@@ -315,3 +436,4 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
 }
 
 export default Header
+ 

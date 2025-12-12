@@ -1,8 +1,11 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
 import { Session } from '@supabase/supabase-js'
 import { toast } from 'sonner'
-import { AuthUser, UserProfile, supabase } from '../lib/supabase'
+import { AuthUser, supabase } from '../lib/supabase'
+import { setUserCredits, refreshMonthlyCreditsForPlan } from '../lib/utils'
+import type { UserProfile } from '../lib/supabase'
 import { trackAuth, setUserProperties } from '../lib/analytics'
+import mixpanel from 'mixpanel-browser'
 
 interface AuthContextType {
   user: AuthUser | null
@@ -17,6 +20,7 @@ interface AuthContextType {
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>
   updateProfile: (updates: Partial<UserProfile>) => Promise<{ success: boolean; error?: string }>
+  refreshProfile: () => Promise<{ success: boolean; error?: string }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -41,21 +45,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     toast.error(error.message)
   }
 
-  // Cache keys for sessionStorage
+  // Cache keys for persistent storage
   const CACHE_KEYS = {
     USER: 'auth_user',
     PROFILE: 'auth_profile',
     SESSION: 'auth_session'
   }
 
-  // Helper functions for sessionStorage
+  // Helper functions for persistent storage
   const cacheUserData = (user: AuthUser, profile: UserProfile | null, session: Session) => {
     try {
-      sessionStorage.setItem(CACHE_KEYS.USER, JSON.stringify(user))
+      localStorage.setItem(CACHE_KEYS.USER, JSON.stringify(user))
       if (profile) {
-        sessionStorage.setItem(CACHE_KEYS.PROFILE, JSON.stringify(profile))
+        localStorage.setItem(CACHE_KEYS.PROFILE, JSON.stringify(profile))
       }
-      sessionStorage.setItem(CACHE_KEYS.SESSION, JSON.stringify(session))
+      localStorage.setItem(CACHE_KEYS.SESSION, JSON.stringify(session))
     } catch (error) {
       console.warn('Failed to cache user data:', error)
       toast.error('Failed to save session data. Some features may not work properly.')
@@ -64,9 +68,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const getCachedUserData = () => {
     try {
-      const cachedUser = sessionStorage.getItem(CACHE_KEYS.USER)
-      const cachedProfile = sessionStorage.getItem(CACHE_KEYS.PROFILE)
-      const cachedSession = sessionStorage.getItem(CACHE_KEYS.SESSION)
+      const cachedUser = localStorage.getItem(CACHE_KEYS.USER)
+      const cachedProfile = localStorage.getItem(CACHE_KEYS.PROFILE)
+      const cachedSession = localStorage.getItem(CACHE_KEYS.SESSION)
       
       return {
         user: cachedUser ? JSON.parse(cachedUser) : null,
@@ -82,9 +86,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clearCachedUserData = () => {
     try {
-      sessionStorage.removeItem(CACHE_KEYS.USER)
-      sessionStorage.removeItem(CACHE_KEYS.PROFILE)
-      sessionStorage.removeItem(CACHE_KEYS.SESSION)
+      localStorage.removeItem(CACHE_KEYS.USER)
+      localStorage.removeItem(CACHE_KEYS.PROFILE)
+      localStorage.removeItem(CACHE_KEYS.SESSION)
     } catch (error) {
       console.warn('Failed to clear cached user data:', error)
     }
@@ -95,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Initialize auth state with improved timeout protection
   useEffect(() => {
     let isMounted = true
-    let initTimeout: NodeJS.Timeout
+    let initTimeout: ReturnType<typeof setTimeout>
     
     const initializeAuth = async () => {
       console.log('🔄 Initializing authentication...')
@@ -108,7 +112,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(cachedData.user)
           setProfile(cachedData.profile)
           setSession(cachedData.session)
-          // Don't set isRehydrating here to avoid infinite loading
+          // Immediately allow UI to proceed while background revalidation happens
+          setLoading(false)
         }
 
         // Create a timeout promise that resolves (doesn't reject) after delay
@@ -116,34 +121,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           initTimeout = setTimeout(() => {
             // Silently handle timeout without warning - authentication is working with cached data
             resolve({ timedOut: true })
-          }, 10000) // Reduced to 10 second timeout
+          }, 10000)
         })
 
         // Create the session fetch promise with optimized retry logic
-        const sessionPromise = new Promise<{ session: any; error: any; timedOut?: never }>(async (resolve, reject) => {
-          try {
-            // Get current session from Supabase with optimized retry logic
-            let retryCount = 0
-            const maxRetries = 1 // Reduced retries to prevent timeout
-            
-            while (retryCount <= maxRetries) {
-              try {
-                const { data: { session }, error } = await supabase.auth.getSession()
-                resolve({ session, error })
-                return
-              } catch (err) {
-                retryCount++
-                if (retryCount > maxRetries) {
-                  reject(err)
-                } else {
-                  console.log(`🔄 Retrying session fetch (${retryCount}/${maxRetries})`)
-                  await new Promise(resolve => setTimeout(resolve, 500)) // Reduced wait time to 500ms
+        const sessionPromise = new Promise<{ session: any; error: any; timedOut?: never }>((resolve, reject) => {
+          (async () => {
+            try {
+              let retryCount = 0
+              const maxRetries = 1
+              while (retryCount <= maxRetries) {
+                try {
+                  const { data: { session }, error } = await supabase.auth.getSession()
+                  resolve({ session, error })
+                  return
+                } catch (err) {
+                  retryCount++
+                  if (retryCount > maxRetries) {
+                    reject(err)
+                  } else {
+                    console.log(`🔄 Retrying session fetch (${retryCount}/${maxRetries})`)
+                    await new Promise(r => setTimeout(r, 500))
+                  }
                 }
               }
+            } catch (error) {
+              reject(error)
             }
-          } catch (error) {
-            reject(error)
-          }
+          })()
         })
 
         // Race between session fetch and timeout
@@ -153,7 +158,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if ('timedOut' in result) {
             // Timeout occurred - use cached data if available (silently)
             if (cachedData.user && cachedData.session) {
-              // Keep cached data, just update loading states
               setLoading(false)
               setIsRehydrating(false)
             } else {
@@ -237,6 +241,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setSession(null)
             setLoading(false)
             setIsRehydrating(false)
+            // Reset Mixpanel identity on logout to prevent cross-user data mixing
+            mixpanel.reset()
           } else if (event === 'TOKEN_REFRESHED' && session) {
             setSession(session)
             // Update cached session
@@ -300,6 +306,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           plan: session.user.user_metadata?.plan || 'free'
         }
         setUser(authUser)
+        const prevDistinct = mixpanel.get_distinct_id()
+        if (prevDistinct && prevDistinct !== authUser.id) {
+          mixpanel.alias(authUser.id, prevDistinct)
+        }
+        mixpanel.identify(authUser.id)
+        // Create/update Mixpanel user profile immediately after identification
+        mixpanel.people.set({
+          $email: authUser.email,
+          $name: authUser.name,
+          plan: authUser.plan
+        })
+        // Persist plan as a super property on events
+        mixpanel.register({ plan: authUser.plan })
+        // Send a confirmation event so Users page shows a recent event tied to this profile
+        mixpanel.track('User Profile Set', { plan: authUser.plan })
 
         try {
           // Check if we need to fetch profile data
@@ -329,6 +350,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const lastName = session.user.user_metadata?.lastName || ''
               const plan = session.user.user_metadata?.plan || 'free'
               
+              const avatarSeed = session.user.id
               const { error: createError } = await supabase
                 .from('user_profiles')
                 .insert({
@@ -336,10 +358,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   email: session.user.email!,
                   first_name: firstName,
                   last_name: lastName,
-                  plan: plan as 'free' | 'pro' | 'business',
+                  plan: plan as 'free' | 'pro' | 'team' | 'business' | 'enterprise',
                   company: null,
                   role: null,
-                  timezone: null
+                  timezone: null,
+                  avatar_seed: avatarSeed
                 })
               
               if (createError) {
@@ -355,6 +378,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 if (createdProfile) {
                   console.log('✅ Profile created successfully')
                   setProfile(createdProfile)
+                  try { setUserCredits(createdProfile.id, createdProfile.credits_balance ?? 0); refreshMonthlyCreditsForPlan(createdProfile.id, createdProfile.plan as any) } catch { /* noop */ }
                   // Set user properties for analytics
                   setUserProperties({
                     user_id: createdProfile.id,
@@ -366,16 +390,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
               }
             } else if (existingProfile) {
-              console.log('✅ Profile loaded successfully')
-              setProfile(existingProfile)
-              // Set user properties for analytics
+              let updatedProfile = existingProfile
+              if (!existingProfile.avatar_seed) {
+                const seed = session.user.id
+                const { error: updateErr, data } = await supabase
+                  .from('user_profiles')
+                  .update({ avatar_seed: seed })
+                  .eq('id', session.user.id)
+                  .select()
+                  .single()
+                if (!updateErr && data) {
+                  updatedProfile = data
+                }
+              }
+              setProfile(updatedProfile)
+              try { setUserCredits(updatedProfile.id, updatedProfile.credits_balance ?? 0); refreshMonthlyCreditsForPlan(updatedProfile.id, updatedProfile.plan as any) } catch { /* noop */ }
               setUserProperties({
-                user_id: existingProfile.id,
-                plan: existingProfile.plan,
-                company: existingProfile.company || undefined
+                user_id: updatedProfile.id,
+                plan: updatedProfile.plan,
+                company: updatedProfile.company || undefined
               })
-              // Cache the data
-              cacheUserData(authUser, existingProfile, session)
+              cacheUserData(authUser, updatedProfile, session)
             }
           }
         } catch (err) {
@@ -386,20 +421,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (!cachedData.profile) {
             // Create a minimal profile from user data if no cache
             console.log('🔄 Creating minimal profile from user metadata')
-            const minimalProfile = {
+            const minimalProfile: UserProfile = {
               id: session.user.id,
               first_name: session.user.user_metadata?.firstName || null,
               last_name: session.user.user_metadata?.lastName || null,
               email: session.user.email!,
-              plan: (session.user.user_metadata?.plan || 'free') as 'free' | 'pro' | 'business',
+              plan: (session.user.user_metadata?.plan || 'free') as 'free' | 'pro' | 'team' | 'business' | 'enterprise',
+              plan_expires_at: null,
               company: null,
               role: null,
               timezone: null,
+              avatar_seed: session.user.id,
+              credits_balance: 0,
+              notify_email_reports: false,
+              notify_analysis_complete: false,
+              notify_weekly_digest: false,
+              notify_low_credits: true,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             }
-            setProfile(minimalProfile)
-            cacheUserData(authUser, minimalProfile, session)
+            setProfile(minimalProfile as UserProfile)
+            cacheUserData(authUser, minimalProfile as UserProfile, session)
           }
         }
       } else {
@@ -418,6 +460,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearTimeout(profileTimeout)
       setLoading(false)
       setIsRehydrating(false)
+      try {
+        if (session && session.user) {
+          const path = window.location.pathname
+          if (path !== '/dashboard' && !path.startsWith('/auth/')) {
+            // Only redirect to dashboard if we're not already there and not in an auth flow
+            // This prevents redirect loops or unexpected navigation
+            // window.location.assign('/dashboard')
+          }
+        }
+      } catch {}
     }
   }
 
@@ -438,6 +490,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       // Track successful sign up
       trackAuth.signUp('email')
+      mixpanel.track('Sign Up', {
+        email,
+        signup_method: 'email'
+      })
       toast.success('Account created successfully! Please check your email to verify your account.')
       return { success: true }
     } catch (err) {
@@ -448,18 +504,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      })
-      if (error) {
-        return { success: false, error: error.message }
+      if (!email || !password) {
+        return { success: false, error: 'Email and password are required' }
       }
-      // Track successful sign in
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(email)) {
+        return { success: false, error: 'Please enter a valid email address' }
+      }
+
+      const timeout = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), 20000))
+      const result = await Promise.race([
+        (async () => {
+          const { error } = await supabase.auth.signInWithPassword({
+            email: email.trim().toLowerCase(),
+            password
+          })
+          return { error }
+        })(),
+        timeout
+      ])
+
+      if ('timedOut' in result) {
+        return { success: false, error: 'Network timeout during sign in. Please try again.' }
+      }
+
+      if (result.error) {
+        let errorMessage = result.error.message
+        if (result.error.message.includes('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password. Please check your credentials and try again.'
+        } else if (result.error.message.includes('Email not confirmed')) {
+          errorMessage = 'Please check your email and click the verification link before signing in.'
+        } else if (result.error.message.includes('Rate limit')) {
+          errorMessage = 'Too many login attempts. Please try again in a few minutes.'
+        }
+        return { success: false, error: errorMessage }
+      }
+
       trackAuth.signIn('email')
+      mixpanel.track('Sign In', {
+        email,
+        login_method: 'email',
+        success: true
+      })
       return { success: true }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred'
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred during sign in'
+      mixpanel.track('Sign In', {
+        email,
+        login_method: 'email',
+        success: false
+      })
       return { success: false, error: errorMessage }
     }
   }
@@ -477,32 +571,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       // Track successful Google sign in
       trackAuth.signIn('google')
+      mixpanel.track('Sign In', {
+        login_method: 'google',
+        success: true
+      })
       return { success: true }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred'
+      mixpanel.track('Sign In', {
+        login_method: 'google',
+        success: false
+      })
       return { success: false, error: errorMessage }
     }
   }
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut()
-      if (error) throw error
-      // Track successful sign out
+      const timeout = new Promise<void>((resolve) => setTimeout(resolve, 8000))
+      await Promise.race([
+        (async () => {
+          const { error } = await supabase.auth.signOut()
+          if (error) throw error
+        })(),
+        timeout
+      ])
+    } catch (err) {
+      // Swallow sign-out errors to ensure UI can proceed
+    } finally {
       trackAuth.signOut()
       setUser(null)
       setProfile(null)
       setSession(null)
       clearCachedUserData()
-    } catch (err) {
-      handleError(err as Error)
-      throw err
+      // Clear Mixpanel state on explicit sign out
+      mixpanel.reset()
     }
   }
 
   const resetPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email)
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      })
       if (error) {
         return { success: false, error: error.message }
       }
@@ -538,8 +649,70 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.success('Profile updated successfully!')
       return { success: true }
     } catch (err) {
-      handleError(err as Error)
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update profile'
+      const e = err as Error
+      const msg = e?.message || ''
+      if (updates?.plan && /plan_check|check constraint|invalid input value/i.test(msg)) {
+        try {
+          await supabase.auth.updateUser({ data: { plan: updates.plan } })
+          const updatedUser = { ...(user as any), plan: updates.plan }
+          setUser(updatedUser)
+          if (profile) {
+            const updatedProfile = { ...profile }
+            setProfile(updatedProfile)
+          }
+          if (session) {
+            cacheUserData(updatedUser, profile || null as any, session)
+          }
+          toast.success('Plan activated')
+          return { success: true }
+        } catch (metaErr) {
+          handleError(metaErr as Error)
+          return { success: false, error: 'Failed to activate plan' }
+        }
+      }
+      handleError(e)
+      return { success: false, error: e?.message || 'Failed to update profile' }
+    }
+  }
+
+  const refreshProfile = async (): Promise<{ success: boolean; error?: string }> => {
+    if (!user?.id || !session) {
+      return { success: false, error: 'No authenticated user' }
+    }
+    try {
+      const { data: existingProfile, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      if (error) throw error
+      if (existingProfile) {
+        setProfile(existingProfile)
+        try { setUserCredits(existingProfile.id, existingProfile.credits_balance ?? 0) } catch { /* noop */ }
+        const planMeta = (session.user.user_metadata?.plan as 'free' | 'pro' | 'team' | 'business' | 'enterprise' | undefined)
+        const nextPlan = (planMeta || existingProfile.plan) as 'free' | 'pro' | 'team' | 'business' | 'enterprise'
+        setUser({
+          ...user,
+          plan: nextPlan
+        })
+        setUserProperties({
+          user_id: existingProfile.id,
+          plan: nextPlan,
+          company: existingProfile.company || undefined
+        })
+        cacheUserData({ ...user, plan: nextPlan }, existingProfile, session)
+      }
+      return { success: true }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to refresh profile'
+      console.error('Error refreshing profile:', err)
+      try {
+        const planMeta = (session.user.user_metadata?.plan as 'free' | 'pro' | 'team' | 'business' | 'enterprise' | undefined)
+        if (planMeta) {
+          setUser({ ...user, plan: planMeta })
+          cacheUserData({ ...user, plan: planMeta }, profile || null as any, session)
+        }
+      } catch { /* noop */ }
       return { success: false, error: errorMessage }
     }
   }
@@ -559,7 +732,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signInWithGoogle,
     signOut,
     resetPassword,
-    updateProfile
+    updateProfile,
+    refreshProfile
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

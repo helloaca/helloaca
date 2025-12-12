@@ -6,6 +6,7 @@ import Footer from '../components/layout/Footer'
 import Button from '../components/ui/Button'
 import { useAuth } from '../contexts/AuthContext'
 import { ContractService, Contract, ContractAnalysis } from '../lib/contractService'
+import { supabase } from '@/lib/supabase'
 import { generatePDFReport } from '../lib/pdfGenerator'
 import { toast } from 'sonner'
 
@@ -36,12 +37,31 @@ const Reports: React.FC = () => {
         setIsLoading(false)
         setError('Loading is taking longer than expected. Please refresh the page.')
       }
-    }, 15000) // 15 second timeout
+    }, 15000)
 
-    loadReports()
+    ;(async () => {
+      try {
+        // Wait for session to be fully established
+        let activeSession = null
+        for (let i = 0; i < 10; i++) {
+          const { data } = await supabase.auth.getSession()
+          if (data.session) {
+            activeSession = data.session
+            break
+          }
+          await new Promise(r => setTimeout(r, 200))
+        }
+        if (!activeSession) {
+          console.warn('Session not found after waiting, attempting load anyway')
+        }
+      } catch (e) {
+        console.error('Session check failed', e)
+      }
+      await loadReports()
+    })()
 
     return () => clearTimeout(timeoutId)
-  }, [user])
+  }, [user?.id])
 
   // Filter and sort reports when dependencies change
   useEffect(() => {
@@ -105,41 +125,36 @@ const Reports: React.FC = () => {
 
   const handleDownload = async (report: ReportData) => {
     try {
-      if (!report.analysis) {
-        toast.error('No analysis data available for download')
-        return
-      }
-
-      // Add report to downloading set
       setDownloadingReports(prev => new Set(prev).add(report.id))
-
-      // Show loading toast
       const loadingToast = toast.loading('Generating PDF report...')
 
-      // Generate and download PDF
-      await new Promise(resolve => setTimeout(resolve, 500)) // Small delay for UX
-      generatePDFReport(report)
+      let analysis = report.analysis
+      if (!analysis || !analysis.analysis_data) {
+        const fetched = await ContractService.getContractAnalysis(report.id)
+        if (!fetched) {
+          throw new Error('No analysis available for this report')
+        }
+        analysis = fetched
+        setReports(prev => prev.map(r => r.id === report.id ? { ...r, analysis: fetched } : r))
+      }
 
-      // Remove from downloading set
+      await new Promise(resolve => setTimeout(resolve, 300))
+      generatePDFReport({ ...report, analysis })
+
       setDownloadingReports(prev => {
         const newSet = new Set(prev)
         newSet.delete(report.id)
         return newSet
       })
-
-      // Dismiss loading toast and show success
       toast.dismiss(loadingToast)
       toast.success('PDF report downloaded successfully')
     } catch (error) {
       console.error('Download error:', error)
-      
-      // Remove from downloading set
       setDownloadingReports(prev => {
         const newSet = new Set(prev)
         newSet.delete(report.id)
         return newSet
       })
-      
       toast.error('Failed to generate PDF report')
     }
   }
@@ -406,7 +421,7 @@ const Reports: React.FC = () => {
                             >
                               <Eye className="w-4 h-4" />
                             </button>
-                            {report.analysis && (
+                            {report.analysis_status === 'completed' && (
                               <button
                                 onClick={() => handleShare(report)}
                                 className="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
@@ -415,7 +430,7 @@ const Reports: React.FC = () => {
                                 <Share2 className="w-4 h-4" />
                               </button>
                             )}
-                            {report.analysis && (
+                            {report.analysis_status === 'completed' && (
                               <button
                                 onClick={() => handleDownload(report)}
                                 disabled={downloadingReports.has(report.id)}
@@ -477,7 +492,7 @@ const Reports: React.FC = () => {
                     </Button>
                     
                     <div className="flex items-center space-x-1 flex-shrink-0">
-                      {report.analysis && (
+                      {report.analysis_status === 'completed' && (
                         <>
                           <button
                             onClick={() => handleShare(report)}

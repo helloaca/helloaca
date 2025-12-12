@@ -1,0 +1,199 @@
+Let's work on the pricing model...
+
+There should be multiple options, 
+- Pay-per-use
+- Pro
+- Team
+- Business
+- Enterprise
+
+The pay-as-you-go option will use the same format, where users can buy credits and use them per contract ($7 for 1 credit, $30 for 5 credits, $55 for 10 credits, and the custom credit where the user can choose how much credit to buy)... When users click on this plan, the options should pop-up
+
+Then, for the subscription option, they pay $24/month, then they get 5 credits per month, their unused credits get rolled over (up to 10 max), they get all the pro features (Full analysis, chat, negotiation playbook, personal library, PDF export) when users click on this option they should be able to select if to pay per year/Annually or per month/monthly
+
+Then, for the enterprise/business/team model, users with this model will get a modified dashboard different from the current dashboard (normal users)... The reason is to be able to make sure the Enterprise users can make use of all these features listed below...
+
+Business Tier Pricing & Reasoning
+Tier 1: Team — $79/month
+What's Included:
+5 seats
+30 contract analyses/month (team-wide pool)
+Shared contract library
+Team dashboard with analytics
+Centralized billing
+Email support (48-hour response)
+Additional seats: $12/seat/month
+Additional contract packs: 10 contracts for $40 (if they exceed 30)
+
+Pricing Rationale:
+Why $79/month?
+Cost Analysis:
+30 contracts × $0.50 = $15 in costs
+Support overhead: ~$10/month per customer (amortized)
+Total cost: $25/month
+Margin: $54/month (68%)
+
+Value-Based Pricing:
+Alternative: Hire a paralegal to review 30 contracts = $1,500-3,000
+Alternative: 30 individual pay-as-you-go purchases = $210 (at $7 each)
+Your price: $79 = 63% savings vs. pay-as-you-go
+Your price: $79 = 95% savings vs. paralegal
+
+Competitive Benchmarking:
+Contract management tools (ContractWorks, Ironclad): $200-500/month
+Team productivity tools (Notion, Asana): $10-15/user = $50-75 for 5 users
+Your pricing slots below enterprise tools, above productivity tools ✓
+
+
+Customer Psychology:
+$79/month = $2.63/day for entire team
+Single bad contract costs agency $5K-50K
+ROI is obvious: "Pays for itself if it prevents ONE mistake."
+
+Seat Economics:
+5 seats included = natural fit for 5-10 person agency
+Want more? Pay $12/seat (still cheaper than they'd pay individually at $24/month Pro)
+Expansion revenue built in
+
+Target Customer:
+
+5-15 person creative/consulting agencies
+Review 20-40 client contracts per month
+No in-house legal counsel
+Annual revenue: $500K-2M
+
+Upsell Path:
+Pro user says: "Can I share this with my business partner?"
+Prompt: "Upgrade to Team for $79/month — add 4 more teammates + shared library."
+
+
+Tier 2: Business — $199/month
+What's Included:
+15 seats
+100 contract analyses/month (team-wide pool)
+Everything in Team, PLUS:
+Approval workflows (draft → review → approve → sign)
+Advanced analytics (risk trends, clause benchmarking, team performance)
+Custom contract templates (agency-specific templates)
+Version comparison (track negotiation changes)
+White-label reports (add agency logo/branding)
+Priority support (24-hour response, onboarding call)
+
+
+Additional seats: $10/seat/month
+Additional contract packs: 25 contracts for $75 (if they exceed 100)
+
+Pricing Rationale:
+Why $199/month?
+Cost Analysis:
+100 contracts × $0.50 = $50 in costs
+Priority support: ~$30/month per customer
+White-label infrastructure: ~$10/month
+Total cost: $90/month
+Margin: $109/month (55%)
+
+Value-Based Pricing:
+Alternative: 100 pay-as-you-go = $700
+Alternative: Paralegal review = $5,000-10,000
+Your price: $199 = 72% savings vs. pay-as-you-go
+Your price: $199 = 98% savings vs. paralegal
+
+Feature Value:
+Approval workflows alone are worth $50/month (prevents unauthorized contracts)
+White-label reports worth $50/month (they can charge clients for "contract review service")
+Analytics worth $30/month (spot patterns, reduce risk)
+Total feature value: $130/month
+Your price: $199 = features + analysis
+
+Competitive Benchmarking:
+Workflow tools (Asana Business, Monday.com): $12-20/user = $180-300 for 15 users
+Contract software (PandaDoc, Ironclad): $300-600/month
+You're positioned below enterprise contract tools, competitive with workflow tools ✓
+
+ROI Calculation:
+Agency bills $150/hour average
+Manual contract review: 2 hours/contract
+100 contracts = 200 hours = $30,000 in billable time lost
+Your tool saves: $30,000 - (100 × 0.5 hours × $150) = $22,500/month in time
+Your price: $199 = 0.88% of time savings
+
+Target Customer:
+15-40 person agencies/firms
+Review 80-150 contracts per month
+Have formal approval processes
+Want to offer contract review as a client service (white-label)
+Annual revenue: $2M-10M
+
+Upsell Path:
+Team customer hits the 30-contract limit repeatedly
+Usage analytics shows: "You're at 95% capacity 3 months in a row."
+Prompt: "Upgrade to Business for unlimited analysis + approval workflows."
+
+Tier 3: Enterprise — $499/month
+What's Included:
+50 seats (custom for larger orgs)
+Unlimited contract analyses (with fair use policy: 500/month)
+Everything in Business, PLUS:
+Custom risk frameworks (define your own risk criteria)
+API access (integrate with internal systems)
+SSO/SAML (single sign-on for security)
+Advanced integrations (DocuSign, Google Drive, Slack, Salesforce)
+Audit trail & compliance (SOC 2 ready, immutable logs)
+Dedicated account manager (monthly check-ins, strategic planning)
+SLA guarantee (99.9% uptime, 4-hour support response)
+Custom contract (annual commitment, volume discounts)
+Onboarding & training (team training sessions, documentation)
+
+Additional seats: $8/seat/month (beyond 50)
+Overage: $0.75/contract beyond 500/month
+
+Pricing Rationale:
+Why $499/month?
+Cost Analysis:
+500 contracts × $0.50 = $250 in costs
+Dedicated support: ~$100/month per customer (account manager time)
+Infrastructure (SSO, API, compliance): ~$50/month
+Total cost: $400/month
+Margin: $99/month (20%) — Lower margin, but acceptable for enterprise
+
+Value-Based Pricing:
+Alternative: In-house legal team = $120K-200K/year = $10K-17K/month
+Alternative: Contract management enterprise software = $1,000-5,000/month
+Your price: $499 = 90% savings vs. legal team, 50-80% vs. enterprise software
+
+Enterprise Buyer Psychology:
+$499/month = $5,988/year
+Enterprise budgets think in "seats" and "per employee cost."
+50 employees = $9.98/employee/month = trivial per-head cost
+"Is this worth $10/person to reduce contract risk?" = instant yes
+
+Custom Features Justify Premium:
+SSO alone costs $50-100/month from other SaaS tools
+API access typically $200-500/month as an add-on
+Dedicated account manager = $1,500+/month value
+You're bundling $750+/month in enterprise features for $499
+
+Annual Contract Value (ACV):
+$499/month × 12 = $5,988 ACV
+This crosses the threshold where:
+Sales calls are worth it
+Custom contracts make sense
+You can afford dedicated support
+It's a "real" enterprise deal
+
+Target Customer:
+
+50+ person agencies, law firms, consulting firms
+SaaS companies (legal team reviewing vendor/customer contracts)
+Staffing agencies are placing hundreds of contractors
+Review 300-1,000+ contracts per month
+Need compliance, security, and integrations
+Annual revenue: $10M+
+
+Upsell Path:
+Business customer needs API integration
+Business customer asks about SOC 2 compliance
+Business customer has 40+ team members
+Prompt: "These features are available in our Enterprise tier."
+
+Make sure the Team/Business/Enterprise dashboard is capable of doing what it is meant to do.
