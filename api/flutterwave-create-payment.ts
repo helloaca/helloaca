@@ -16,7 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!secret || !pub) { res.status(500).json({ error: 'Flutterwave not configured' }); return }
 
     const reference = tx_ref || (credits ? `CREDITS-${credits}-${Date.now()}` : plan ? `SUB-${String(plan).toUpperCase()}-${String(period||'monthly').toUpperCase()}-${Date.now()}` : `TX-${Date.now()}`)
-    const base = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://helloaca.xyz')
+    const base = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://preview.helloaca.xyz')
     const redirect_url = `${base}/api/flutterwave-verify?tx_ref=${encodeURIComponent(reference)}&email=${encodeURIComponent(email)}`
 
     const payload = {
@@ -24,8 +24,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       amount: Number(amount_usd),
       currency: 'USD',
       redirect_url,
+      payment_options: 'card',
       customer: { email },
-      meta: { userId, credits, plan, period }
+      meta: { userId, credits, plan, period },
+      customizations: {
+        title: 'HelloACA',
+        description: credits ? `${credits} credits` : (plan ? `${String(plan)} subscription` : 'Payment'),
+        logo: `${base}/logo.png`
+      }
     }
 
     const fwRes = await fetch('https://api.flutterwave.com/v3/payments', {
@@ -46,4 +52,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(500).json({ error: 'Internal server error' })
   }
 }
-
