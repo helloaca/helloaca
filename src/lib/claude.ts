@@ -30,8 +30,8 @@ export const claudeService = {
       
       // Prepare system message with identity, optional contract context and strict no-emoji policy
       const baseSystemMessage = contractContext 
-        ? `You are HelloACA, an AI assistant specialized in contract analysis. You have access to the following contract content: ${contractContext}. Provide helpful, accurate responses about the contract.`
-        : 'You are HelloACA, an AI assistant specialized in contract analysis. Provide helpful responses about contract-related questions.'
+        ? `You are Helloaca, an AI assistant specialized in contract analysis. You have access to the following contract content: ${contractContext}. Provide helpful, accurate responses about the contract.`
+        : 'You are Helloaca, an AI assistant specialized in contract analysis. Provide helpful responses about contract-related questions.'
       
       // Add strict no-emoji policy to system message with rich formatting allowed
       const systemMessage = `${baseSystemMessage}
