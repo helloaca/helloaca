@@ -25,6 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       currency: 'USD',
       redirect_url,
       payment_options: 'card',
+      public_key: pub,
       customer: { email },
       meta: { userId, credits, plan, period },
       customizations: {
