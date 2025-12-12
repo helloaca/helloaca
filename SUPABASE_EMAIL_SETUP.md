@@ -108,7 +108,7 @@ The templates are designed for maximum compatibility:
 **Common Issues:**
 
 1. **Logo not displaying**:
-   - Ensure `https://helloaca.xyz/logo.png` is publicly accessible
+   - Ensure https://helloaca.xyz/logo.png is publicly accessible
    - Check image dimensions (recommended: 40px height)
 
 2. **Colors not showing**:
