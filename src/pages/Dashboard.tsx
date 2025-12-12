@@ -212,7 +212,7 @@ const Dashboard: React.FC = () => {
   // Load user contracts on component mount or when user changes
   useEffect(() => {
     if (user?.id && !authLoading) {
-      setCreditsCount(getUserCredits(user.id))
+      setCreditsCount(Number(typeof profile?.credits_balance === 'number' ? profile.credits_balance : getUserCredits(user.id)))
       const cached = readCachedContracts()
       if (cached && cached.length > 0) {
         setContracts(cached)
@@ -258,6 +258,13 @@ const Dashboard: React.FC = () => {
       loadTemplates()
     }
   }, [user?.id, authLoading])
+
+  // Keep credits in sync when profile updates
+  useEffect(() => {
+    if (user?.id && typeof profile?.credits_balance === 'number') {
+      setCreditsCount(Number(profile.credits_balance))
+    }
+  }, [user?.id, profile?.credits_balance])
 
   const loadUserContracts = async (retryCount = 0) => {
     const maxRetries = 2
