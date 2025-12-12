@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { getUserCredits, refreshMonthlyCreditsForPlan, addUserCredits } from '@/lib/utils'
 import { toast } from 'sonner'
-import mixpanel from 'mixpanel-browser'
+// import mixpanel from 'mixpanel-browser'
 
 const Pricing: React.FC = () => {
   const navigate = useNavigate()
@@ -42,9 +42,9 @@ const Pricing: React.FC = () => {
   }, [user?.id])
 
   const bundles = [
-    { credits: 1, priceUSD: 7, popular: false as const },
-    { credits: 5, priceUSD: 30, popular: true as const },
-    { credits: 10, priceUSD: 55, popular: false as const }
+    { credits: 1, priceUSD: 2, popular: false as const },
+    { credits: 5, priceUSD: 9, popular: true as const },
+    { credits: 10, priceUSD: 15, popular: false as const }
   ]
 
   // Removed: custom pricing calculator; using fixed bundles
@@ -121,113 +121,34 @@ const Pricing: React.FC = () => {
         return
       }
 
-      const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY
-      if (!publicKey) {
-        toast.error('Payment is not configured')
-        return
-      }
-
+      // Prefer Flutterwave for USD
       setIsLoading(true)
       setProcessingMethod('card')
-      try { await loadPaystackScript() } catch { 
-        setIsLoading(false); 
-        setProcessingMethod(null); 
-        if (shouldMock) {
-          try {
-            const planUpdate = { plan: selectedPlan.plan }
-            const result = await auth.updateProfile(planUpdate)
-            if (!result.success) {
-              await supabase.auth.updateUser({ data: { plan: selectedPlan.plan } })
-            }
-            await auth.refreshProfile()
-            refreshMonthlyCreditsForPlan(user.id, selectedPlan.plan)
-            setSubModalOpen(false)
-            toast.success('Subscription activated (mock)')
-            return
-          } catch {
-            toast.error('Mock activation failed')
-            return
-          }
-        }
-        toast.error('Network error loading payment library')
-        return 
-      }
-      const PaystackPop = (window as any).PaystackPop
-      if (!PaystackPop || typeof PaystackPop.setup !== 'function') { setIsLoading(false); setProcessingMethod(null); toast.error('Payment library failed to load'); return }
-      let amountKobo: number = 0
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 12000)
       try {
-        const rateRes = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=NGN')
-        const rateJson = await rateRes.json().catch(() => null)
-        const rate = typeof rateJson?.rates?.NGN === 'number' ? rateJson.rates.NGN : null
-        const ngn = Math.round(((rate || 1500) * selectedPlan.priceUSD))
-        amountKobo = ngn * 100
-      } catch { amountKobo = 1500 * selectedPlan.priceUSD * 100 }
-
-      const handler = PaystackPop.setup({
-        key: publicKey,
-        email: String(user.email),
-        amount: amountKobo,
-        currency: 'NGN',
-        reference: `${selectedPlan.plan.toUpperCase()}-${selectedPlan.period}-${Date.now()}`,
-        channels: ['card'],
-        metadata: { plan: selectedPlan.plan, period: selectedPlan.period },
-        callback: (response: any) => {
-          (async () => {
-            try {
-              const res = await fetch(`${base}/api/paystack-verify`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reference: response.reference }) })
-              const data = await res.json()
-              if (data?.status === 'success') {
-                const planUpdate = { plan: selectedPlan.plan }
-                const result = await auth.updateProfile(planUpdate)
-                if (result.success) {
-                  await auth.refreshProfile()
-                  try { refreshMonthlyCreditsForPlan(user.id, selectedPlan.plan) } catch {}
-                  try {
-                    const baseEnv = import.meta.env.VITE_API_ORIGIN
-                    const base = baseEnv && baseEnv.length > 0
-                      ? baseEnv
-                      : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-                          ? 'https://helloaca.xyz'
-                        : window.location.origin)
-                    await fetch(`${base}/api/notify`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ event: 'plan_upgrade', userId: user.id, email: user.email, extra: { plan: selectedPlan.plan } })
-                    })
-                  } catch {}
-                  toast.success('Subscription activated')
-                } else {
-                  try {
-                    await supabase.auth.updateUser({ data: { plan: selectedPlan.plan } })
-                    await auth.refreshProfile()
-                    try { refreshMonthlyCreditsForPlan(user.id, selectedPlan.plan) } catch {}
-                    try {
-                      const baseEnv = import.meta.env.VITE_API_ORIGIN
-                      const base = baseEnv && baseEnv.length > 0
-                        ? baseEnv
-                        : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-                            ? 'https://helloaca.xyz'
-                            : window.location.origin)
-                      await fetch(`${base}/api/notify`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ event: 'plan_upgrade', userId: user.id, email: user.email, extra: { plan: selectedPlan.plan } })
-                      })
-                    } catch {}
-                    toast.success('Subscription activated')
-                  } catch {
-                    toast.error(result.error || 'Failed to update plan')
-                  }
-                }
-              } else { toast.error('Payment verification failed') }
-            } catch { toast.error('Could not verify payment') }
-            finally { setIsLoading(false); setProcessingMethod(null) }
-          })()
-        },
-        onClose: function () { setIsLoading(false); setProcessingMethod(null); toast.info('Payment canceled') }
-      })
-      setSubModalOpen(false)
-      handler.openIframe()
+        const res = await fetch(`${base}/api/flutterwave-create-payment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id, email: user.email, amount_usd: selectedPlan.priceUSD, plan: selectedPlan.plan, period: selectedPlan.period }),
+          signal: controller.signal
+        })
+        const data = await res.json().catch(() => null)
+        clearTimeout(timer)
+        const link = data?.link
+        if (res.ok && link) {
+          setSubModalOpen(false)
+          window.location.href = link
+          return
+        }
+        toast.error(typeof data?.error === 'string' ? data.error : 'Failed to start payment')
+      } catch {
+        clearTimeout(timer)
+        toast.error('Network error starting payment')
+      } finally {
+        setIsLoading(false)
+        setProcessingMethod(null)
+      }
     } catch (err) {
       setIsLoading(false)
       setProcessingMethod(null)
@@ -260,116 +181,35 @@ const Pricing: React.FC = () => {
         }
       }
 
-      const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY
-      if (!publicKey) {
-        toast.error('Payment is not configured')
-        return
-      }
-
+      // Use Flutterwave
       setIsLoading(true)
       setProcessingMethod('card')
+      const base = import.meta.env.VITE_API_ORIGIN || window.location.origin
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 12000)
       try {
-        await loadPaystackScript()
+        const res = await fetch(`${base}/api/flutterwave-create-payment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id, email: user.email, amount_usd: selectedBundle.priceUSD, credits: selectedBundle.credits }),
+          signal: controller.signal
+        })
+        const data = await res.json().catch(() => null)
+        clearTimeout(timer)
+        const link = data?.link
+        if (res.ok && link) {
+          setMethodModalOpen(false)
+          window.location.href = link
+          return
+        }
+        toast.error(typeof data?.error === 'string' ? data.error : 'Failed to start payment')
       } catch {
+        clearTimeout(timer)
+        toast.error('Network error starting payment')
+      } finally {
         setIsLoading(false)
         setProcessingMethod(null)
-        const hostname = window.location.hostname
-        const shouldMock = String(import.meta.env.VITE_PAYSTACK_TEST_MODE || '') === 'mock' || hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('preview')
-        if (shouldMock) {
-          try {
-            if (!user || !selectedBundle) { toast.error('No bundle selected'); return }
-            addUserCredits(user.id, selectedBundle.credits)
-            setCreditBalance(getUserCredits(user.id))
-            setMethodModalOpen(false)
-            toast.success(`Added ${selectedBundle.credits} credits (mock)`) 
-            return
-          } catch {
-            toast.error('Mock credit purchase failed')
-            return
-          }
-        }
-        toast.error('Network error loading payment library')
-        return
       }
-
-      const PaystackPop = (window as any).PaystackPop
-      if (!PaystackPop || typeof PaystackPop.setup !== 'function') {
-        setIsLoading(false)
-        setProcessingMethod(null)
-        toast.error('Payment library failed to load')
-        return
-      }
-
-      let amountKobo: number = 0
-      try {
-        const rateRes = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=NGN')
-        const rateJson = await rateRes.json().catch(() => null)
-        const rate = typeof rateJson?.rates?.NGN === 'number' ? rateJson.rates.NGN : null
-        const ngn = Math.round(((rate || 1500) * selectedBundle.priceUSD))
-        amountKobo = ngn * 100
-      } catch {
-        amountKobo = 1500 * selectedBundle.priceUSD * 100
-      }
-
-      const handler = PaystackPop.setup({
-        key: publicKey,
-        email: user.email,
-        amount: amountKobo,
-        currency: 'NGN',
-        reference: `CREDITS-${selectedBundle.credits}-${Date.now()}`,
-        channels: ['card'],
-        metadata: { credits: selectedBundle.credits },
-        callback: (response: any) => {
-          (async () => {
-            try {
-              const baseEnv = import.meta.env.VITE_API_ORIGIN
-              const base = baseEnv && baseEnv.length > 0
-                ? baseEnv
-                : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-                    ? 'https://helloaca.xyz'
-                    : window.location.origin)
-              const url = `${base}/api/paystack-verify?reference=${encodeURIComponent(response.reference)}`
-              const res = await fetch(url)
-              const data = await res.json()
-              if (data?.status === 'success') {
-                if (auth?.refreshProfile && user?.id) {
-                  await auth.refreshProfile()
-                  setCreditBalance(Number(auth?.profile?.credits_balance || getUserCredits(user.id)))
-                }
-                mixpanel.track('Purchase', {
-                  user_id: user?.id,
-                  transaction_id: response.reference,
-                  revenue: selectedBundle.priceUSD,
-                  currency: 'USD'
-                })
-                mixpanel.track('Conversion', {
-                  Conversion_Type: 'purchase',
-                  Conversion_Value: selectedBundle.priceUSD
-                })
-                toast.success(`Added ${selectedBundle.credits} credits`)
-              } else {
-                toast.error('Payment verification failed')
-              }
-            } catch {
-              mixpanel.track('API Error', {
-                error_type: 'paystack_verify',
-                transaction_id: response.reference
-              })
-              toast.error('Could not verify payment')
-            } finally {
-              setIsLoading(false)
-              setProcessingMethod(null)
-            }
-          })()
-        },
-        onClose: function () {
-          setIsLoading(false)
-          setProcessingMethod(null)
-          toast.info('Payment canceled')
-        }
-      })
-      setMethodModalOpen(false)
-      handler.openIframe()
     } catch (err) {
       setIsLoading(false)
       setProcessingMethod(null)
@@ -514,10 +354,10 @@ const Pricing: React.FC = () => {
             </div>
 
             {([
-              { plan: 'pro' as const, title: 'Pro', monthly: 24, features: ['5 credits/month','1 seat','Full analysis','Chat with contract','Negotiation playbook','PDF export','Rollover up to 10'] },
-              { plan: 'team' as const, title: 'Team', monthly: 79, features: ['30 analyses/month (team)','5 seats','Shared library','Team dashboard','Basic analytics','Centralized billing'] },
-              { plan: 'business' as const, title: 'Business', monthly: 199, features: ['100 analyses/month (team)','15 seats','Approval workflows','Advanced analytics','Custom templates','Version comparison','White‑label reports','Priority support'] },
-              { plan: 'enterprise' as const, title: 'Enterprise', monthly: 499, features: ['500 analyses/month (team)','50 seats','Custom risk frameworks','API access','SSO/SAML','Integrations','Audit trail','SLA 99.9%','Account manager'] }
+              { plan: 'pro' as const, title: 'Pro', monthly: 10, features: ['5 credits/month','1 seat','Full analysis','Chat with contract','Negotiation playbook','PDF export','Rollover up to 10'] },
+              { plan: 'team' as const, title: 'Team', monthly: 0, features: ['Custom pricing','Seats','Shared library','Team dashboard','Basic analytics','Centralized billing'] },
+              { plan: 'business' as const, title: 'Business', monthly: 0, features: ['Custom pricing','Approval workflows','Advanced analytics','Custom templates','Version comparison','White‑label reports','Priority support'] },
+              { plan: 'enterprise' as const, title: 'Enterprise', monthly: 0, features: ['Custom pricing','Custom risk frameworks','API access','SSO/SAML','Integrations','Audit trail','SLA 99.9%','Account manager'] }
             ]).map((p) => {
               const isDisabled = p.plan === 'team' || p.plan === 'business' || p.plan === 'enterprise'
               return (
@@ -525,7 +365,7 @@ const Pricing: React.FC = () => {
                 <div className="mb-4 flex items-center justify-between">
                   <div>
                     <h3 className="text-2xl font-bold text-gray-900">{p.title}</h3>
-                    <p className="text-gray-600">{billingPeriod==='monthly' ? `$${p.monthly}/month` : `$${p.monthly*12}/year`}</p>
+                    <p className="text-gray-600">{p.plan==='pro' ? (billingPeriod==='monthly' ? `$${p.monthly}/month` : `$${p.monthly*12}/year`) : 'Contact us'}</p>
                   </div>
                   {p.plan==='pro' && (
                     <span className="absolute -top-3 right-4 text-xs px-2 py-1 rounded-full bg-gray-900 text-white shadow">Most popular</span>
@@ -539,10 +379,10 @@ const Pricing: React.FC = () => {
                 <div className="mt-auto">
                   {isDisabled ? (
                     <button
-                      disabled
-                      className="w-full h-11 px-6 rounded-lg font-medium bg-gray-300 text-gray-700 cursor-not-allowed leading-none whitespace-nowrap"
+                      onClick={() => navigate('/contact')}
+                      className="w-full h-11 px-6 rounded-lg font-medium bg-gray-900 text-white leading-none whitespace-nowrap"
                     >
-                      Coming soon...
+                      Contact us
                     </button>
                   ) : (
                     <button
