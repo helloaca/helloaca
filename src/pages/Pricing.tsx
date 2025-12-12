@@ -85,7 +85,7 @@ const Pricing: React.FC = () => {
       const baseEnv = import.meta.env.VITE_API_ORIGIN
       const baseUrl = baseEnv && baseEnv.length > 0 ? baseEnv : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://preview.helloaca.xyz' : window.location.origin)
       const preferredCurrency = String(import.meta.env.VITE_FLUTTERWAVE_DEFAULT_CURRENCY || 'USD').toUpperCase()
-      const preferredCountry = String(import.meta.env.VITE_FLUTTERWAVE_DEFAULT_COUNTRY || '').toUpperCase()
+      
       const fxRateNgn = Number(String(import.meta.env.VITE_FX_USD_TO_NGN_RATE || '1600'))
       const amountLocal = preferredCurrency === 'NGN' ? Math.round(selectedBundle.priceUSD * fxRateNgn) : selectedBundle.priceUSD
       ;(window as any).FlutterwaveCheckout({
@@ -94,7 +94,7 @@ const Pricing: React.FC = () => {
         amount: amountLocal,
         currency: preferredCurrency,
         payment_options: 'card',
-        ...(preferredCountry ? { country: preferredCountry } : {}),
+        // Avoid enforcing country to let checkout pick correct auth model for card BIN
         redirect_url: `${baseUrl}/api/flutterwave-verify?tx_ref=${encodeURIComponent(txRef)}&email=${encodeURIComponent(user.email)}`,
         customer: { email: String(user.email) },
         meta: { userId: user.id, credits: selectedBundle.credits },
@@ -121,7 +121,7 @@ const Pricing: React.FC = () => {
       const baseEnv = import.meta.env.VITE_API_ORIGIN
       const baseUrl = baseEnv && baseEnv.length > 0 ? baseEnv : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://preview.helloaca.xyz' : window.location.origin)
       const preferredCurrency2 = String(import.meta.env.VITE_FLUTTERWAVE_DEFAULT_CURRENCY || 'USD').toUpperCase()
-      const preferredCountry2 = String(import.meta.env.VITE_FLUTTERWAVE_DEFAULT_COUNTRY || '').toUpperCase()
+      
       const fxRateNgn2 = Number(String(import.meta.env.VITE_FX_USD_TO_NGN_RATE || '1600'))
       const amountLocal2 = preferredCurrency2 === 'NGN' ? Math.round(selectedPlan.priceUSD * fxRateNgn2) : selectedPlan.priceUSD
       ;(window as any).FlutterwaveCheckout({
@@ -130,7 +130,7 @@ const Pricing: React.FC = () => {
         amount: amountLocal2,
         currency: preferredCurrency2,
         payment_options: 'card',
-        ...(preferredCountry2 ? { country: preferredCountry2 } : {}),
+        // Avoid enforcing country to let checkout pick correct auth model for card BIN
         redirect_url: `${baseUrl}/api/flutterwave-verify?tx_ref=${encodeURIComponent(txRef)}&email=${encodeURIComponent(user.email)}`,
         customer: { email: String(user.email) },
         meta: { userId: user.id, plan: selectedPlan.plan, period: selectedPlan.period },

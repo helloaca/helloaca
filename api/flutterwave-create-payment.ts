@@ -31,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       redirect_url,
       payment_options: 'card',
       public_key: pub,
-      ...(preferredCountry ? { country: preferredCountry } : {}),
+      // Avoid enforcing country to let checkout pick correct auth model for card BIN
       customer: { email },
       meta: { userId, credits, plan, period },
       customizations: {
