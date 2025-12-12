@@ -415,7 +415,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         } catch (err) {
           console.error('❌ Error fetching profile:', err)
-          handleError(err as Error)
+          const code = (err as any)?.code || ''
+          const message = String((err as any)?.message || '')
+          if (!(code === '42P17' || /infinite recursion/i.test(message))) {
+            handleError(err as Error)
+          }
           // If fetch fails, try to get cached profile
           const cachedData = getCachedUserData()
           if (!cachedData.profile) {

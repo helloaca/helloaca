@@ -1,428 +1,154 @@
-dom.js?token=762752-316443-116164:893 initEternlDomAPI: domId 92668-979924-74050 false
-initEternlDomAPI @ dom.js?token=762752-316443-116164:893
-dom.js?token=762752-316443-116164:894 initEternlDomAPI: href https://www.helloaca.xyz/
-initEternlDomAPI @ dom.js?token=762752-316443-116164:894
-index-jq_b_s4k.js:176 🔄 Initializing authentication...
-index-jq_b_s4k.js:170 ❌ No active session
-index-jq_b_s4k.js:170 🔄 Auth state changed: INITIAL_SESSION undefined
-dom.js?token=23534-49691-987291:893 initEternlDomAPI: domId 132589-902617-209456 true
-initEternlDomAPI @ dom.js?token=23534-49691-987291:893
-dom.js?token=23534-49691-987291:894 initEternlDomAPI: href https://vercel.live/_next-live/feedback/feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6
-initEternlDomAPI @ dom.js?token=23534-49691-987291:894
-dom.js?token=622392-23079-355287:893 initEternlDomAPI: domId 476968-293734-987542 true
-initEternlDomAPI @ dom.js?token=622392-23079-355287:893
-dom.js?token=622392-23079-355287:894 initEternlDomAPI: href about:srcdoc
-initEternlDomAPI @ dom.js?token=622392-23079-355287:894
-instrument.b3d9585f91084d9f25a6.js?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:2 [DEPRECATED] Default export is deprecated. Instead use `import { create } from 'zustand'`.
-f @ instrument.b3d9585f91084d9f25a6.js?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:2
-instrument.b3d9585f91084d9f25a6.js?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:2 [DEPRECATED] Default export is deprecated. Instead use `import { create } from 'zustand'`.
-f @ instrument.b3d9585f91084d9f25a6.js?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:2
-instrument.b3d9585f91084d9f25a6.js?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:2 [DEPRECATED] Default export is deprecated. Instead use `import { create } from 'zustand'`.
-f @ instrument.b3d9585f91084d9f25a6.js?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:2
-dom.js?token=23534-49691-987291:836 dom:receive wrong channel: vt-live_mode_1@prj_nqvPbbJGlfYxpLnOJN4braldT18Q@main
-onMessageHandlerEternlDOM @ dom.js?token=23534-49691-987291:836
-dom.js?token=23534-49691-987291:836 dom:receive wrong channel: private-vt-live_mode_1@prj_nqvPbbJGlfYxpLnOJN4braldT18Q@main
-onMessageHandlerEternlDOM @ dom.js?token=23534-49691-987291:836
-vercel.live/toolbar/session:1  Failed to load resource: the server responded with a status of 404 ()
-feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9 Uncaught (in promise) Error: Could not fetch session
-    at feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9:30931
-dom.js?token=23534-49691-987291:836 dom:receive wrong channel: vt-live_mode_1@prj_nqvPbbJGlfYxpLnOJN4braldT18Q@main
-onMessageHandlerEternlDOM @ dom.js?token=23534-49691-987291:836
-dom.js?token=23534-49691-987291:836 dom:receive wrong channel: private-vt-live_mode_1@prj_nqvPbbJGlfYxpLnOJN4braldT18Q@main
-onMessageHandlerEternlDOM @ dom.js?token=23534-49691-987291:836
-vercel.live/toolbar/session:1  Failed to load resource: the server responded with a status of 404 ()
-feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9 Uncaught (in promise) Error: Could not fetch session
-    at feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9:30931
-index-jq_b_s4k.js:170 🔄 Auth state changed: SIGNED_IN ozoemenachidile@gmail.com
-index-jq_b_s4k.js:170 🔄 Handling auth state change for user: ozoemenachidile@gmail.com
-index-jq_b_s4k.js:170 🔄 Fetching fresh profile data
-accuaxoceljncyyyiedz.supabase.co/rest/v1/user_profiles?select=*&id=eq.78a52b89-61f5-4101-b1ae-8d14a4c6b118:1  Failed to load resource: the server responded with a status of 500 ()
-index-jq_b_s4k.js:170 Starting contract load for user: 78a52b89-61f5-4101-b1ae-8d14a4c6b118 (retry: 0)
-index-jq_b_s4k.js:170 Loading contracts for user: 78a52b89-61f5-4101-b1ae-8d14a4c6b118
-accuaxoceljncyyyiedz.supabase.co/rest/v1/contracts?select=id%2Cuser_id%2Ctitle%2Cfile_name%2Cfile_size%2Cupload_date%2Canalysis_status%2Ccreated_at%2Cupdated_at&user_id=eq.78a52b89-61f5-4101-b1ae-8d14a4c6b118&order=created_at.desc:1  Failed to load resource: the server responded with a status of 500 ()
-index-jq_b_s4k.js:170 Error fetching contracts: Object
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 Error in getUserContractsWithAnalysis: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async Nd.getDashboardSummary (index-jq_b_s4k.js:1014:9377)
-    at async index-jq_b_s4k.js:537:58945
-    at async st (index-jq_b_s4k.js:537:59479)
-    at async index-jq_b_s4k.js:537:58459
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 Error fetching dashboard summary: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async Nd.getDashboardSummary (index-jq_b_s4k.js:1014:9377)
-    at async index-jq_b_s4k.js:537:58945
-    at async st (index-jq_b_s4k.js:537:59479)
-    at async index-jq_b_s4k.js:537:58459
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 ContractService summary error: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async Nd.getDashboardSummary (index-jq_b_s4k.js:1014:9377)
-    at async index-jq_b_s4k.js:537:58945
-    at async st (index-jq_b_s4k.js:537:59479)
-    at async index-jq_b_s4k.js:537:58459
-(anonymous) @ index-jq_b_s4k.js:170
-accuaxoceljncyyyiedz.supabase.co/rest/v1/contracts?select=id%2Cuser_id%2Ctitle%2Cfile_name%2Cfile_size%2Cupload_date%2Canalysis_status%2Ccreated_at%2Cupdated_at&user_id=eq.78a52b89-61f5-4101-b1ae-8d14a4c6b118&order=created_at.desc:1  Failed to load resource: the server responded with a status of 500 ()
-index-jq_b_s4k.js:170 Error fetching contracts: Object
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 Error in getUserContractsWithAnalysis: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async index-jq_b_s4k.js:537:59347
-    at async st (index-jq_b_s4k.js:537:59479)
-    at async index-jq_b_s4k.js:537:58459
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 Fallback loading also failed: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async index-jq_b_s4k.js:537:59347
-    at async st (index-jq_b_s4k.js:537:59479)
-    at async index-jq_b_s4k.js:537:58459
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 Error loading contracts: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async index-jq_b_s4k.js:537:59347
-    at async st (index-jq_b_s4k.js:537:59479)
-    at async index-jq_b_s4k.js:537:58459
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 Retrying contract loading in 1000ms (attempt 1/2)
-index-jq_b_s4k.js:170 Contract loading process completed
-index-jq_b_s4k.js:170 Starting contract load for user: 78a52b89-61f5-4101-b1ae-8d14a4c6b118 (retry: 1)
-index-jq_b_s4k.js:170 Loading contracts for user: 78a52b89-61f5-4101-b1ae-8d14a4c6b118
-accuaxoceljncyyyiedz.supabase.co/rest/v1/contracts?select=id%2Cuser_id%2Ctitle%2Cfile_name%2Cfile_size%2Cupload_date%2Canalysis_status%2Ccreated_at%2Cupdated_at&user_id=eq.78a52b89-61f5-4101-b1ae-8d14a4c6b118&order=created_at.desc:1  Failed to load resource: the server responded with a status of 500 ()
-index-jq_b_s4k.js:170 Error fetching contracts: Object
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 Error in getUserContractsWithAnalysis: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async Nd.getDashboardSummary (index-jq_b_s4k.js:1014:9377)
-    at async index-jq_b_s4k.js:537:58945
-    at async st (index-jq_b_s4k.js:537:59479)
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 Error fetching dashboard summary: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async Nd.getDashboardSummary (index-jq_b_s4k.js:1014:9377)
-    at async index-jq_b_s4k.js:537:58945
-    at async st (index-jq_b_s4k.js:537:59479)
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 ContractService summary error: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async Nd.getDashboardSummary (index-jq_b_s4k.js:1014:9377)
-    at async index-jq_b_s4k.js:537:58945
-    at async st (index-jq_b_s4k.js:537:59479)
-(anonymous) @ index-jq_b_s4k.js:170
-accuaxoceljncyyyiedz.supabase.co/rest/v1/contracts?select=id%2Cuser_id%2Ctitle%2Cfile_name%2Cfile_size%2Cupload_date%2Canalysis_status%2Ccreated_at%2Cupdated_at&user_id=eq.78a52b89-61f5-4101-b1ae-8d14a4c6b118&order=created_at.desc:1  Failed to load resource: the server responded with a status of 500 ()
-index-jq_b_s4k.js:170 Error fetching contracts: Object
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 Error in getUserContractsWithAnalysis: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async index-jq_b_s4k.js:537:59347
-    at async st (index-jq_b_s4k.js:537:59479)
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 Fallback loading also failed: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async index-jq_b_s4k.js:537:59347
-    at async st (index-jq_b_s4k.js:537:59479)
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 Error loading contracts: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async index-jq_b_s4k.js:537:59347
-    at async st (index-jq_b_s4k.js:537:59479)
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 Retrying contract loading in 2000ms (attempt 2/2)
-index-jq_b_s4k.js:170 Contract loading process completed
-index-jq_b_s4k.js:170 Starting contract load for user: 78a52b89-61f5-4101-b1ae-8d14a4c6b118 (retry: 2)
-index-jq_b_s4k.js:170 Loading contracts for user: 78a52b89-61f5-4101-b1ae-8d14a4c6b118
-accuaxoceljncyyyiedz.supabase.co/rest/v1/contracts?select=id%2Cuser_id%2Ctitle%2Cfile_name%2Cfile_size%2Cupload_date%2Canalysis_status%2Ccreated_at%2Cupdated_at&user_id=eq.78a52b89-61f5-4101-b1ae-8d14a4c6b118&order=created_at.desc:1  Failed to load resource: the server responded with a status of 500 ()
-index-jq_b_s4k.js:170 Error fetching contracts: Object
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 Error in getUserContractsWithAnalysis: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async Nd.getDashboardSummary (index-jq_b_s4k.js:1014:9377)
-    at async index-jq_b_s4k.js:537:58945
-    at async st (index-jq_b_s4k.js:537:59479)
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 Error fetching dashboard summary: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async Nd.getDashboardSummary (index-jq_b_s4k.js:1014:9377)
-    at async index-jq_b_s4k.js:537:58945
-    at async st (index-jq_b_s4k.js:537:59479)
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 ContractService summary error: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async Nd.getDashboardSummary (index-jq_b_s4k.js:1014:9377)
-    at async index-jq_b_s4k.js:537:58945
-    at async st (index-jq_b_s4k.js:537:59479)
-(anonymous) @ index-jq_b_s4k.js:170
-vercel.live/toolbar/session:1  Failed to load resource: the server responded with a status of 404 ()
-feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9 Uncaught (in promise) Error: Could not fetch session
-    at feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9:30931
-accuaxoceljncyyyiedz.supabase.co/rest/v1/contracts?select=id%2Cuser_id%2Ctitle%2Cfile_name%2Cfile_size%2Cupload_date%2Canalysis_status%2Ccreated_at%2Cupdated_at&user_id=eq.78a52b89-61f5-4101-b1ae-8d14a4c6b118&order=created_at.desc:1  Failed to load resource: the server responded with a status of 500 ()
-index-jq_b_s4k.js:170 Error fetching contracts: Object
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 Error in getUserContractsWithAnalysis: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async index-jq_b_s4k.js:537:59347
-    at async st (index-jq_b_s4k.js:537:59479)
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 Fallback loading also failed: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async index-jq_b_s4k.js:537:59347
-    at async st (index-jq_b_s4k.js:537:59479)
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 Error loading contracts: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async index-jq_b_s4k.js:537:59347
-    at async st (index-jq_b_s4k.js:537:59479)
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 Contract loading failed after all retries
-(anonymous) @ index-jq_b_s4k.js:170
-index-jq_b_s4k.js:170 Contract loading process completed
-feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9  GET https://vercel.live/toolbar/session 404 (Not Found)
-U @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-i @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-s @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-oe @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9 Uncaught (in promise) Error: Could not fetch session
-    at feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9:30931
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-Promise.then
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9  GET https://vercel.live/toolbar/session 404 (Not Found)
-U @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-i @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-s @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-oe @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9 Uncaught (in promise) Error: Could not fetch session
-    at feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9:30931
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-Promise.then
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-index-jq_b_s4k.js:90  GET https://accuaxoceljncyyyiedz.supabase.co/rest/v1/contracts?select=id%2Cuser_id%2Ctitle%2Cfile_name%2Cfile_size%2Cupload_date%2Canalysis_status%2Ccreated_at%2Cupdated_at&user_id=eq.78a52b89-61f5-4101-b1ae-8d14a4c6b118&order=created_at.desc 500 (Internal Server Error)
-(anonymous) @ index-jq_b_s4k.js:90
-(anonymous) @ index-jq_b_s4k.js:90
+VM101 js:701 [Violation] 'setTimeout' handler took 83ms
+index-CSrR66uX.js:176 🔄 Initializing authentication...
+dom.js?token=340554-437609-889868:893 initEternlDomAPI: domId 8416-576077-593602 false
+initEternlDomAPI @ dom.js?token=340554-437609-889868:893
+(anonymous) @ dom.js?token=340554-437609-889868:932
+(anonymous) @ dom.js?token=340554-437609-889868:934
+dom.js?token=340554-437609-889868:894 initEternlDomAPI: href https://www.helloaca.xyz/login
+initEternlDomAPI @ dom.js?token=340554-437609-889868:894
+(anonymous) @ dom.js?token=340554-437609-889868:932
+(anonymous) @ dom.js?token=340554-437609-889868:934
+index-CSrR66uX.js:170 ❌ No active session
+index-CSrR66uX.js:170 🔄 Auth state changed: INITIAL_SESSION undefined
+index-CSrR66uX.js:170 🔄 Auth state changed: SIGNED_IN ozoemenachidile@gmail.com
+index-CSrR66uX.js:170 🔄 Handling auth state change for user: ozoemenachidile@gmail.com
+index-CSrR66uX.js:170 🔄 Fetching fresh profile data
+index-CSrR66uX.js:90  GET https://accuaxoceljncyyyiedz.supabase.co/rest/v1/user_profiles?select=*&id=eq.78a52b89-61f5-4101-b1ae-8d14a4c6b118 500 (Internal Server Error)
+(anonymous) @ index-CSrR66uX.js:90
+(anonymous) @ index-CSrR66uX.js:90
 await in (anonymous)
-then @ index-jq_b_s4k.js:68
-index-jq_b_s4k.js:170 Error fetching contracts: {code: '42P17', details: null, hint: null, message: 'infinite recursion detected in policy for relation "user_profiles"'}
-(anonymous) @ index-jq_b_s4k.js:170
+then @ index-CSrR66uX.js:68
+index-CSrR66uX.js:170 Starting contract load for user: 78a52b89-61f5-4101-b1ae-8d14a4c6b118 (retry: 0)
+index-CSrR66uX.js:170 Loading contracts for user: 78a52b89-61f5-4101-b1ae-8d14a4c6b118
+index-CSrR66uX.js:90  GET https://accuaxoceljncyyyiedz.supabase.co/rest/v1/contracts?select=id%2Cuser_id%2Ctitle%2Cfile_name%2Cfile_size%2Cupload_date%2Canalysis_status%2Ccreated_at%2Cupdated_at&user_id=eq.78a52b89-61f5-4101-b1ae-8d14a4c6b118&order=created_at.desc 500 (Internal Server Error)
+(anonymous) @ index-CSrR66uX.js:90
+(anonymous) @ index-CSrR66uX.js:90
+await in (anonymous)
+then @ index-CSrR66uX.js:68
+installHook.js:1 Error fetching contracts: {code: '42P17', details: null, hint: null, message: 'infinite recursion detected in policy for relation "user_profiles"'}
 overrideMethod @ installHook.js:1
-getUserContractsWithAnalysis @ index-jq_b_s4k.js:1014
+(anonymous) @ index-CSrR66uX.js:170
+getUserContractsWithAnalysis @ index-CSrR66uX.js:1014
 await in getUserContractsWithAnalysis
-P @ index-jq_b_s4k.js:1206
-(anonymous) @ index-jq_b_s4k.js:1206
+getDashboardSummary @ index-CSrR66uX.js:1014
+(anonymous) @ index-CSrR66uX.js:537
 await in (anonymous)
-(anonymous) @ index-jq_b_s4k.js:1206
-N0 @ index-jq_b_s4k.js:40
-vd @ index-jq_b_s4k.js:40
-(anonymous) @ index-jq_b_s4k.js:40
-C @ index-jq_b_s4k.js:25
-T @ index-jq_b_s4k.js:25
-_ @ inpage.js:166
-w @ inpage.js:166
-Y @ inpage.js:166
-postMessage
-h @ inpage.js:166
-b @ inpage.js:166
-U @ index-jq_b_s4k.js:25
-T @ index-jq_b_s4k.js:25
-_ @ inpage.js:166
-w @ inpage.js:166
-Y @ inpage.js:166
-postMessage
-h @ inpage.js:166
-b @ inpage.js:166
-U @ index-jq_b_s4k.js:25
-T @ index-jq_b_s4k.js:25
-_ @ inpage.js:166
-w @ inpage.js:166
-Y @ inpage.js:166
-postMessage
-h @ inpage.js:166
-b @ inpage.js:166
-U @ index-jq_b_s4k.js:25
-V @ index-jq_b_s4k.js:25
-e.unstable_scheduleCallback @ index-jq_b_s4k.js:25
-mE @ index-jq_b_s4k.js:40
-xs @ index-jq_b_s4k.js:40
-Ea @ index-jq_b_s4k.js:40
-fM @ index-jq_b_s4k.js:38
-(anonymous) @ index-jq_b_s4k.js:67
-xr.startTransition @ index-jq_b_s4k.js:9
-(anonymous) @ index-jq_b_s4k.js:67
-p @ index-jq_b_s4k.js:49
-(anonymous) @ index-jq_b_s4k.js:58
-(anonymous) @ index-jq_b_s4k.js:67
-w @ index-jq_b_s4k.js:67
-Y8 @ index-jq_b_s4k.js:37
-X8 @ index-jq_b_s4k.js:37
-Q8 @ index-jq_b_s4k.js:37
-Kk @ index-jq_b_s4k.js:37
-pA @ index-jq_b_s4k.js:37
-(anonymous) @ index-jq_b_s4k.js:37
-X2 @ index-jq_b_s4k.js:40
-F3 @ index-jq_b_s4k.js:37
-Xv @ index-jq_b_s4k.js:37
-N2 @ index-jq_b_s4k.js:37
-pR @ index-jq_b_s4k.js:37
-index-jq_b_s4k.js:170 Error in getUserContractsWithAnalysis: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async P (index-jq_b_s4k.js:1206:16775)
-    at async index-jq_b_s4k.js:1206:15993
-(anonymous) @ index-jq_b_s4k.js:170
-overrideMethod @ installHook.js:1
-getUserContractsWithAnalysis @ index-jq_b_s4k.js:1014
-await in getUserContractsWithAnalysis
-P @ index-jq_b_s4k.js:1206
-(anonymous) @ index-jq_b_s4k.js:1206
+st @ index-CSrR66uX.js:537
+(anonymous) @ index-CSrR66uX.js:537
 await in (anonymous)
-(anonymous) @ index-jq_b_s4k.js:1206
-N0 @ index-jq_b_s4k.js:40
-vd @ index-jq_b_s4k.js:40
-(anonymous) @ index-jq_b_s4k.js:40
-C @ index-jq_b_s4k.js:25
-T @ index-jq_b_s4k.js:25
+(anonymous) @ index-CSrR66uX.js:537
+N0 @ index-CSrR66uX.js:40
+vd @ index-CSrR66uX.js:40
+(anonymous) @ index-CSrR66uX.js:40
+C @ index-CSrR66uX.js:25
+T @ index-CSrR66uX.js:25
 _ @ inpage.js:166
 w @ inpage.js:166
 Y @ inpage.js:166
 postMessage
 h @ inpage.js:166
 b @ inpage.js:166
-U @ index-jq_b_s4k.js:25
-T @ index-jq_b_s4k.js:25
+U @ index-CSrR66uX.js:25
+T @ index-CSrR66uX.js:25
 _ @ inpage.js:166
 w @ inpage.js:166
 Y @ inpage.js:166
 postMessage
 h @ inpage.js:166
 b @ inpage.js:166
-U @ index-jq_b_s4k.js:25
-T @ index-jq_b_s4k.js:25
+U @ index-CSrR66uX.js:25
+T @ index-CSrR66uX.js:25
 _ @ inpage.js:166
 w @ inpage.js:166
 Y @ inpage.js:166
 postMessage
 h @ inpage.js:166
 b @ inpage.js:166
-U @ index-jq_b_s4k.js:25
-V @ index-jq_b_s4k.js:25
-e.unstable_scheduleCallback @ index-jq_b_s4k.js:25
-mE @ index-jq_b_s4k.js:40
-xs @ index-jq_b_s4k.js:40
-Ea @ index-jq_b_s4k.js:40
-fM @ index-jq_b_s4k.js:38
-(anonymous) @ index-jq_b_s4k.js:67
-xr.startTransition @ index-jq_b_s4k.js:9
-(anonymous) @ index-jq_b_s4k.js:67
-p @ index-jq_b_s4k.js:49
-(anonymous) @ index-jq_b_s4k.js:58
-(anonymous) @ index-jq_b_s4k.js:67
-w @ index-jq_b_s4k.js:67
-Y8 @ index-jq_b_s4k.js:37
-X8 @ index-jq_b_s4k.js:37
-Q8 @ index-jq_b_s4k.js:37
-Kk @ index-jq_b_s4k.js:37
-pA @ index-jq_b_s4k.js:37
-(anonymous) @ index-jq_b_s4k.js:37
-X2 @ index-jq_b_s4k.js:40
-F3 @ index-jq_b_s4k.js:37
-Xv @ index-jq_b_s4k.js:37
-N2 @ index-jq_b_s4k.js:37
-pR @ index-jq_b_s4k.js:37
-index-jq_b_s4k.js:170 Error loading reports: Error: Failed to fetch contracts
-    at Nd.getUserContractsWithAnalysis (index-jq_b_s4k.js:1014:8473)
-    at async P (index-jq_b_s4k.js:1206:16775)
-    at async index-jq_b_s4k.js:1206:15993
-(anonymous) @ index-jq_b_s4k.js:170
-overrideMethod @ installHook.js:1
-P @ index-jq_b_s4k.js:1206
-await in P
-(anonymous) @ index-jq_b_s4k.js:1206
-await in (anonymous)
-(anonymous) @ index-jq_b_s4k.js:1206
-N0 @ index-jq_b_s4k.js:40
-vd @ index-jq_b_s4k.js:40
-(anonymous) @ index-jq_b_s4k.js:40
-C @ index-jq_b_s4k.js:25
-T @ index-jq_b_s4k.js:25
+U @ index-CSrR66uX.js:25
+T @ index-CSrR66uX.js:25
 _ @ inpage.js:166
 w @ inpage.js:166
 Y @ inpage.js:166
 postMessage
 h @ inpage.js:166
 b @ inpage.js:166
-U @ index-jq_b_s4k.js:25
-T @ index-jq_b_s4k.js:25
-_ @ inpage.js:166
-w @ inpage.js:166
-Y @ inpage.js:166
-postMessage
-h @ inpage.js:166
-b @ inpage.js:166
-U @ index-jq_b_s4k.js:25
-T @ index-jq_b_s4k.js:25
-_ @ inpage.js:166
-w @ inpage.js:166
-Y @ inpage.js:166
-postMessage
-h @ inpage.js:166
-b @ inpage.js:166
-U @ index-jq_b_s4k.js:25
-V @ index-jq_b_s4k.js:25
-e.unstable_scheduleCallback @ index-jq_b_s4k.js:25
-mE @ index-jq_b_s4k.js:40
-xs @ index-jq_b_s4k.js:40
-Ea @ index-jq_b_s4k.js:40
-fM @ index-jq_b_s4k.js:38
-(anonymous) @ index-jq_b_s4k.js:67
-xr.startTransition @ index-jq_b_s4k.js:9
-(anonymous) @ index-jq_b_s4k.js:67
-p @ index-jq_b_s4k.js:49
-(anonymous) @ index-jq_b_s4k.js:58
-(anonymous) @ index-jq_b_s4k.js:67
-w @ index-jq_b_s4k.js:67
-Y8 @ index-jq_b_s4k.js:37
-X8 @ index-jq_b_s4k.js:37
-Q8 @ index-jq_b_s4k.js:37
-Kk @ index-jq_b_s4k.js:37
-pA @ index-jq_b_s4k.js:37
-(anonymous) @ index-jq_b_s4k.js:37
-X2 @ index-jq_b_s4k.js:40
-F3 @ index-jq_b_s4k.js:37
-Xv @ index-jq_b_s4k.js:37
-N2 @ index-jq_b_s4k.js:37
-pR @ index-jq_b_s4k.js:37
-feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9  GET https://vercel.live/toolbar/session 404 (Not Found)
-U @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-i @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-s @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-oe @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9 Uncaught (in promise) Error: Could not fetch session
-    at feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9:30931
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
+U @ index-CSrR66uX.js:25
+V @ index-CSrR66uX.js:25
+e.unstable_scheduleCallback @ index-CSrR66uX.js:25
+mE @ index-CSrR66uX.js:40
+xs @ index-CSrR66uX.js:40
+PM @ index-CSrR66uX.js:40
 Promise.then
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
-(anonymous) @ feedback.html?dpl=dpl_FGTu9Lj4LqtZKfmbksmqUo4uJKw6:9
+uS @ index-CSrR66uX.js:40
+cE @ index-CSrR66uX.js:40
+lE @ index-CSrR66uX.js:40
+C @ index-CSrR66uX.js:25
+T @ index-CSrR66uX.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+U @ index-CSrR66uX.js:25
+T @ index-CSrR66uX.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+U @ index-CSrR66uX.js:25
+T @ index-CSrR66uX.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+U @ index-CSrR66uX.js:25
+T @ index-CSrR66uX.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+U @ index-CSrR66uX.js:25
+T @ index-CSrR66uX.js:25
+_ @ inpage.js:166
+w @ inpage.js:166
+Y @ inpage.js:166
+postMessage
+h @ inpage.js:166
+b @ inpage.js:166
+U @ index-CSrR66uX.js:25
+V @ index-CSrR66uX.js:25
+e.unstable_scheduleCallback @ index-CSrR66uX.js:25
+mE @ index-CSrR66uX.js:40
+xs @ index-CSrR66uX.js:40
+Ea @ index-CSrR66uX.js:40
+fM @ index-CSrR66uX.js:38
+x @ index-CSrR66uX.js:176
+await in x
+(anonymous) @ index-CSrR66uX.js:176
+(anonymous) @ index-CSrR66uX.js:107
+_notifyAllSubscribers @ index-CSrR66uX.js:107
+signInWithPassword @ index-CSrR66uX.js:106
+await in signInWithPassword
+(anonymous) @ index-CSrR66uX.js:176
+signIn @ index-CSrR66uX.js:176
+j @ index-CSrR66uX.js:1206
+Y8 @ index-CSrR66uX.js:37
+X8 @ index-CSrR66uX.js:37
+Q8 @ index-CSrR66uX.js:37
+Kk @ index-CSrR66uX.js:37
+pA @ index-CSrR66uX.js:37
+(anonymous) @ index-CSrR66uX.js:37
+X2 @ index-CSrR66uX.js:40
+F3 @ index-CSrR66uX.js:37
+Xv @ index-CSrR66uX.js:37
+N2 @ index-CSrR66uX.js:37
+pR @ index-CSrR66uX.js:37
+index-CSrR66uX.js:170 Contract loading completed successfully
+index-CSrR66uX.js:170 Contract loading process completed
