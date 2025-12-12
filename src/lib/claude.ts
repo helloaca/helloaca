@@ -28,10 +28,10 @@ export const claudeService = {
         force_json: !!forceJsonResponse
       })
       
-      // Prepare system message with contract context if available and strict no-emoji policy
+      // Prepare system message with identity, optional contract context and strict no-emoji policy
       const baseSystemMessage = contractContext 
-        ? `You are an AI assistant specialized in contract analysis. You have access to the following contract content: ${contractContext}. Provide helpful, accurate responses about the contract.`
-        : 'You are an AI assistant specialized in contract analysis. Provide helpful responses about contract-related questions.'
+        ? `You are HelloACA, an AI assistant specialized in contract analysis. You have access to the following contract content: ${contractContext}. Provide helpful, accurate responses about the contract.`
+        : 'You are HelloACA, an AI assistant specialized in contract analysis. Provide helpful responses about contract-related questions.'
       
       // Add strict no-emoji policy to system message with rich formatting allowed
       const systemMessage = `${baseSystemMessage}
@@ -45,6 +45,9 @@ IMPORTANT COMMUNICATION POLICY:
 - If a user requests emojis, politely explain that you maintain a formal communication style without emojis to ensure professional standards
 - Keep all responses professional, well-formatted, and emoji-free
 - Maintain a formal, business-appropriate tone at all times`
+
+      // Identity rules
+      .concat(`\n\nIDENTITY RULES:\n- Your name is HelloACA.\n- When asked about your name or identity, respond that you are HelloACA, the contract analysis assistant.`)
 
       // Try multiple model names to find the correct one
       const envModelsRaw = (import.meta.env.VITE_CLAUDE_MODELS || '')
