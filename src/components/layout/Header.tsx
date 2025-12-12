@@ -7,6 +7,7 @@ import Button from '../ui/Button'
 import Avatar from '../ui/Avatar'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
+import { setUserCredits } from '@/lib/utils'
 
 interface HeaderProps {
   showAuth?: boolean
@@ -68,6 +69,15 @@ const Header: React.FC<HeaderProps> = ({ showAuth = true }) => {
       try { if (sub) supabase.removeChannel(sub) } catch {}
     }
   }, [isAuthenticated, user?.id])
+
+  // Sync credits from profile to local storage when profile loads
+  useEffect(() => {
+    try {
+      if (isAuthenticated && user?.id && typeof profile?.credits_balance === 'number') {
+        setUserCredits(user.id, profile.credits_balance || 0)
+      }
+    } catch {}
+  }, [isAuthenticated, user?.id, profile?.credits_balance])
 
   const toggleNotif = async () => {
     const next = !isNotifOpen

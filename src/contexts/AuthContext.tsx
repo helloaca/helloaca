@@ -391,11 +391,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             } else if (existingProfile) {
               let updatedProfile = existingProfile
+              const patch: any = {}
               if (!existingProfile.avatar_seed) {
-                const seed = session.user.id
+                patch.avatar_seed = session.user.id
+              }
+              const mf = session.user.user_metadata?.firstName
+              const ml = session.user.user_metadata?.lastName
+              if (!existingProfile.first_name && typeof mf === 'string' && mf.length > 0) {
+                patch.first_name = mf
+              }
+              if (!existingProfile.last_name && typeof ml === 'string' && ml.length > 0) {
+                patch.last_name = ml
+              }
+              if (Object.keys(patch).length > 0) {
                 const { error: updateErr, data } = await supabase
                   .from('user_profiles')
-                  .update({ avatar_seed: seed })
+                  .update(patch)
                   .eq('id', session.user.id)
                   .select()
                   .single()
