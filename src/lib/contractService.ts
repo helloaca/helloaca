@@ -1022,6 +1022,11 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
 
       if (contractsError) {
         console.error('Error fetching contracts:', contractsError)
+        const code = (contractsError as any)?.code || ''
+        const message = String((contractsError as any)?.message || '')
+        if (code === '42P17' || /infinite recursion/i.test(message)) {
+          return []
+        }
         throw new Error('Failed to fetch contracts')
       }
 
@@ -1070,6 +1075,11 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
 
       if (error) {
         console.error('Failed to fetch user contracts:', error)
+        const code = (error as any)?.code || ''
+        const message = String((error as any)?.message || '')
+        if (code === '42P17' || /infinite recursion/i.test(message)) {
+          return []
+        }
         throw error
       }
 
