@@ -497,12 +497,12 @@ const Contact: React.FC = () => {
                     </p>
                   </div>
 
-                  <div>
+                  {/* <div>
                     <h3 className="font-semibold text-gray-900 mb-2">Interested in enterprise plans?</h3>
                     <p className="text-gray-600 text-sm">
                       Contact our sales team at sales@helloaca.xyz for custom pricing and features.
                     </p>
-                  </div>
+                  </div> */}
 
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2">Media inquiries?</h3>

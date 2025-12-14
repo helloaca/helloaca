@@ -153,10 +153,10 @@ const TermsOfService: React.FC = () => {
                 </ul>
                 <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">7.2 Subscription Plans</h3>
                 <ul>
-                  <li>Pro: $24/month, includes 5 credits per month; unused credits roll over up to 10</li>
-                  <li>Team: $79/month, includes 5 seats and 30 analyses/month (team‑wide pool)</li>
-                  <li>Business: $199/month, includes 15 seats and 100 analyses/month (team‑wide pool)</li>
-                  <li>Enterprise: $499/month, includes 50 seats and 500 analyses/month with additional enterprise features</li>
+                  <li>Pro: $10/month or $120/year; includes 5 credits per month; unused credits roll over up to 10</li>
+                  <li>Team: Coming Soon — custom pricing; includes seats, shared library, team dashboard, basic analytics, centralized billing</li>
+                  <li>Business: Coming Soon — custom pricing; includes approval workflows, advanced analytics, custom templates, version comparison, white‑label reports, priority support</li>
+                  <li>Enterprise: Coming Soon — custom pricing; includes custom risk frameworks, API access, SSO/SAML, integrations, audit trail, 99.9% SLA, account manager</li>
                 </ul>
                 <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">7.3 Billing Terms</h3>
                 <ul>

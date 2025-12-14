@@ -388,7 +388,7 @@ const Pricing: React.FC = () => {
                   Do you offer custom enterprise solutions?
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Yes, we offer custom solutions for large organizations including 
+                  Not yet, we will soon start offering custom solutions for large organizations including 
                   on-premise deployment, custom integrations, and dedicated support.
                 </p>
 
