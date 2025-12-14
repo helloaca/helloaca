@@ -46,7 +46,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).end()
     }
     const supabase = (supabaseUrl && supabaseServiceKey) ? createClient(supabaseUrl, supabaseServiceKey) : null
-    const { event, userId, contractId, extra } = req.body || {}
+    const { event, userId, contractId, extra, sendOnly } = req.body || {}
     if (!event || !userId) {
       return res.status(400).json({ error: 'Missing event or userId' })
     }
@@ -212,7 +212,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const result = await sendEmail(toEmail, tpl.subject, html)
       return res.status(200).json({ status: 'invite_sent', result })
     }
-    if (event === 'credit_purchase') {
+    if (event === 'credit_purchase' && !sendOnly) {
       try {
         const creditsNum = Number(extra?.credits || 0)
         if (supabase && userId) {
@@ -228,7 +228,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       } catch {}
     }
-    if (event === 'plan_upgrade') {
+    if (event === 'plan_upgrade' && !sendOnly) {
       try {
         if (supabase && userId) {
           await supabase

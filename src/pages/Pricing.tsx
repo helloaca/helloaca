@@ -95,7 +95,7 @@ const Pricing: React.FC = () => {
         currency: preferredCurrency,
         payment_options: 'card',
         // Avoid enforcing country to let checkout pick correct auth model for card BIN
-        redirect_url: `${baseUrl}/api/flutterwave-verify?tx_ref=${encodeURIComponent(txRef)}&email=${encodeURIComponent(user.email)}`,
+        redirect_url: `${baseUrl}/api/flutterwave-verify?tx_ref=${encodeURIComponent(txRef)}&email=${encodeURIComponent(user.email)}&return_to=%2Fdashboard`,
         customer: { email: String(user.email) },
         meta: { userId: user.id, credits: selectedBundle.credits },
         customizations: { title: 'HelloACA', description: `${selectedBundle.credits} credits`, logo: `${baseUrl}/logo.png` },
@@ -131,7 +131,7 @@ const Pricing: React.FC = () => {
         currency: preferredCurrency2,
         payment_options: 'card',
         // Avoid enforcing country to let checkout pick correct auth model for card BIN
-        redirect_url: `${baseUrl}/api/flutterwave-verify?tx_ref=${encodeURIComponent(txRef)}&email=${encodeURIComponent(user.email)}`,
+        redirect_url: `${baseUrl}/api/flutterwave-verify?tx_ref=${encodeURIComponent(txRef)}&email=${encodeURIComponent(user.email)}&return_to=%2Fdashboard`,
         customer: { email: String(user.email) },
         meta: { userId: user.id, plan: selectedPlan.plan, period: selectedPlan.period },
         customizations: { title: 'Helloaca', description: `${selectedPlan.plan} subscription (${selectedPlan.period})`, logo: `${baseUrl}/logo.png` },
