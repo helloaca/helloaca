@@ -27,6 +27,7 @@ const Reports: React.FC = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [downloadingReports, setDownloadingReports] = useState<Set<string>>(new Set())
+  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false)
 
   const getReportsCacheKey = () => `reports_cache_${user?.id || 'anon'}`
   const readCachedReports = (): ReportData[] => {
@@ -46,24 +47,22 @@ const Reports: React.FC = () => {
   // Load reports on component mount
   useEffect(() => {
     const cached = readCachedReports()
-    if (cached && cached.length > 0) {
+    const hasCached = cached && cached.length > 0
+    if (hasCached) {
       setReports(cached)
       setIsLoading(false)
     }
 
     const timeoutId = setTimeout(() => {
-      if (isLoading) {
-        console.warn('Reports loading timeout - proceeding without data')
+      setShowTimeoutWarning(true)
+      if (!hasCached) {
         setIsLoading(false)
-        if (!cached || cached.length === 0) {
-          setError('Loading is taking longer than expected. Please refresh the page.')
-        }
+        setError('Loading is taking longer than expected. Please refresh the page.')
       }
     }, 15000)
 
     void (async () => {
       try {
-        // Wait for session to be fully established
         let activeSession = null
         for (let i = 0; i < 10; i++) {
           const { data } = await supabase.auth.getSession()
@@ -80,6 +79,9 @@ const Reports: React.FC = () => {
         console.error('Session check failed', e)
       }
       await loadReports()
+      clearTimeout(timeoutId)
+      setShowTimeoutWarning(false)
+      setError(null)
     })()
 
     return () => clearTimeout(timeoutId)
@@ -368,6 +370,23 @@ const Reports: React.FC = () => {
                 className="ml-auto"
               >
                 Retry
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {!error && showTimeoutWarning && filteredReports.length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-8">
+            <div className="flex items-center">
+              <AlertCircle className="w-5 h-5 text-yellow-600 mr-2" />
+              <p className="text-yellow-800">Showing cached data. Fresh data may be delayed.</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowTimeoutWarning(false)}
+                className="ml-auto"
+              >
+                Dismiss
               </Button>
             </div>
           </div>
