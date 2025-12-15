@@ -266,7 +266,7 @@ const Dashboard: React.FC = () => {
         })
         setStats({ totalContracts: cached.length, thisMonth: thisMonthContracts.length, avgAnalysisTime: '32s', risksSaved: totalRisks })
       }
-      ;(async () => {
+      void (async () => {
         try {
           // Wait for session to be fully established
           let session = null
@@ -285,12 +285,19 @@ const Dashboard: React.FC = () => {
         } catch (e) {
           console.error('Session check failed', e)
         }
-        await loadUserContracts()
+        const devKey = import.meta.env.DEV ? `contracts_loaded_${user!.id}` : ''
+        const shouldLoad = import.meta.env.DEV ? !localStorage.getItem(devKey) : true
+        if (shouldLoad) {
+          await loadUserContracts()
+          if (import.meta.env.DEV) {
+            try { localStorage.setItem(devKey, '1') } catch { void 0 }
+          }
+        }
       })()
       loadFolderState()
       loadTemplates()
     }
-  }, [user?.id, authLoading])
+  }, [user?.id])
 
   // Keep credits in sync when profile updates
   useEffect(() => {
@@ -312,24 +319,16 @@ const Dashboard: React.FC = () => {
       const timeoutPromise = new Promise<{ timedOut: true }>((resolve) => setTimeout(() => resolve({ timedOut: true }), timeoutMs))
       console.log('Loading contracts for user:', user?.id)
       
-      // Try to load contracts with better error handling
+      // Load full contract list for accurate cache and stats
       let userContracts: Array<Contract & { analysis?: any }> = []
       const fetchPromise = (async () => {
         try {
           const { ContractService } = await import('@/lib/contractService')
-          const summary = await ContractService.getDashboardSummary(user!.id)
-          setStats({ totalContracts: summary.totalContracts, thisMonth: summary.thisMonth, avgAnalysisTime: '32s', risksSaved: summary.risksIdentified })
-          return { data: summary.recentContracts }
-        } catch (serviceError) {
-          console.error('ContractService summary error:', serviceError)
-          try {
-            const { ContractService } = await import('@/lib/contractService')
-            const full = await ContractService.getUserContractsWithAnalysis(user!.id)
-            return { data: full }
-          } catch (fallbackError) {
-            console.error('Fallback loading also failed:', fallbackError)
-            return { error: fallbackError }
-          }
+          const full = await ContractService.getUserContractsWithAnalysis(user!.id)
+          return { data: full }
+        } catch (err) {
+          console.error('Error fetching full contracts list:', err)
+          return { error: err }
         }
       })()
 
@@ -353,8 +352,24 @@ const Dashboard: React.FC = () => {
       setContracts(userContracts)
       writeCachedContracts(userContracts)
       
-      // Stats are set from summary; preserve existing avg time
-      
+      // Derive stats from full dataset
+      const now = new Date()
+      const thisMonth = now.getMonth()
+      const thisYear = now.getFullYear()
+      const thisMonthContracts = userContracts.filter(c => {
+        const d = new Date(c.created_at)
+        return d.getMonth() === thisMonth && d.getFullYear() === thisYear
+      })
+      let totalRisks = 0
+      userContracts.forEach(contract => {
+        const sections = contract.analysis?.analysis_data?.sections
+        if (sections) {
+          const count = Object.values(sections).reduce((acc: number, section: any) => acc + (section.keyFindings?.length || 0), 0)
+          totalRisks += count
+        }
+      })
+      setStats({ totalContracts: userContracts.length, thisMonth: thisMonthContracts.length, avgAnalysisTime: '32s', risksSaved: totalRisks })
+
       console.log('Contract loading completed successfully')
     } catch (error) {
       console.error('Error loading contracts:', error)
