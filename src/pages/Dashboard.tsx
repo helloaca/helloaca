@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import Button from '@/components/ui/Button'
@@ -76,6 +76,39 @@ const Dashboard: React.FC = () => {
       localStorage.setItem(getCacheKey(), JSON.stringify(items))
     } catch { void 0 }
   }
+
+  const contractSummaries = useMemo(() => {
+    const summaryMap = new Map<string, string>()
+    contracts.forEach(contract => {
+      let summary = ''
+      const execSummary = contract.analysis?.analysis_data?.executive_summary?.summary as string | undefined
+      const rootSummary = contract.analysis?.analysis_data?.summary as string | undefined
+      const legacyStructured = contract.analysis?.analysis_data?.structuredAnalysis?.summary as string | undefined
+
+      const pick = execSummary || rootSummary || legacyStructured
+      if (pick) {
+        const firstSentence = (pick.split('.')[0] + '.')
+        summary = firstSentence.length > 100 ? pick.substring(0, 100) + '...' : firstSentence
+      } else {
+        const title = (contract.title || '').toLowerCase()
+        if (title.includes('service') || title.includes('freelance')) {
+          summary = 'Service agreement for professional services.'
+        } else if (title.includes('employment') || title.includes('job')) {
+          summary = 'Employment contract with terms and conditions.'
+        } else if (title.includes('nda') || title.includes('confidential')) {
+          summary = 'Non-disclosure agreement with confidentiality terms.'
+        } else if (title.includes('lease') || title.includes('rental')) {
+          summary = 'Lease agreement for property rental.'
+        } else if (title.includes('purchase') || title.includes('sale')) {
+          summary = 'Purchase agreement for goods or services.'
+        } else {
+          summary = 'Contract document with standard terms and conditions.'
+        }
+      }
+      summaryMap.set(contract.id, summary)
+    })
+    return summaryMap
+  }, [contracts])
 
   const writeFolderState = (fs: string[], map: Record<string, string>) => {
     try {
@@ -577,55 +610,7 @@ const Dashboard: React.FC = () => {
 
   // Helper function to get contract summary
   const getContractSummary = (contract: Contract & { analysis?: any }): string => {
-    console.log('🔍 Getting summary for contract:', contract.title)
-    console.log('📊 Analysis data structure:', {
-      hasAnalysis: !!contract.analysis,
-      hasAnalysisData: !!contract.analysis?.analysis_data,
-      hasDirectSummary: !!contract.analysis?.analysis_data?.summary,
-      hasStructuredAnalysis: !!contract.analysis?.analysis_data?.structuredAnalysis,
-      hasStructuredSummary: !!contract.analysis?.analysis_data?.structuredAnalysis?.summary
-    })
-    
-    if (contract.analysis?.analysis_data?.executive_summary?.summary) {
-      const fullSummary = contract.analysis.analysis_data.executive_summary.summary
-      console.log('✅ Found summary at root level:', fullSummary.substring(0, 100) + '...')
-      // Extract first sentence or first 100 characters
-      const firstSentence = fullSummary.split('.')[0] + '.'
-      return firstSentence.length > 100 ? fullSummary.substring(0, 100) + '...' : firstSentence
-    }
-
-    if (contract.analysis?.analysis_data?.summary) {
-      const fullSummary = contract.analysis.analysis_data.summary
-      console.log('✅ Found legacy summary at root:', fullSummary.substring(0, 100) + '...')
-      const firstSentence = fullSummary.split('.')[0] + '.'
-      return firstSentence.length > 100 ? fullSummary.substring(0, 100) + '...' : firstSentence
-    }
-
-    if (contract.analysis?.analysis_data?.structuredAnalysis?.summary) {
-      const fullSummary = contract.analysis.analysis_data.structuredAnalysis.summary
-      console.log('✅ Found summary in structuredAnalysis (legacy):', fullSummary.substring(0, 100) + '...')
-      // Extract first sentence or first 100 characters
-      const firstSentence = fullSummary.split('.')[0] + '.'
-      return firstSentence.length > 100 ? fullSummary.substring(0, 100) + '...' : firstSentence
-    }
-    
-    console.log('❌ No summary found in analysis data, using fallback based on title')
-    
-    // Fallback: try to infer from title
-    const title = contract.title.toLowerCase()
-    if (title.includes('service') || title.includes('freelance')) {
-      return 'Service agreement for professional services.'
-    } else if (title.includes('employment') || title.includes('job')) {
-      return 'Employment contract with terms and conditions.'
-    } else if (title.includes('nda') || title.includes('confidential')) {
-      return 'Non-disclosure agreement with confidentiality terms.'
-    } else if (title.includes('lease') || title.includes('rental')) {
-      return 'Lease agreement for property rental.'
-    } else if (title.includes('purchase') || title.includes('sale')) {
-      return 'Purchase agreement for goods or services.'
-    }
-    
-    return 'Contract document with standard terms and conditions.'
+    return contractSummaries.get(contract.id) || 'Contract document with standard terms and conditions.'
   }
 
   const getDisplayTitle = (title: string): string => {
@@ -633,6 +618,48 @@ const Dashboard: React.FC = () => {
     if (!title) return ''
     return title.length > max ? `${title.slice(0, max)}...` : title
   }
+
+  const recentContractsList = useMemo(() => {
+    return contracts.slice(0, 5).map((contract) => (
+      <div key={contract.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 gap-3 sm:gap-4 overflow-hidden">
+        <div className="flex items-center space-x-3 sm:space-x-4">
+          <div className="p-2 bg-primary-100 rounded-lg flex-shrink-0">
+            <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h4 className="font-medium text-sm sm:text-base truncate">{getDisplayTitle(contract.title)}</h4>
+            <p className="text-xs sm:text-sm text-gray-600">
+              Uploaded on {new Date(contract.created_at).toLocaleDateString()}
+            </p>
+            <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+              {getContractSummary(contract)}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-end space-x-3 sm:space-x-4 flex-shrink-0 ml-0 sm:ml-4 w-full sm:w-auto mt-2 sm:mt-0">
+          <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
+            contract.analysis_status === 'completed' ? 'bg-green-100 text-green-800' :
+            contract.analysis_status === 'processing' ? 'bg-blue-100 text-blue-800' :
+            contract.analysis_status === 'failed' ? 'bg-red-100 text-red-800' :
+            'bg-gray-100 text-gray-800'
+          }`}>
+            {contract.analysis_status === 'completed' ? 'Analyzed' :
+             contract.analysis_status === 'processing' ? 'Processing' :
+             contract.analysis_status === 'failed' ? 'Failed' : 'Pending'}
+          </span>
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="min-h-[40px] text-xs sm:text-sm flex-shrink-0"
+            onClick={() => handleContractView(contract.id)}
+            disabled={contract.analysis_status !== 'completed'}
+          >
+            View
+          </Button>
+        </div>
+      </div>
+    ))
+  }, [contracts, contractSummaries])
 
   // Show loading state only when absolutely necessary
   if (authLoading) {
@@ -1541,45 +1568,7 @@ const Dashboard: React.FC = () => {
                       </Button>
                     </div>
                   ) : (
-                    contracts.slice(0, 5).map((contract) => (
-                      <div key={contract.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 gap-3 sm:gap-4 overflow-hidden">
-                        <div className="flex items-center space-x-3 sm:space-x-4">
-                          <div className="p-2 bg-primary-100 rounded-lg flex-shrink-0">
-                            <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <h4 className="font-medium text-sm sm:text-base truncate">{getDisplayTitle(contract.title)}</h4>
-                            <p className="text-xs sm:text-sm text-gray-600">
-                              Uploaded on {new Date(contract.created_at).toLocaleDateString()}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                              {getContractSummary(contract)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-end space-x-3 sm:space-x-4 flex-shrink-0 ml-0 sm:ml-4 w-full sm:w-auto mt-2 sm:mt-0">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
-                            contract.analysis_status === 'completed' ? 'bg-green-100 text-green-800' :
-                            contract.analysis_status === 'processing' ? 'bg-blue-100 text-blue-800' :
-                            contract.analysis_status === 'failed' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {contract.analysis_status === 'completed' ? 'Analyzed' :
-                             contract.analysis_status === 'processing' ? 'Processing' :
-                             contract.analysis_status === 'failed' ? 'Failed' : 'Pending'}
-                          </span>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="min-h-[40px] text-xs sm:text-sm flex-shrink-0"
-                            onClick={() => handleContractView(contract.id)}
-                            disabled={contract.analysis_status !== 'completed'}
-                          >
-                            View
-                          </Button>
-                        </div>
-                      </div>
-                    ))
+                    recentContractsList
                   )}
                 </div>
                 <div className="mt-4 sm:mt-6 text-center">
