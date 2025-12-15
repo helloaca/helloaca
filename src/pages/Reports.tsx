@@ -28,18 +28,40 @@ const Reports: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false)
   const [downloadingReports, setDownloadingReports] = useState<Set<string>>(new Set())
 
+  const getReportsCacheKey = () => `reports_cache_${user?.id || 'anon'}`
+  const readCachedReports = (): ReportData[] => {
+    try {
+      const raw = localStorage.getItem(getReportsCacheKey())
+      return raw ? JSON.parse(raw) as ReportData[] : []
+    } catch {
+      return []
+    }
+  }
+  const writeCachedReports = (data: ReportData[]) => {
+    try {
+      localStorage.setItem(getReportsCacheKey(), JSON.stringify(data))
+    } catch { void 0 }
+  }
+
   // Load reports on component mount
   useEffect(() => {
-    // Add timeout protection for loading
+    const cached = readCachedReports()
+    if (cached && cached.length > 0) {
+      setReports(cached)
+      setIsLoading(false)
+    }
+
     const timeoutId = setTimeout(() => {
       if (isLoading) {
         console.warn('Reports loading timeout - proceeding without data')
         setIsLoading(false)
-        setError('Loading is taking longer than expected. Please refresh the page.')
+        if (!cached || cached.length === 0) {
+          setError('Loading is taking longer than expected. Please refresh the page.')
+        }
       }
     }, 15000)
 
-    ;(async () => {
+    void (async () => {
       try {
         // Wait for session to be fully established
         let activeSession = null
@@ -114,6 +136,7 @@ const Reports: React.FC = () => {
       setError(null)
       const contractsWithAnalysis = await ContractService.getUserContractsWithAnalysis(user.id)
       setReports(contractsWithAnalysis)
+      writeCachedReports(contractsWithAnalysis)
     } catch (err) {
       console.error('Error loading reports:', err)
       setError('Failed to load reports. Please try again.')
