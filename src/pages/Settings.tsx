@@ -466,7 +466,7 @@ const Settings: React.FC = () => {
 
   const cancelSubscription = async () => {
     try {
-      const base = import.meta.env.VITE_API_ORIGIN || 'https://preview.helloaca.xyz'
+      const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
       const res = await fetch(`${base}/api/paystack-cancel-subscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -503,7 +503,7 @@ const Settings: React.FC = () => {
   const submitCancellationFeedback = async (proceed: boolean) => {
     try {
       setCancelSubmitting(true)
-      const base = import.meta.env.VITE_API_ORIGIN || 'https://preview.helloaca.xyz'
+      const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
       await fetch(`${base}/api/cancel-feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -571,7 +571,7 @@ const Settings: React.FC = () => {
         return
       }
       if (!user?.id) return
-      const base = import.meta.env.VITE_API_ORIGIN || 'https://preview.helloaca.xyz'
+      const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
       const res = await fetch(`${base}/api/app`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
@@ -680,7 +680,7 @@ const Settings: React.FC = () => {
           const hostname = window.location.hostname
           let base = baseEnv && baseEnv.length > 0 ? baseEnv : window.location.origin
           if ((hostname === 'localhost' || hostname === '127.0.0.1') && typeof base === 'string' && base.includes('preview')) {
-            base = 'https://preview.helloaca.xyz'
+            base = 'https://helloaca.xyz'
           }
           const resp = await fetch(`${base}/api/app`, {
             method: 'POST',
@@ -1297,7 +1297,7 @@ const Settings: React.FC = () => {
                     const hostname = window.location.hostname
                     let base = baseEnv && baseEnv.length > 0 ? baseEnv : window.location.origin
                     if ((hostname === 'localhost' || hostname === '127.0.0.1') && typeof base === 'string' && base.includes('preview')) {
-                      base = 'https://preview.helloaca.xyz'
+                      base = 'https://helloaca.xyz'
                     }
                     const controller = new AbortController()
                     const timer = setTimeout(() => controller.abort(), 10000)

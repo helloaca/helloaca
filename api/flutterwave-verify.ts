@@ -64,7 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await supabase.from('user_profiles').update({ credits_balance: next }).eq('id', profile.id)
       try { await supabase.from('notifications').insert({ user_id: profile.id, title: 'Credits purchased', body: `You purchased ${credits} credits. Reference: ${ref}`, type: 'credit_purchase', read: false }) } catch {}
       try {
-        const base = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || 'https://preview.helloaca.xyz'
+        const base = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || 'https://helloaca.xyz'
         await fetch(`${base}/api/notify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -72,7 +72,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
       } catch {}
       if (return_to && typeof return_to === 'string') {
-        const appBase = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || 'https://preview.helloaca.xyz'
+        const appBase = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || 'https://helloaca.xyz'
         const path = return_to.startsWith('/') ? return_to : `/${return_to}`
         res.status(302).setHeader('Location', `${appBase}${path}`).end()
         return
@@ -86,7 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await supabase.from('user_profiles').update({ plan }).eq('id', profile.id)
       try { await supabase.from('notifications').insert({ user_id: profile.id, title: 'Subscription activated', body: `Your ${plan} subscription is active. Reference: ${ref}`, type: 'system', read: false }) } catch {}
       try {
-        const base = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || 'https://preview.helloaca.xyz'
+        const base = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || 'https://helloaca.xyz'
         await fetch(`${base}/api/notify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -94,7 +94,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
       } catch {}
       if (return_to && typeof return_to === 'string') {
-        const appBase = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || 'https://preview.helloaca.xyz'
+        const appBase = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || 'https://helloaca.xyz'
         const path = return_to.startsWith('/') ? return_to : `/${return_to}`
         res.status(302).setHeader('Location', `${appBase}${path}`).end()
         return

@@ -83,7 +83,7 @@ const Pricing: React.FC = () => {
       await loadFlutterwaveScript()
       const txRef = `CREDITS-${selectedBundle.credits}-${Date.now()}`
       const baseEnv = import.meta.env.VITE_API_ORIGIN
-      const baseUrl = baseEnv && baseEnv.length > 0 ? baseEnv : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://preview.helloaca.xyz' : window.location.origin)
+      const baseUrl = baseEnv && baseEnv.length > 0 ? baseEnv : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://helloaca.xyz' : window.location.origin)
       const preferredCurrency = String(import.meta.env.VITE_FLUTTERWAVE_DEFAULT_CURRENCY || 'USD').toUpperCase()
       
       const fxRateNgn = Number(String(import.meta.env.VITE_FX_USD_TO_NGN_RATE || '1600'))
@@ -119,7 +119,7 @@ const Pricing: React.FC = () => {
       await loadFlutterwaveScript()
       const txRef = `SUB-${String(selectedPlan.plan).toUpperCase()}-${String(selectedPlan.period).toUpperCase()}-${Date.now()}`
       const baseEnv = import.meta.env.VITE_API_ORIGIN
-      const baseUrl = baseEnv && baseEnv.length > 0 ? baseEnv : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://preview.helloaca.xyz' : window.location.origin)
+      const baseUrl = baseEnv && baseEnv.length > 0 ? baseEnv : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://helloaca.xyz' : window.location.origin)
       const preferredCurrency2 = String(import.meta.env.VITE_FLUTTERWAVE_DEFAULT_CURRENCY || 'USD').toUpperCase()
       
       const fxRateNgn2 = Number(String(import.meta.env.VITE_FX_USD_TO_NGN_RATE || '1600'))
@@ -508,7 +508,7 @@ const Pricing: React.FC = () => {
                 try {
                   setIsLoading(true)
                   const baseEnv = import.meta.env.VITE_API_ORIGIN
-                  const base = baseEnv && baseEnv.length > 0 ? baseEnv : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://preview.helloaca.xyz' : window.location.origin)
+                  const base = baseEnv && baseEnv.length > 0 ? baseEnv : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://helloaca.xyz' : window.location.origin)
                   const res = await fetch(`${base}/api/waitlist`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

@@ -170,7 +170,7 @@ export class ContractService {
         const base = baseEnv && baseEnv.length > 0
           ? baseEnv
           : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-              ? 'https://preview.helloaca.xyz'
+              ? 'https://helloaca.xyz'
               : window.location.origin)
         await fetch(`${base}/api/notify`, {
           method: 'POST',
@@ -1530,7 +1530,7 @@ REMEMBER: Every array element MUST be followed by a comma except the last one. E
       const h = doc.internal.pageSize.getHeight()
       doc.setFontSize(10)
       doc.setTextColor('#6B7280')
-      doc.text('© 2025 HelloACA • preview.helloaca.xyz', 40, h - 24)
+      doc.text('© 2025 HelloACA • helloaca.xyz', 40, h - 24)
       doc.setDrawColor('#E5E7EB')
       doc.line(40, h - 36, w - 40, h - 36)
       doc.setTextColor('#111827')

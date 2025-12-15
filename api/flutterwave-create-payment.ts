@@ -16,7 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!secret || !pub) { res.status(500).json({ error: 'Flutterwave not configured' }); return }
 
     const reference = tx_ref || (credits ? `CREDITS-${credits}-${Date.now()}` : plan ? `SUB-${String(plan).toUpperCase()}-${String(period||'monthly').toUpperCase()}-${Date.now()}` : `TX-${Date.now()}`)
-    const base = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://preview.helloaca.xyz')
+    const base = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://helloaca.xyz')
     const redirect_url = `${base}/api/flutterwave-verify?tx_ref=${encodeURIComponent(reference)}&email=${encodeURIComponent(email)}`
 
     const preferredCurrency = (process.env.FLUTTERWAVE_DEFAULT_CURRENCY || 'USD').toUpperCase()

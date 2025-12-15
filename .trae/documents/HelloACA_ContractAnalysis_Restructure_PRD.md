@@ -197,7 +197,7 @@ The AI analysis prompt needs to be updated to generate the enhanced analysis for
 
 ## 7. Recent Product Updates
 
-- Export Center and PDF/HTML exports now brand footers with `https://preview.helloaca.xyz`
+- Export Center and PDF/HTML exports now brand footers with `https://helloaca.xyz`
 - Team collaboration supports pending invites that remain visible until accepted
 - Email notifications (credits, analysis complete, digest) leverage a CORS-enabled notify endpoint
 - Frontend uses `VITE_API_ORIGIN` to construct environment-safe links

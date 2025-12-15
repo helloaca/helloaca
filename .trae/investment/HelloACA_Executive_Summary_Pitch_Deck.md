@@ -197,7 +197,7 @@
 - 📊 **Risk Assessment**: Automated risk classification
 - 📈 **Analytics Dashboard**: Usage tracking and insights
 - 👥 **Team Collaboration**: Owner, members, and pending invites (pending until accepted)
-- 🌐 **Preview Domain**: Public site and APIs at `https://preview.helloaca.xyz`
+- 🌐 **Preview Domain**: Public site and APIs at `https://helloaca.xyz`
 
 **Product Roadmap (2025):**
 - Q1: Multi-language support, team collaboration
