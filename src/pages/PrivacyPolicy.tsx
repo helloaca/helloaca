@@ -59,11 +59,17 @@ const PrivacyPolicy: React.FC = () => {
 
                 <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">2.2 Document and Content Information</h3>
                 <ul>
-                  <li><strong>Uploaded Documents:</strong> Contracts, legal documents, and related files</li>
+                  <li><strong>Uploaded Documents:</strong> We process contracts and legal files to extract text for analysis. We do not retain the original files you upload.</li>
+                  <li><strong>Extracted Text:</strong> Text derived from your documents may be stored to enable analysis, chat, and your personal contract library.</li>
                   <li><strong>Analysis Data:</strong> AI-generated insights, risk assessments, and recommendations</li>
                   <li><strong>User Interactions:</strong> Queries, annotations, comments, and feedback on analyses</li>
                   <li><strong>Document Metadata:</strong> File names, upload timestamps, document properties</li>
                 </ul>
+                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mt-4">
+                  <p className="text-sm text-blue-700">
+                    <strong>Document Storage Policy:</strong> Helloaca does not store uploaded documents as files. We extract text solely for analysis and features you use. You can delete extracted text and analyses at any time.
+                  </p>
+                </div>
 
                 <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">2.3 Technical Information</h3>
                 <ul>
@@ -80,8 +86,8 @@ const PrivacyPolicy: React.FC = () => {
                 <ul>
                   <li>Provide AI-powered contract analysis and insights</li>
                   <li>Generate risk assessments and recommendations</li>
-                  <li>Store and manage your documents securely</li>
-                  <li>Enable collaboration features and document sharing</li>
+                  <li>Extract text from uploaded files for analysis; we do not retain original files</li>
+                  <li>Enable collaboration features and document sharing of analyses and extracted text</li>
                   <li>Provide customer support and technical assistance</li>
                 </ul>
 
@@ -315,18 +321,17 @@ const PrivacyPolicy: React.FC = () => {
                 <h3 className="text-xl font-semibold text-gray-800 mb-3">11.1 Service Providers</h3>
                 <p>We work with trusted third-party providers for:</p>
                 <ul>
-                  <li><strong>Cloud Infrastructure:</strong> AWS, Google Cloud (SOC 2 compliant)</li>
-                  <li><strong>Payment Processing:</strong> Paystack, Coinbase Commerce (PCI DSS compliant where applicable)</li>
-                  <li><strong>Analytics:</strong> Google Analytics (Measurement ID: G-0JVYR712V0) for website usage analytics with anonymized data</li>
-                  <li><strong>Customer Support:</strong> Intercom, Zendesk</li>
-                  <li><strong>Email Services:</strong> SendGrid, Mailchimp</li>
+                  <li><strong>Hosting & Serverless:</strong> Vercel</li>
+                  <li><strong>Database & Authentication:</strong> Supabase</li>
+                  <li><strong>Payment Processing:</strong> Flutterwave (cards) and Coinbase Commerce (crypto)</li>
+                  <li><strong>Analytics:</strong> Google Analytics (Measurement ID: G-0JVYR712V0) and Mixpanel</li>
                 </ul>
 
                 <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">11.2 Third-Party Policies</h3>
                 <ul>
                   <li>Third-party services have their own privacy policies</li>
                   <li>We require service providers to maintain appropriate security standards</li>
-                  <li>Data Processing Agreements (DPAs) are in place with all processors</li>
+                  <li>Payment providers maintain PCI DSS compliance where applicable</li>
                 </ul>
               </section>
 
@@ -347,6 +352,20 @@ const PrivacyPolicy: React.FC = () => {
                   <li>Material changes will be communicated via email or platform notification</li>
                   <li>Continued use after changes constitutes acceptance</li>
                   <li>Previous versions are available upon request</li>
+                </ul>
+              </section>
+
+              <section className="mb-8">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">15. Legal Disclaimer</h2>
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                  <p className="text-sm text-yellow-700">
+                    <strong>Not a Substitute for Legal Advice:</strong> Helloaca provides AI-assisted analysis to help you understand contracts. It does not provide legal advice and is not a replacement for licensed attorneys. The Service is designed to assist individuals and teams who may not have access to legal counsel and should be used as a tool alongside professional judgment.
+                  </p>
+                </div>
+                <ul>
+                  <li>Outputs are informational and should be reviewed before any legal decision</li>
+                  <li>For complex matters, consult a qualified lawyer</li>
+                  <li>Use of the Service is subject to our Terms of Service</li>
                 </ul>
               </section>
 

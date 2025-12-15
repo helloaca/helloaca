@@ -19,8 +19,8 @@ HelloACA has developed a comprehensive intellectual property portfolio centered 
 - 🎨 **Copyrighted Software** and user interface designs
 - 🔐 **Trade Secrets** protecting competitive advantages
 - 📋 **Domain Portfolio** securing brand presence
-  - Active domains: `helloaca.xyz`, `preview.helloaca.xyz`
-  - Public links and exports currently reference `https://preview.helloaca.xyz`
+  - Active domains: `helloaca.xyz`, `helloaca.xyz`
+  - Public links and exports currently reference `https://helloaca.xyz`
 
 ---
 
