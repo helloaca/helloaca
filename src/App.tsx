@@ -65,10 +65,20 @@ function PageTracker() {
       '/login': 'Login | Helloaca',
       '/register': 'Register | Helloaca',
       '/forgot-password': 'Reset Password | Helloaca',
-      '/docs': 'Documentation | Helloaca'
+      '/docs': 'Documentation | Helloaca',
+      '/dashboard': 'Dashboard | Helloaca',
+      '/reports': 'Reports | Helloaca',
+      '/settings': 'Settings | Helloaca'
     }
-    const title = titles[url.pathname]
-    if (title) document.title = title
+
+    const path = url.pathname
+    const dynamicTitle = (
+      titles[path]
+      || (path.startsWith('/analyze/') ? 'Contract Analysis | Helloaca' : undefined)
+      || (path.startsWith('/chat/') ? 'Contract Chat | Helloaca' : undefined)
+      || 'Helloaca | AI-Powered Contract Analyzer'
+    )
+    document.title = dynamicTitle
 
     const ogUrl = document.querySelector('meta[property="og:url"]') as HTMLMetaElement | null
     if (ogUrl) ogUrl.setAttribute('content', canonicalHref)

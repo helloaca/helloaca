@@ -21,7 +21,7 @@ HelloACA leverages Claude AI to deliver professional-grade contract insights ins
 - 94% accuracy rate with continuous improvement
 - Mobile-optimized for on-the-go professionals
  - Team collaboration with dynamic invites (pending until accepted)
- - Unified preview domain `https://preview.helloaca.xyz` for links and exports
+ - Unified preview domain `https://helloaca.xyz` for links and exports
 
 ---
 

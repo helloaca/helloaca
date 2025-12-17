@@ -51,7 +51,7 @@ graph TD
 
 * Deployment: Vercel (frontend), Supabase (backend services)
 
-* Domains: Public site and API origin use `https://preview.helloaca.xyz`
+* Domains: Public site and API origin use `https://helloaca.xyz`
 
 ## 3. Route Definitions
 

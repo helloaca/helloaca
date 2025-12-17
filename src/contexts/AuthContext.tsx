@@ -391,11 +391,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             } else if (existingProfile) {
               let updatedProfile = existingProfile
+              const patch: any = {}
               if (!existingProfile.avatar_seed) {
-                const seed = session.user.id
+                patch.avatar_seed = session.user.id
+              }
+              const mf = session.user.user_metadata?.firstName
+              const ml = session.user.user_metadata?.lastName
+              if (!existingProfile.first_name && typeof mf === 'string' && mf.length > 0) {
+                patch.first_name = mf
+              }
+              if (!existingProfile.last_name && typeof ml === 'string' && ml.length > 0) {
+                patch.last_name = ml
+              }
+              if (Object.keys(patch).length > 0) {
                 const { error: updateErr, data } = await supabase
                   .from('user_profiles')
-                  .update({ avatar_seed: seed })
+                  .update(patch)
                   .eq('id', session.user.id)
                   .select()
                   .single()
@@ -415,7 +426,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         } catch (err) {
           console.error('❌ Error fetching profile:', err)
-          handleError(err as Error)
+          const code = (err as any)?.code || ''
+          const message = String((err as any)?.message || '')
+          if (!(code === '42P17' || /infinite recursion/i.test(message))) {
+            handleError(err as Error)
+          }
           // If fetch fails, try to get cached profile
           const cachedData = getCachedUserData()
           if (!cachedData.profile) {
@@ -463,8 +478,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         if (session && session.user) {
           const path = window.location.pathname
-          if (path !== '/dashboard') {
-            window.location.assign('/dashboard')
+          if (path !== '/dashboard' && !path.startsWith('/auth/')) {
+            // Only redirect to dashboard if we're not already there and not in an auth flow
+            // This prevents redirect loops or unexpected navigation
+            // window.location.assign('/dashboard')
           }
         }
       } catch {}
