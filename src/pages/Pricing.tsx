@@ -93,7 +93,7 @@ const Pricing: React.FC = () => {
         tx_ref: txRef,
         amount: amountLocal,
         currency: preferredCurrency,
-        payment_options: 'card',
+        payment_options: 'card,applepay,googlepay',
         // Avoid enforcing country to let checkout pick correct auth model for card BIN
         redirect_url: `${baseUrl}/api/flutterwave-verify?tx_ref=${encodeURIComponent(txRef)}&email=${encodeURIComponent(user.email)}&return_to=%2Fdashboard`,
         customer: { email: String(user.email) },
@@ -129,7 +129,7 @@ const Pricing: React.FC = () => {
         tx_ref: txRef,
         amount: amountLocal2,
         currency: preferredCurrency2,
-        payment_options: 'card',
+        payment_options: 'card,applepay,googlepay',
         // Avoid enforcing country to let checkout pick correct auth model for card BIN
         redirect_url: `${baseUrl}/api/flutterwave-verify?tx_ref=${encodeURIComponent(txRef)}&email=${encodeURIComponent(user.email)}&return_to=%2Fdashboard`,
         customer: { email: String(user.email) },

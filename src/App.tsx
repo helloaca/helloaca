@@ -82,6 +82,20 @@ function PageTracker() {
 
     const ogUrl = document.querySelector('meta[property="og:url"]') as HTMLMetaElement | null
     if (ogUrl) ogUrl.setAttribute('content', canonicalHref)
+
+    const imageUrl = `${url.origin}/og-image.png`
+    const ogImage = document.querySelector('meta[property="og:image"]') as HTMLMetaElement | null
+    if (ogImage) ogImage.setAttribute('content', imageUrl)
+    const ogImageSecure = document.querySelector('meta[property="og:image:secure_url"]') as HTMLMetaElement | null
+    if (ogImageSecure) ogImageSecure.setAttribute('content', imageUrl)
+    const twitterImage = document.querySelector('meta[name="twitter:image"]') as HTMLMetaElement | null
+    if (twitterImage) twitterImage.setAttribute('content', imageUrl)
+    const twitterUrl = document.querySelector('meta[name="twitter:url"]') as HTMLMetaElement | null
+    if (twitterUrl) twitterUrl.setAttribute('content', canonicalHref)
+    const ogTitle = document.querySelector('meta[property="og:title"]') as HTMLMetaElement | null
+    if (ogTitle) ogTitle.setAttribute('content', dynamicTitle)
+    const twitterTitle = document.querySelector('meta[name="twitter:title"]') as HTMLMetaElement | null
+    if (twitterTitle) twitterTitle.setAttribute('content', dynamicTitle)
   }, [location])
 
   return null
