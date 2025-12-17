@@ -29,13 +29,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       amount: finalAmount,
       currency: preferredCurrency,
       redirect_url,
-      payment_options: 'card',
+      payment_options: 'card,applepay,googlepay',
       public_key: pub,
       // Avoid enforcing country to let checkout pick correct auth model for card BIN
       customer: { email },
       meta: { userId, credits, plan, period },
       customizations: {
-        title: 'HelloACA',
+        title: 'Helloaca',
         description: credits ? `${credits} credits` : (plan ? `${String(plan)} subscription` : 'Payment'),
         logo: `${base}/logo.png`
       }
