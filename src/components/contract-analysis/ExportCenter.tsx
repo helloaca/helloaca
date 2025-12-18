@@ -68,7 +68,7 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contract
     doc.rect(0, 0, doc.internal.pageSize.getWidth(), 48, 'F')
     doc.setTextColor('#000000')
     doc.setFontSize(20)
-    doc.text('HelloACA', 40, 30)
+    doc.text('Helloaca', 40, 30)
     doc.setFontSize(12)
     doc.text(subtitle, 160, 30)
     doc.setTextColor('#111827')
@@ -79,7 +79,7 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contract
     const h = doc.internal.pageSize.getHeight()
     doc.setFontSize(10)
     doc.setTextColor('#6B7280')
-    doc.text('© 2025 HelloACA • helloaca.xyz', 40, h - 24)
+    doc.text('© 2025 Helloaca • helloaca.xyz', 40, h - 24)
     doc.setDrawColor('#E5E7EB')
     doc.line(40, h - 36, w - 40, h - 36)
     doc.setTextColor('#111827')
@@ -230,7 +230,7 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ exportData, contract
 
   const downloadChartsCsv = () => {
     const rows: string[] = [
-      'HelloACA,Charts & Data Export',
+      'Helloaca,Charts & Data Export',
       `Contract,${safeContractTitle}`,
       `Exported,${new Date().toISOString()}`,
       '',

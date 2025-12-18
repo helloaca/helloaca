@@ -1,8 +1,8 @@
-import React, { useCallback, useState, useEffect } from 'react'
+import React, { useCallback, useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/layout/Header'
 import { Footer } from '../components/layout/Footer'
-import { Check, ArrowLeft, X } from 'lucide-react'
+import { Check, ArrowLeft, X, Loader2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { getUserCredits, addUserCredits } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -27,6 +27,14 @@ const Pricing: React.FC = () => {
   const [waitlistName, setWaitlistName] = useState('')
   const [waitlistEmail, setWaitlistEmail] = useState('')
   const [waitlistPlans, setWaitlistPlans] = useState<Array<'team'|'business'|'enterprise'>>([])
+  useEffect(() => {
+    if (isMethodModalOpen) {
+      setTimeout(() => {
+        const btn = document.getElementById('method-card-btn') as HTMLButtonElement | null
+        btn?.focus()
+      }, 50)
+    }
+  }, [isMethodModalOpen])
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -61,89 +69,67 @@ const Pricing: React.FC = () => {
 
   
 
-  const loadFlutterwaveScript = useCallback(async () => {
-    if ((window as any).FlutterwaveCheckout) return
-    await new Promise<void>((resolve, reject) => {
-      const script = document.createElement('script')
-      script.src = 'https://checkout.flutterwave.com/v3.js'
-      script.async = true
-      script.onload = () => resolve()
-      script.onerror = () => reject(new Error('Failed to load Flutterwave script'))
-      document.body.appendChild(script)
-    })
-  }, [])
+  const clickGuardRef = useRef(false)
 
   const startFlutterwaveCreditsCheckout = useCallback(async () => {
     try {
       if (!user || !selectedBundle) { toast.error('No bundle selected'); return }
-      const publicKey = import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY
-      if (!publicKey) { toast.error('Payment is not configured'); return }
       setIsLoading(true)
       setProcessingMethod('card')
-      await loadFlutterwaveScript()
-      const txRef = `CREDITS-${selectedBundle.credits}-${Date.now()}`
-      const baseEnv = import.meta.env.VITE_API_ORIGIN
-      const baseUrl = baseEnv && baseEnv.length > 0 ? baseEnv : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://helloaca.xyz' : window.location.origin)
-      const preferredCurrency = String(import.meta.env.VITE_FLUTTERWAVE_DEFAULT_CURRENCY || 'USD').toUpperCase()
-      
-      const fxRateNgn = Number(String(import.meta.env.VITE_FX_USD_TO_NGN_RATE || '1600'))
-      const amountLocal = preferredCurrency === 'NGN' ? Math.round(selectedBundle.priceUSD * fxRateNgn) : selectedBundle.priceUSD
-      ;(window as any).FlutterwaveCheckout({
-        public_key: publicKey,
-        tx_ref: txRef,
-        amount: amountLocal,
-        currency: preferredCurrency,
-        payment_options: 'card,applepay,googlepay',
-        // Avoid enforcing country to let checkout pick correct auth model for card BIN
-        redirect_url: `${baseUrl}/api/flutterwave-verify?tx_ref=${encodeURIComponent(txRef)}&email=${encodeURIComponent(user.email)}&return_to=%2Fdashboard`,
-        customer: { email: String(user.email) },
-        meta: { userId: user.id, credits: selectedBundle.credits },
-        customizations: { title: 'HelloACA', description: `${selectedBundle.credits} credits`, logo: `${baseUrl}/logo.png` },
-        onclose: () => { setIsLoading(false); setProcessingMethod(null) }
+      const base = import.meta.env.VITE_API_ORIGIN || window.location.origin
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 12000)
+      const res = await fetch(`${base}/api/flutterwave-create-payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, email: user.email, amount_usd: selectedBundle.priceUSD, credits: selectedBundle.credits }),
+        signal: controller.signal
       })
-      setMethodModalOpen(false)
+      clearTimeout(timer)
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.link) {
+        const message = typeof data?.error === 'string' ? data.error : 'Failed to initialize payment'
+        toast.error(message)
+      } else {
+        setMethodModalOpen(false)
+        window.location.href = data.link
+      }
     } catch (e) {
       setIsLoading(false)
       setProcessingMethod(null)
       toast.error('Network error starting payment')
     }
-  }, [user, selectedBundle, loadFlutterwaveScript])
+  }, [user, selectedBundle])
 
   const startFlutterwaveSubscribeCheckout = useCallback(async () => {
     try {
       if (!user || !selectedPlan) { toast.error('Please sign in and select a plan'); return }
-      const publicKey = import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY
-      if (!publicKey) { toast.error('Payment is not configured'); return }
       setIsLoading(true)
       setProcessingMethod('card')
-      await loadFlutterwaveScript()
-      const txRef = `SUB-${String(selectedPlan.plan).toUpperCase()}-${String(selectedPlan.period).toUpperCase()}-${Date.now()}`
-      const baseEnv = import.meta.env.VITE_API_ORIGIN
-      const baseUrl = baseEnv && baseEnv.length > 0 ? baseEnv : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://helloaca.xyz' : window.location.origin)
-      const preferredCurrency2 = String(import.meta.env.VITE_FLUTTERWAVE_DEFAULT_CURRENCY || 'USD').toUpperCase()
-      
-      const fxRateNgn2 = Number(String(import.meta.env.VITE_FX_USD_TO_NGN_RATE || '1600'))
-      const amountLocal2 = preferredCurrency2 === 'NGN' ? Math.round(selectedPlan.priceUSD * fxRateNgn2) : selectedPlan.priceUSD
-      ;(window as any).FlutterwaveCheckout({
-        public_key: publicKey,
-        tx_ref: txRef,
-        amount: amountLocal2,
-        currency: preferredCurrency2,
-        payment_options: 'card,applepay,googlepay',
-        // Avoid enforcing country to let checkout pick correct auth model for card BIN
-        redirect_url: `${baseUrl}/api/flutterwave-verify?tx_ref=${encodeURIComponent(txRef)}&email=${encodeURIComponent(user.email)}&return_to=%2Fdashboard`,
-        customer: { email: String(user.email) },
-        meta: { userId: user.id, plan: selectedPlan.plan, period: selectedPlan.period },
-        customizations: { title: 'Helloaca', description: `${selectedPlan.plan} subscription (${selectedPlan.period})`, logo: `${baseUrl}/logo.png` },
-        onclose: () => { setIsLoading(false); setProcessingMethod(null) }
+      const base = import.meta.env.VITE_API_ORIGIN || window.location.origin
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 12000)
+      const res = await fetch(`${base}/api/flutterwave-create-payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, email: user.email, amount_usd: selectedPlan.priceUSD, plan: selectedPlan.plan, period: selectedPlan.period }),
+        signal: controller.signal
       })
-      setSubModalOpen(false)
+      clearTimeout(timer)
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.link) {
+        const message = typeof data?.error === 'string' ? data.error : 'Failed to initialize payment'
+        toast.error(message)
+      } else {
+        setSubModalOpen(false)
+        window.location.href = data.link
+      }
     } catch (e) {
       setIsLoading(false)
       setProcessingMethod(null)
       toast.error('Network error starting payment')
     }
-  }, [user, selectedPlan, loadFlutterwaveScript])
+  }, [user, selectedPlan])
 
   
 
@@ -179,6 +165,16 @@ const Pricing: React.FC = () => {
       toast.error(err instanceof Error ? err.message : 'Payment initialization failed')
     }
   }, [user, navigate, selectedBundle, startFlutterwaveCreditsCheckout])
+
+  const handleBuyCreditsClick = useCallback(async () => {
+    if (clickGuardRef.current) return
+    clickGuardRef.current = true
+    try {
+      await handleBuyCredits()
+    } finally {
+      clickGuardRef.current = false
+    }
+  }, [handleBuyCredits])
 
   // Crypto callback flow will be implemented when crypto is enabled
 
@@ -414,6 +410,9 @@ const Pricing: React.FC = () => {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="method-modal-title"
             className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-4 sm:p-6 max-h-[85vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
@@ -425,17 +424,23 @@ const Pricing: React.FC = () => {
             >
               <X className="w-5 h-5" />
             </button>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Choose payment method</h3>
+            <h3 id="method-modal-title" className="text-xl font-semibold text-gray-900 mb-2">Choose payment method</h3>
             <p className="text-gray-600 mb-6">Buying {selectedBundle.credits} credit{selectedBundle.credits > 1 ? 's' : ''} for ${selectedBundle.priceUSD}.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
-                onClick={handleBuyCredits}
+                id="method-card-btn"
+                onClick={handleBuyCreditsClick}
                 disabled={isLoading || processingMethod === 'crypto'}
                 className={`w-full py-3 px-6 rounded-lg font-medium text-center transition-colors ${
                   'bg-[#4ECCA3] text-white hover:bg-[#4ECCA3]/90 disabled:opacity-50 disabled:cursor-not-allowed'
                 }`}
               >
-                {processingMethod === 'card' ? 'Processing…' : 'Card'}
+                {processingMethod === 'card' ? (
+                  <span className="inline-flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Processing…
+                  </span>
+                ) : 'Card'}
               </button>
               <button
                 onClick={handleBuyCreditsCrypto}
@@ -453,11 +458,16 @@ const Pricing: React.FC = () => {
 
   {isBundleModalOpen && (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { if (!isLoading) setBundleModalOpen(false) }}>
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 sm:p-8" onClick={(e) => e.stopPropagation()}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="bundle-modal-title"
+        className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 sm:p-8"
+        onClick={(e) => e.stopPropagation()}>
         <button aria-label="Close" onClick={() => setBundleModalOpen(false)} disabled={isLoading} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
           <X className="w-5 h-5" />
         </button>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Select credits</h3>
+        <h3 id="bundle-modal-title" className="text-xl font-semibold text-gray-900 mb-2">Select credits</h3>
         <p className="text-gray-600 mb-6">Choose a bundle. You can pay with card or crypto.</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {bundles.map((b) => (
@@ -480,14 +490,27 @@ const Pricing: React.FC = () => {
 
       {isSubModalOpen && selectedPlan && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { if (!isLoading) setSubModalOpen(false) }}>
-          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-4 sm:p-6 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sub-modal-title"
+            className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-4 sm:p-6 max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}>
             <button aria-label="Close" onClick={() => setSubModalOpen(false)} disabled={isLoading} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
               <X className="w-5 h-5" />
             </button>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Subscribe to {selectedPlan.plan} ({selectedPlan.period})</h3>
+            <h3 id="sub-modal-title" className="text-xl font-semibold text-gray-900 mb-2">Subscribe to {selectedPlan.plan} ({selectedPlan.period})</h3>
             <p className="text-gray-600 mb-4">Total: ${selectedPlan.priceUSD}</p>
             <div className="grid grid-cols-1 gap-3">
-              <button onClick={async () => { await startFlutterwaveSubscribeCheckout() }} disabled={isLoading} className="py-3 px-6 rounded-lg font-medium bg-[#4ECCA3] text-white hover:bg-[#4ECCA3]/90 disabled:opacity-50">Card</button>
+              <button onClick={async () => {
+                if (clickGuardRef.current) return
+                clickGuardRef.current = true
+                try {
+                  await startFlutterwaveSubscribeCheckout()
+                } finally {
+                  clickGuardRef.current = false
+                }
+              }} disabled={isLoading} className="py-3 px-6 rounded-lg font-medium bg-[#4ECCA3] text-white hover:bg-[#4ECCA3]/90 disabled:opacity-50">Card</button>
             </div>
           </div>
         </div>
