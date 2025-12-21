@@ -79,17 +79,7 @@ const Settings: React.FC = () => {
   const [creditsBalance, setCreditsBalance] = useState(0)
   const [teamMembers, setTeamMembers] = useState<Array<{ id: string; name?: string; email: string; role: 'Owner'|'Admin'|'Member'|'Viewer'; status: 'active'|'pending' }>>([])
 
-  const loadPaystackScript = useCallback(async () => {
-    if ((window as any).PaystackPop) return
-    await new Promise<void>((resolve, reject) => {
-      const script = document.createElement('script')
-      script.src = 'https://js.paystack.co/v1/inline.js'
-      script.async = true
-      script.onload = () => resolve()
-      script.onerror = () => reject(new Error('Failed to load Paystack script'))
-      document.body.appendChild(script)
-    })
-  }, [])
+  // No external script needed for Flutterwave checkout
 
   const handleSubscribe = useCallback(async () => {
     try {
@@ -120,167 +110,45 @@ const Settings: React.FC = () => {
         }
       }
 
-      const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY
-      const planCode = import.meta.env.VITE_PAYSTACK_PLAN_CODE
-      if (!publicKey) {
-        toast.error('Payment is not configured')
-        return
-      }
-
       setIsLoadingPayment(true)
       setProcessingMethod('card')
       try {
-        await loadPaystackScript()
+        const base = import.meta.env.VITE_API_ORIGIN || window.location.origin
+        const period = 'monthly'
+        const priceUsd = Number(import.meta.env.VITE_PRO_MONTHLY_USD || 10)
+        const controller = new AbortController()
+        const timer = setTimeout(() => controller.abort(), 12000)
+        const res = await fetch(`${base}/api/flutterwave-create-payment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id, email: user.email, amount_usd: priceUsd, plan: 'pro', period }),
+          signal: controller.signal
+        })
+        clearTimeout(timer)
+        const data = await res.json().catch(() => null)
+        if (!res.ok || !data?.link) {
+          const message = typeof data?.error === 'string' ? data.error : 'Failed to initialize payment'
+          toast.error(message)
+        } else {
+          setMethodModalOpen(false)
+          window.location.href = data.link
+        }
       } catch {
+        toast.error('Network error starting payment')
+      } finally {
         setIsLoadingPayment(false)
         setProcessingMethod(null)
-        if (shouldMock) {
-          try {
-            const result = await updateProfile({ plan: 'pro' })
-            if (!result.success) {
-              await supabase.auth.updateUser({ data: { plan: 'pro' } })
-            }
-            await refreshProfile()
-            toast.success('Subscription activated (mock)')
-            return
-          } catch {
-            toast.error('Mock activation failed')
-            return
-          }
-        }
-        toast.error('Network error loading payment library')
-        return
       }
-
-      const PaystackPop = (window as any).PaystackPop
-      if (!PaystackPop || typeof PaystackPop.setup !== 'function') {
-        setIsLoadingPayment(false)
-        setProcessingMethod(null)
-        toast.error('Payment library failed to load')
-        return
-      }
-
-      let amountKobo: number | undefined
-      if (!planCode) {
-        try {
-          const rateRes = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=NGN')
-          const rateJson = await rateRes.json().catch(() => null)
-          const rate = typeof rateJson?.rates?.NGN === 'number' ? rateJson.rates.NGN : null
-          const ngn = Math.round(((rate || 1500) * 3))
-          amountKobo = ngn * 100
-        } catch {
-          amountKobo = 1500 * 3 * 100
-        }
-      }
-
-      const handler = PaystackPop.setup({
-        key: publicKey,
-        email: String(user.email),
-        ...(planCode ? { plan: planCode } : { amount: amountKobo, currency: 'NGN' }),
-        reference: `PRO-${Date.now()}`,
-        channels: ['card'],
-        metadata: { plan: 'pro' },
-        callback: (response: any) => {
-          (async () => {
-            try {
-              const base = import.meta.env.VITE_API_ORIGIN || 'https://helloaca.xyz'
-              const res = await fetch(`${base}/api/paystack-verify`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reference: response.reference })
-              })
-              const data = await res.json()
-              if (data?.status === 'success') {
-                await updateProfile({ plan: 'pro' })
-                await refreshProfile()
-                toast.success('Subscription activated')
-              } else {
-                toast.error('Payment verification failed')
-              }
-            } catch {
-              toast.error('Could not verify payment')
-            } finally {
-              setIsLoadingPayment(false)
-              setProcessingMethod(null)
-            }
-          })()
-        },
-        onClose: function () {
-          setIsLoadingPayment(false)
-          setProcessingMethod(null)
-          toast.info('Payment canceled')
-        }
-      })
-      setMethodModalOpen(false)
-      handler.openIframe()
     } catch (err) {
       setIsLoadingPayment(false)
       setProcessingMethod(null)
       toast.error(err instanceof Error ? err.message : 'Payment initialization failed')
     }
-  }, [user, navigate, loadPaystackScript, profile])
+  }, [user, navigate, profile])
 
   const handleSubscribeCrypto = useCallback(async () => {
-    try {
-      if (!user) {
-        toast.error('Please sign in to subscribe')
-        navigate('/login')
-        return
-      }
-      if (String(user?.plan) === 'pro' || String(profile?.plan) === 'pro') {
-        toast.info('You already have an active Pro plan')
-        return
-      }
-      const testMode = String(import.meta.env.VITE_PAYSTACK_TEST_MODE || '')
-      const hostname = window.location.hostname
-      const shouldMock = testMode === 'mock' || hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('preview')
-      if (shouldMock) {
-        try {
-          const result = await updateProfile({ plan: 'pro' })
-          if (!result.success) {
-            await supabase.auth.updateUser({ data: { plan: 'pro' } })
-          }
-          await refreshProfile()
-          toast.success('Subscription activated (mock)')
-          return
-        } catch {
-          toast.error('Mock activation failed')
-          return
-        }
-      }
-
-      setIsLoadingPayment(true)
-      setProcessingMethod('crypto')
-      const base = import.meta.env.VITE_API_ORIGIN || window.location.origin
-      const controller = new AbortController()
-      const timer = setTimeout(() => controller.abort(), 10000)
-      let data: any = null
-      try {
-        const res = await fetch(`${base}/api/coinbase-create-charge`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id, email: user.email }),
-          signal: controller.signal
-        })
-        data = await res.json().catch(() => null)
-        clearTimeout(timer)
-        const url = data?.hosted_url
-        if (res.ok && url) {
-          setMethodModalOpen(false)
-          window.location.href = url
-          return
-        }
-        const message = typeof data?.error === 'string' ? data.error : 'Failed to start crypto payment'
-        toast.error(message)
-      } catch {
-        clearTimeout(timer)
-        toast.error('Network error starting crypto payment')
-      }
-    } finally {
-      setIsLoadingPayment(false)
-      setProcessingMethod(null)
-    }
-  }, [user, navigate, profile])
+    toast.info('Crypto is only available for pay‑per‑use credits')
+  }, [])
 
   const handleChangePassword = async () => {
     try {
@@ -419,21 +287,18 @@ const Settings: React.FC = () => {
       const base = baseEnv && baseEnv.length > 0
         ? baseEnv
         : window.location.origin
-      const [cardRes, cryptoRes] = await Promise.all([
-        fetch(`${base}/api/paystack-history?email=${encodeURIComponent(String(user.email))}`),
-        fetch(`${base}/api/coinbase-list-charges?email=${encodeURIComponent(String(user.email))}`)
-      ])
-      const [cardJson, cryptoJson] = await Promise.all([cardRes.json(), cryptoRes.json()])
-      const card = Array.isArray(cardJson?.data) ? cardJson.data.map((tx: any) => ({
+      const res = await fetch(`${base}/api/app?action=billing_history&email=${encodeURIComponent(String(user.email))}`)
+      const json = await res.json().catch(() => null)
+      const card = Array.isArray(json?.card) ? json.card.map((tx: any) => ({
         method: 'card',
         reference: tx.reference,
         status: tx.status,
-        amount: typeof tx.amount === 'number' ? (tx.amount / 100).toFixed(2) : tx.amount,
-        currency: 'USD',
-        created_at: tx.paid_at || tx.created_at,
+        amount: typeof tx.amount === 'number' ? tx.amount.toFixed(2) : String(tx.amount || ''),
+        currency: tx.currency || 'USD',
+        created_at: tx.created_at || tx.paid_at,
         explorer_url: null
       })) : []
-      const crypto = Array.isArray(cryptoJson?.data) ? cryptoJson.data.map((c: any) => {
+      const crypto = Array.isArray(json?.crypto) ? json.crypto.map((c: any) => {
         const created = c.created_at ? new Date(c.created_at).getTime() : 0
         const ageMs = Date.now() - created
         const isComplete = ['success','completed','paid'].includes(String(c.status))
@@ -624,10 +489,29 @@ const Settings: React.FC = () => {
   }, [user, profile])
 
   useEffect(() => {
-    if (user?.id) {
-      setCreditsBalance(getUserCredits(user.id))
+    const run = async () => {
+      try {
+        if (typeof profile?.credits_balance === 'number') {
+          setCreditsBalance(Math.max(0, Math.floor(Number(profile.credits_balance))))
+          return
+        }
+        if (user?.id) {
+          const { data } = await supabase
+            .from('user_profiles')
+            .select('credits_balance')
+            .eq('id', String(user.id))
+            .single()
+          const bal = typeof data?.credits_balance === 'number' ? data.credits_balance : getUserCredits(user.id)
+          setCreditsBalance(Math.max(0, Math.floor(Number(bal || 0))))
+          return
+        }
+        setCreditsBalance(0)
+      } catch {
+        if (user?.id) setCreditsBalance(getUserCredits(user.id))
+      }
     }
-  }, [user?.id])
+    run()
+  }, [user?.id, profile?.credits_balance])
 
   const tabs = [
     { id: 'profile' as const, label: 'Profile', icon: User },
@@ -969,13 +853,7 @@ const Settings: React.FC = () => {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Team Members</h3>
         <Button onClick={() => {
-          const plan = String(profile?.plan || (user as any)?.plan || 'free')
-          if (!['team','business','enterprise'].includes(plan)) {
-            toast.error('Upgrade to invite team members')
-            navigate('/pricing')
-            return
-          }
-          setInviteModalOpen(true)
+          toast.info('Coming Soon')
         }}>
           <Plus className="w-4 h-4 mr-2" />
           Invite Member
@@ -1349,13 +1227,13 @@ const Settings: React.FC = () => {
                 <X className="w-5 h-5" />
               </button>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Choose payment method</h3>
-              <p className="text-gray-600 mb-6">Select how you want to subscribe to Pro.</p>
+              <p className="text-gray-600 mb-6">Subscriptions are card‑only via Flutterwave.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button onClick={handleSubscribe} disabled={isLoadingPayment || processingMethod === 'crypto'} className='w-full py-3 px-6 rounded-lg font-medium text-center transition-colors bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'>
-                  {processingMethod === 'card' ? 'Processing…' : 'Card'}
+                  {processingMethod === 'card' ? 'Processing…' : 'Card (Flutterwave)'}
                 </button>
-                <button onClick={handleSubscribeCrypto} disabled={isLoadingPayment || processingMethod === 'card'} className='w-full py-3 px-6 rounded-lg font-medium text-center transition-colors bg-gray-900 text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed'>
-                  {processingMethod === 'crypto' ? 'Processing…' : 'Crypto'}
+                <button onClick={handleSubscribeCrypto} disabled={true} className='w-full py-3 px-6 rounded-lg font-medium text-center transition-colors bg-gray-300 text-gray-600 cursor-not-allowed'>
+                  Crypto (credits only)
                 </button>
               </div>
             </div>

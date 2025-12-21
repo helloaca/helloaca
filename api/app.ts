@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 
 function setCors(res: VercelResponse, origin: string) {
   res.setHeader('Access-Control-Allow-Origin', origin || '*')
-  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS')
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
   res.setHeader('Access-Control-Max-Age', '86400')
 }
@@ -14,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') {
     return res.status(200).end()
   }
-  if (req.method !== 'POST') {
+  if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' })
   }
 
@@ -29,9 +29,86 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
 
   const body = (req.body || {}) as any
-  const action = String(body.action || '')
+  const action = String((req.method === 'GET' ? (req.query as any).action : body.action) || '')
 
   try {
+    if (req.method === 'GET' && action === 'billing_history') {
+      const email = String((req.query as any).email || '').trim().toLowerCase()
+      if (!email) {
+        return res.status(400).json({ error: 'Missing email' })
+      }
+      const fwSecret = process.env.FLUTTERWAVE_SECRET_KEY
+      const ccKey = process.env.COINBASE_COMMERCE_API_KEY || process.env.VITE_COINBASE_COMMERCE_API_KEY
+      const now = new Date()
+      const past = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000)
+      const from = past.toISOString().slice(0, 10)
+      const to = now.toISOString().slice(0, 10)
+      let card: any[] = []
+      let crypto: any[] = []
+      try {
+        if (fwSecret) {
+          const url = `https://api.flutterwave.com/v3/transactions?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
+          const fwRes = await fetch(url, { headers: { Authorization: `Bearer ${fwSecret}` } })
+          const fwJson = await fwRes.json().catch(() => null)
+          if (fwRes.ok && Array.isArray(fwJson?.data)) {
+            const fxNgn = Number(process.env.FLUTTERWAVE_USD_TO_NGN_RATE || process.env.FX_USD_TO_NGN || 1600)
+            card = (fwJson.data as any[])
+              .filter((tx: any) => String(tx?.customer_email || tx?.customer?.email || '').trim().toLowerCase() === email)
+              .map((tx: any) => {
+                const currency = String(tx?.currency || 'USD').toUpperCase()
+                const amt = Number(tx?.amount || 0)
+                const amountUsd = currency === 'USD' ? Math.max(0, amt) : (fxNgn > 0 ? Math.max(0, Math.round((amt / fxNgn) * 100) / 100) : 0)
+                return {
+                  reference: String(tx?.tx_ref || tx?.flw_ref || tx?.id || ''),
+                  status: String(tx?.status || '').toLowerCase(),
+                  amount: amountUsd,
+                  currency: 'USD',
+                  created_at: String(tx?.created_at || ''),
+                  paid_at: String(tx?.created_at || ''),
+                  method: String(tx?.payment_type || 'card').toLowerCase(),
+                  explorer_url: null
+                }
+              })
+          }
+        }
+      } catch {}
+      try {
+        if (ccKey) {
+          const ccRes = await fetch('https://api.commerce.coinbase.com/charges?limit=100', {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CC-Api-Key': ccKey,
+              'X-CC-Version': '2018-03-22',
+              'Accept': 'application/json'
+            }
+          })
+          const ccJson = await ccRes.json().catch(() => null)
+          if (ccRes.ok && Array.isArray(ccJson?.data)) {
+            crypto = (ccJson.data as any[])
+              .filter((c: any) => String(c?.metadata?.email || '').trim().toLowerCase() === email)
+              .map((c: any) => {
+                const timeline = Array.isArray(c?.timeline) ? c.timeline : []
+                const last = timeline.length > 0 ? timeline[timeline.length - 1] : null
+                const status = String(c?.status || last?.status || '').toLowerCase()
+                const local = (c?.pricing?.local || {}) as any
+                const amountStr = String(local?.amount || '')
+                const amountNum = amountStr && !isNaN(Number(amountStr)) ? Number(amountStr) : null
+                return {
+                  reference: String(c?.code || c?.id || ''),
+                  status,
+                  amount: amountNum,
+                  currency: String(local?.currency || 'USD').toUpperCase(),
+                  created_at: String(c?.created_at || ''),
+                  hosted_url: String(c?.hosted_url || ''),
+                  explorer_url: null
+                }
+              })
+          }
+        }
+      } catch {}
+      return res.status(200).json({ card, crypto })
+    }
+
     if (action === 'team_accept_invite') {
       const { userId, ownerId } = body as { userId?: string; ownerId?: string }
       if (!userId || !ownerId) {
@@ -90,4 +167,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'Internal error' })
   }
 }
-
