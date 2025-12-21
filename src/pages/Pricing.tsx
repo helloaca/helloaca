@@ -443,13 +443,24 @@ const Pricing: React.FC = () => {
                 ) : 'Card'}
               </button>
               <button
-                onClick={handleBuyCreditsCrypto}
-                disabled={true}
-                className={`w-full py-3 px-6 rounded-lg font-medium text-center transition-colors ${
-                  'bg-gray-300 text-white disabled:opacity-50 disabled:cursor-not-allowed'
-                }`}
+                onClick={async () => {
+                  if (clickGuardRef.current) return
+                  clickGuardRef.current = true
+                  try {
+                    await handleBuyCreditsCrypto()
+                  } finally {
+                    clickGuardRef.current = false
+                  }
+                }}
+                disabled={isLoading || processingMethod === 'card'}
+                className={`w-full py-3 px-6 rounded-lg font-medium text-center transition-colors bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                Coming Soon
+                {processingMethod === 'crypto' ? (
+                  <span className="inline-flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Processing…
+                  </span>
+                ) : 'Crypto'}
               </button>
             </div>
           </div>

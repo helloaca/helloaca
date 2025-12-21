@@ -24,3 +24,4 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+ALTER FUNCTION public.handle_new_user() SET search_path = public;
