@@ -420,7 +420,7 @@ const Settings: React.FC = () => {
         ? baseEnv
         : window.location.origin
       const [cardRes, cryptoRes] = await Promise.all([
-        fetch(`${base}/api/paystack-history?email=${encodeURIComponent(String(user.email))}`),
+        fetch(`${base}/api/flutterwave-history?email=${encodeURIComponent(String(user.email))}`),
         fetch(`${base}/api/coinbase-list-charges?email=${encodeURIComponent(String(user.email))}`)
       ])
       const [cardJson, cryptoJson] = await Promise.all([cardRes.json(), cryptoRes.json()])
@@ -428,9 +428,9 @@ const Settings: React.FC = () => {
         method: 'card',
         reference: tx.reference,
         status: tx.status,
-        amount: typeof tx.amount === 'number' ? (tx.amount / 100).toFixed(2) : tx.amount,
-        currency: 'USD',
-        created_at: tx.paid_at || tx.created_at,
+        amount: typeof tx.amount === 'number' ? tx.amount.toFixed(2) : String(tx.amount || ''),
+        currency: tx.currency || 'USD',
+        created_at: tx.created_at || tx.paid_at,
         explorer_url: null
       })) : []
       const crypto = Array.isArray(cryptoJson?.data) ? cryptoJson.data.map((c: any) => {
@@ -624,10 +624,29 @@ const Settings: React.FC = () => {
   }, [user, profile])
 
   useEffect(() => {
-    if (user?.id) {
-      setCreditsBalance(getUserCredits(user.id))
+    const run = async () => {
+      try {
+        if (typeof profile?.credits_balance === 'number') {
+          setCreditsBalance(Math.max(0, Math.floor(Number(profile.credits_balance))))
+          return
+        }
+        if (user?.id) {
+          const { data } = await supabase
+            .from('user_profiles')
+            .select('credits_balance')
+            .eq('id', String(user.id))
+            .single()
+          const bal = typeof data?.credits_balance === 'number' ? data.credits_balance : getUserCredits(user.id)
+          setCreditsBalance(Math.max(0, Math.floor(Number(bal || 0))))
+          return
+        }
+        setCreditsBalance(0)
+      } catch {
+        if (user?.id) setCreditsBalance(getUserCredits(user.id))
+      }
     }
-  }, [user?.id])
+    run()
+  }, [user?.id, profile?.credits_balance])
 
   const tabs = [
     { id: 'profile' as const, label: 'Profile', icon: User },
@@ -969,13 +988,7 @@ const Settings: React.FC = () => {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Team Members</h3>
         <Button onClick={() => {
-          const plan = String(profile?.plan || (user as any)?.plan || 'free')
-          if (!['team','business','enterprise'].includes(plan)) {
-            toast.error('Upgrade to invite team members')
-            navigate('/pricing')
-            return
-          }
-          setInviteModalOpen(true)
+          toast.info('Coming Soon')
         }}>
           <Plus className="w-4 h-4 mr-2" />
           Invite Member
