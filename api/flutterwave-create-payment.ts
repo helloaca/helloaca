@@ -22,6 +22,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const reference = tx_ref || (credits ? `CREDITS-${credits}-${Date.now()}` : plan ? `SUB-${String(plan).toUpperCase()}-${String(period||'monthly').toUpperCase()}-${Date.now()}` : `TX-${Date.now()}`)
     const base = process.env.VITE_API_ORIGIN || process.env.API_ORIGIN || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://helloaca.xyz')
     const redirect_url = `${base}/api/flutterwave-verify?tx_ref=${encodeURIComponent(reference)}&email=${encodeURIComponent(email)}`
+    const logoEnv = process.env.LOGO_URL || process.env.VITE_LOGO_URL
+    const logo = (logoEnv && /^https?:\/\//.test(logoEnv)) ? logoEnv : `${base}/helloaca.png`
 
     const preferredCurrency = (process.env.FLUTTERWAVE_DEFAULT_CURRENCY || 'USD').toUpperCase()
     const preferredCountry = (process.env.FLUTTERWAVE_DEFAULT_COUNTRY || '').toUpperCase()
@@ -41,7 +43,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       customizations: {
         title: 'Helloaca',
         description: credits ? `${credits} credits` : (plan ? `${String(plan)} subscription` : 'Payment'),
-        logo: `${base}/logo.png`
+        logo
       }
     }
 
