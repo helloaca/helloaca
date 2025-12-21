@@ -119,3 +119,7 @@ temp/
 
 #manmade
 error.txt
+ 
+# Admin panel
+.env.admin
+admin/

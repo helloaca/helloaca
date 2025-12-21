@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 function setCors(res: VercelResponse, origin: string) {
   res.setHeader('Access-Control-Allow-Origin', origin || '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Token, X-Admin-Email')
   res.setHeader('Access-Control-Max-Age', '86400')
 }
 
@@ -30,6 +30,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const body = (req.body || {}) as any
   const action = String((req.method === 'GET' ? (req.query as any).action : body.action) || '')
+  const adminHeader = String((req.headers as any)['x-admin-token'] || '')
+  const adminEmailHeader = String((req.headers as any)['x-admin-email'] || '')
+  const adminTokenEnv = String(process.env.ADMIN_API_TOKEN || '')
+  const allowedAdminEmail = String(process.env.ADMIN_ALLOWED_EMAIL || process.env.ADMIN_EMAIL || 'ozoemenachidile@gmail.com')
 
   try {
     if (req.method === 'GET' && action === 'billing_history') {
@@ -107,6 +111,220 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       } catch {}
       return res.status(200).json({ card, crypto })
+    }
+
+    if (action === 'admin_token') {
+      const { email, password } = body as { email?: string; password?: string }
+      const adminPass = String(process.env.ADMIN_PASSWORD || '')
+      if (!email || !password) return res.status(400).json({ error: 'Missing email or password' })
+      if (!adminPass || !adminTokenEnv) return res.status(500).json({ error: 'Admin not configured' })
+      if (String(email).toLowerCase() !== allowedAdminEmail.toLowerCase()) return res.status(401).json({ error: 'Unauthorized' })
+      if (password !== adminPass) return res.status(401).json({ error: 'Unauthorized' })
+      return res.status(200).json({ token: adminTokenEnv })
+    }
+
+    if (req.method === 'GET' && action === 'admin_metrics') {
+      if (!adminTokenEnv || adminHeader !== adminTokenEnv || (adminEmailHeader && adminEmailHeader.toLowerCase() !== allowedAdminEmail.toLowerCase())) return res.status(401).json({ error: 'Unauthorized' })
+      const fwSecret = process.env.FLUTTERWAVE_SECRET_KEY
+      const ccKey = process.env.COINBASE_COMMERCE_API_KEY || process.env.VITE_COINBASE_COMMERCE_API_KEY
+      const now = new Date()
+      const past = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
+      const from = String(((req.query as any).from || past.toISOString().slice(0,10)))
+      const to = String(((req.query as any).to || now.toISOString().slice(0,10)))
+      let revenueCard = 0
+      let txCardCount = 0
+      let revenueCrypto = 0
+      let txCryptoCount = 0
+      try {
+        if (fwSecret) {
+          const url = `https://api.flutterwave.com/v3/transactions?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
+          const fwRes = await fetch(url, { headers: { Authorization: `Bearer ${fwSecret}` } })
+          const fwJson = await fwRes.json().catch(() => null)
+          if (fwRes.ok && Array.isArray(fwJson?.data)) {
+            const fxNgn = Number(process.env.FLUTTERWAVE_USD_TO_NGN_RATE || process.env.FX_USD_TO_NGN || 1600)
+            for (const tx of fwJson.data as any[]) {
+              const currency = String(tx?.currency || 'USD').toUpperCase()
+              const amt = Number(tx?.amount || 0)
+              const usd = currency === 'USD' ? Math.max(0, amt) : (fxNgn > 0 ? Math.max(0, Math.round((amt / fxNgn) * 100) / 100) : 0)
+              revenueCard += usd
+            }
+            txCardCount = (fwJson.data as any[]).length
+          }
+        }
+      } catch {}
+      try {
+        if (ccKey) {
+          const ccRes = await fetch('https://api.commerce.coinbase.com/charges?limit=100', {
+            headers: { 'Content-Type': 'application/json', 'X-CC-Api-Key': ccKey, 'X-CC-Version': '2018-03-22', 'Accept': 'application/json' }
+          })
+          const ccJson = await ccRes.json().catch(() => null)
+          if (ccRes.ok && Array.isArray(ccJson?.data)) {
+            for (const c of ccJson.data as any[]) {
+              const local = (c?.pricing?.local || {}) as any
+              const currency = String(local?.currency || 'USD').toUpperCase()
+              const amountStr = String(local?.amount || '')
+              const amountNum = amountStr && !isNaN(Number(amountStr)) ? Number(amountStr) : 0
+              if (currency === 'USD') revenueCrypto += amountNum
+            }
+            txCryptoCount = (ccJson.data as any[]).length
+          }
+        }
+      } catch {}
+      let usersTotal = 0
+      let usersActive = 0
+      try {
+        const { count: totalCount } = await supabase.from('user_profiles').select('id', { count: 'exact', head: true })
+        usersTotal = Number(totalCount || 0)
+        const { count: activeCount } = await supabase.from('user_profiles').select('id', { count: 'exact', head: true }).or('plan.eq.pro,plan.eq.team,plan.eq.business,plan.eq.enterprise,credits_balance.gt.0')
+        usersActive = Number(activeCount || 0)
+      } catch {}
+      let reportsTotal = 0
+      let messagesTotal = 0
+      let contactsTotal = 0
+      let notificationsTotal = 0
+      let usageDaily: Array<{ date: string; reports: number; messages: number }> = []
+      let usageMonthly: Array<{ month: string; reports: number; messages: number }> = []
+      let usageYearly: Array<{ year: string; reports: number; messages: number }> = []
+      try {
+        const since = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString()
+        const { data: reports } = await supabase.from('reports').select('created_at').gte('created_at', since).order('created_at', { ascending: true })
+        const { data: messages } = await supabase.from('messages').select('created_at').gte('created_at', since).order('created_at', { ascending: true })
+        const { count: repCount } = await supabase.from('reports').select('id', { count: 'exact', head: true })
+        reportsTotal = Number(repCount || 0)
+        const { count: msgCount } = await supabase.from('messages').select('id', { count: 'exact', head: true })
+        messagesTotal = Number(msgCount || 0)
+        const { count: conCount } = await supabase.from('contact_submissions').select('id', { count: 'exact', head: true })
+        contactsTotal = Number(conCount || 0)
+        const { count: notifCount } = await supabase.from('notifications').select('id', { count: 'exact', head: true })
+        notificationsTotal = Number(notifCount || 0)
+        const mapDay = new Map<string, { r: number; m: number }>()
+        const mapMonth = new Map<string, { r: number; m: number }>()
+        const mapYear = new Map<string, { r: number; m: number }>()
+        for (const row of Array.isArray(reports) ? reports : []) {
+          const d = new Date(String((row as any).created_at))
+          const day = d.toISOString().slice(0,10)
+          const month = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`
+          const year = `${d.getUTCFullYear()}`
+          const dv = mapDay.get(day) || { r: 0, m: 0 }
+          dv.r += 1
+          mapDay.set(day, dv)
+          const mv = mapMonth.get(month) || { r: 0, m: 0 }
+          mv.r += 1
+          mapMonth.set(month, mv)
+          const yv = mapYear.get(year) || { r: 0, m: 0 }
+          yv.r += 1
+          mapYear.set(year, yv)
+        }
+        for (const row of Array.isArray(messages) ? messages : []) {
+          const d = new Date(String((row as any).created_at))
+          const day = d.toISOString().slice(0,10)
+          const month = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`
+          const year = `${d.getUTCFullYear()}`
+          const dv = mapDay.get(day) || { r: 0, m: 0 }
+          dv.m += 1
+          mapDay.set(day, dv)
+          const mv = mapMonth.get(month) || { r: 0, m: 0 }
+          mv.m += 1
+          mapMonth.set(month, mv)
+          const yv = mapYear.get(year) || { r: 0, m: 0 }
+          yv.m += 1
+          mapYear.set(year, yv)
+        }
+        usageDaily = Array.from(mapDay.entries()).sort((a,b) => a[0].localeCompare(b[0])).map(([date, v]) => ({ date, reports: v.r, messages: v.m }))
+        usageMonthly = Array.from(mapMonth.entries()).sort((a,b) => a[0].localeCompare(b[0])).map(([month, v]) => ({ month, reports: v.r, messages: v.m }))
+        usageYearly = Array.from(mapYear.entries()).sort((a,b) => a[0].localeCompare(b[0])).map(([year, v]) => ({ year, reports: v.r, messages: v.m }))
+      } catch {}
+      return res.status(200).json({
+        totals: {
+          revenue_card_usd: Math.round(revenueCard * 100) / 100,
+          revenue_crypto_usd: Math.round(revenueCrypto * 100) / 100,
+          revenue_total_usd: Math.round((revenueCard + revenueCrypto) * 100) / 100,
+          users_total: usersTotal,
+          users_active: usersActive,
+          reports_total: reportsTotal,
+          messages_total: messagesTotal,
+          contacts_total: contactsTotal,
+          notifications_total: notificationsTotal,
+          transactions_card_count: txCardCount,
+          transactions_crypto_count: txCryptoCount
+        },
+        usage: { daily: usageDaily, monthly: usageMonthly, yearly: usageYearly },
+        page_views: []
+      })
+    }
+
+    if (action === 'admin_notify') {
+      if (!adminTokenEnv || adminHeader !== adminTokenEnv || (adminEmailHeader && adminEmailHeader.toLowerCase() !== allowedAdminEmail.toLowerCase())) return res.status(401).json({ error: 'Unauthorized' })
+      const { userIds, emails, title, body: notifBody, type, broadcast } = body as { userIds?: string[]; emails?: string[]; title?: string; body?: string; type?: string; broadcast?: boolean }
+      if (!title || !notifBody) return res.status(400).json({ error: 'Missing title or body' })
+      let targets: string[] = Array.isArray(userIds) ? userIds.filter(Boolean) : []
+      try {
+        if (broadcast) {
+          const { data } = await supabase.from('user_profiles').select('id')
+          targets = Array.isArray(data) ? data.map((r: any) => String(r.id)).filter(Boolean) : targets
+        } else if (Array.isArray(emails) && emails.length > 0) {
+          const { data } = await supabase.from('user_profiles').select('id,email').in('email', emails.map(e => String(e).toLowerCase()))
+          const ids = Array.isArray(data) ? data.map((r: any) => String(r.id)).filter(Boolean) : []
+          targets = [...targets, ...ids]
+        }
+      } catch {}
+      if (targets.length === 0) return res.status(400).json({ error: 'No targets' })
+      const rows = targets.map(id => ({ user_id: id, title, body: notifBody, type: String(type || 'system'), read: false }))
+      const { error } = await supabase.from('notifications').insert(rows)
+      if (error) return res.status(500).json({ error: 'Failed to send notifications' })
+      return res.status(200).json({ sent: targets.length })
+    }
+
+    if (action === 'admin_email') {
+      if (!adminTokenEnv || adminHeader !== adminTokenEnv || (adminEmailHeader && adminEmailHeader.toLowerCase() !== allowedAdminEmail.toLowerCase())) return res.status(401).json({ error: 'Unauthorized' })
+      const { emails, userIds, subject, html } = body as { emails?: string[]; userIds?: string[]; subject?: string; html?: string }
+      if (!subject || !html) return res.status(400).json({ error: 'Missing subject or html' })
+      let toList: string[] = Array.isArray(emails) ? emails.filter(e => /\S+@\S+\.\S+/.test(String(e))) : []
+      if (Array.isArray(userIds) && userIds.length > 0) {
+        const { data } = await supabase.from('user_profiles').select('email').in('id', userIds)
+        const es = Array.isArray(data) ? data.map((r: any) => String(r.email)).filter(e => /\S+@\S+\.\S+/.test(e)) : []
+        toList = [...toList, ...es]
+      }
+      toList = Array.from(new Set(toList))
+      if (toList.length === 0) return res.status(400).json({ error: 'No recipients' })
+      const apiKey = process.env.RESEND_API_KEY
+      if (!apiKey) return res.status(500).json({ error: 'Email not configured' })
+      let ok = 0
+      for (const to of toList) {
+        try {
+          const r = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+            body: JSON.stringify({ from: process.env.EMAIL_FROM || 'helloaca <noreply@helloaca.xyz>', to, subject, html })
+          })
+          if (r.ok) ok += 1
+        } catch {}
+      }
+      return res.status(200).json({ sent: ok, requested: toList.length })
+    }
+
+    if (action === 'admin_set_credits') {
+      if (!adminTokenEnv || adminHeader !== adminTokenEnv || (adminEmailHeader && adminEmailHeader.toLowerCase() !== allowedAdminEmail.toLowerCase())) return res.status(401).json({ error: 'Unauthorized' })
+      const { userId, email, amount, mode } = body as { userId?: string; email?: string; amount?: number; mode?: 'set'|'add' }
+      if ((!userId && !email) || typeof amount !== 'number') return res.status(400).json({ error: 'Missing parameters' })
+      let targetId: string | null = null
+      if (userId) targetId = String(userId)
+      else {
+        const { data } = await supabase.from('user_profiles').select('id').eq('email', String(email)).limit(1).single()
+        targetId = String(data?.id || '')
+      }
+      if (!targetId) return res.status(404).json({ error: 'User not found' })
+      const { data: profile } = await supabase.from('user_profiles').select('id,credits_balance').eq('id', targetId).single()
+      const current = Number(profile?.credits_balance || 0)
+      const next = mode === 'set' ? Number(amount) : current + Number(amount)
+      await supabase.from('user_profiles').update({ credits_balance: next }).eq('id', targetId)
+      return res.status(200).json({ userId: targetId, new_balance: next })
+    }
+
+    if (req.method === 'GET' && action === 'admin_contacts') {
+      if (!adminTokenEnv || adminHeader !== adminTokenEnv || (adminEmailHeader && adminEmailHeader.toLowerCase() !== allowedAdminEmail.toLowerCase())) return res.status(401).json({ error: 'Unauthorized' })
+      const { data } = await supabase.from('contact_submissions').select('*').order('created_at', { ascending: false }).limit(200)
+      return res.status(200).json({ contacts: Array.isArray(data) ? data : [] })
     }
 
     if (action === 'team_accept_invite') {
