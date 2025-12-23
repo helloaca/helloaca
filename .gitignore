@@ -121,5 +121,5 @@ temp/
 error.txt
  
 # Admin panel
-.env.admin
-admin/
+# .env.admin
+# admin/
