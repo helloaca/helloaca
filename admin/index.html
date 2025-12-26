@@ -6,39 +6,42 @@
   <title>Helloaca Admin</title>
   <link rel="icon" href="https://helloaca.xyz/favicon.ico">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    :root { --bg:#0f172a; --panel:#111827; --accent:#4f46e5; --text:#e5e7eb; --muted:#9ca3af; --red:#ef4444; --green:#22c55e; }
+    :root { --bg:#FFFFFF; --panel:#FFFFFF; --border:#E5E7EB; --accent:#4ECCA3; --accent2:#3DBB90; --text:#111827; --muted:#6B7280; --red:#ef4444; --green:#22c55e; }
     * { box-sizing: border-box; }
     html, body { margin:0; padding:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); }
-    a { color: var(--accent); text-decoration: none; }
+    a { color: var(--text); text-decoration: none; }
     .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
-    .panel { background: var(--panel); border: 1px solid #1f2937; border-radius: 12px; padding: 20px; }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 24px; box-shadow: 0px 6px 18px rgba(0,0,0,0.06); }
     .grid { display: grid; gap: 20px; }
     .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .grid-responsive { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
     .row { display: flex; gap: 12px; align-items: center; }
     .row-wrap { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-    .input { width: 100%; padding: 10px 12px; border: 1px solid #374151; border-radius: 8px; background: #0b1220; color: var(--text); outline: none; }
-    .select { width: 100%; padding: 10px 12px; border: 1px solid #374151; border-radius: 8px; background: #0b1220; color: var(--text); outline: none; }
-    .textarea { width: 100%; min-height: 120px; padding: 10px 12px; border: 1px solid #374151; border-radius: 8px; background: #0b1220; color: var(--text); outline: none; }
-    .btn { padding: 10px 14px; border-radius: 8px; border: 1px solid #374151; background: #0b1220; color: var(--text); cursor: pointer; }
-    .btn-primary { background: var(--accent); border-color: var(--accent); }
-    .btn-danger { background: var(--red); border-color: var(--red); }
-    .btn-success { background: var(--green); border-color: var(--green); }
-    .title { font-size: 22px; font-weight: 600; margin: 0 0 12px; }
+    .input { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: #FFFFFF; color: var(--text); outline: none; }
+    .select { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: #FFFFFF; color: var(--text); outline: none; }
+    .textarea { width: 100%; min-height: 120px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: #FFFFFF; color: var(--text); outline: none; }
+    .btn { padding: 12px 18px; border-radius: 12px; border: 1px solid var(--accent); background: #FFFFFF; color: #000000; cursor: pointer; transition: all .2s ease; }
+    .btn:hover { background: var(--accent); color: #FFFFFF; }
+    .btn-primary { background: var(--accent); border-color: var(--accent); color: #FFFFFF; }
+    .btn-primary:hover { background: var(--accent2); }
+    .btn-danger { background: var(--red); border-color: var(--red); color: #FFFFFF; }
+    .btn-success { background: var(--accent); border-color: var(--accent); color: #FFFFFF; }
+    .title { font-family: 'Space Grotesk', Inter, sans-serif; font-size: 24px; font-weight: 700; margin: 0 0 12px; }
     .subtitle { font-size: 14px; color: var(--muted); margin: 0 0 16px; }
     .stat { display: flex; flex-direction: column; gap: 4px; }
     .stat .label { font-size: 12px; color: var(--muted); }
     .stat .value { font-size: 18px; font-weight: 600; }
     .hidden { display: none; }
     table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 10px; border-bottom: 1px solid #1f2937; text-align: left; }
+    th, td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; }
     th { color: var(--muted); font-weight: 500; }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .header h1 { font-size: 24px; margin: 0; }
-    .tag { font-size: 12px; padding: 4px 8px; border-radius: 999px; border: 1px solid #374151; color: var(--muted); }
+    .header h1 { font-family: 'Space Grotesk', Inter, sans-serif; font-size: 26px; margin: 0; }
+    .tag { font-size: 12px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
   </style>
 </head>
 <body>
@@ -185,6 +188,10 @@
     let adminToken = ''
     let adminEmail = ''
     let charts = { revenue: null, txPie: null, usageLine: null }
+    if (window.Chart && window.Chart.defaults) {
+      window.Chart.defaults.font.family = 'Inter, sans-serif'
+      window.Chart.defaults.color = '#111827'
+    }
 
     function computeApiBase() {
       const custom = document.getElementById('apiBaseInput')?.value?.trim()
@@ -192,6 +199,11 @@
       const host = window.location.hostname
       if (host.endsWith('admin.helloaca.xyz') || host.endsWith('helloaca.xyz') || host.endsWith('helloaca.vercel.app')) return 'https://admin.helloaca.xyz'
       return window.location.origin
+    }
+    function getBases() {
+      const base = computeApiBase()
+      const set = new Set([base, 'https://admin.helloaca.xyz', 'https://helloaca.xyz', window.location.origin])
+      return Array.from(set)
     }
 
     function setVisible(el, visible) {
@@ -205,14 +217,12 @@
     async function login() {
       const email = String(document.getElementById('emailInput').value || '').trim().toLowerCase()
       const password = String(document.getElementById('passwordInput').value || '')
-      const base = computeApiBase()
+      const bases = getBases()
       const errEl = document.getElementById('loginError')
       errEl.textContent = ''
       try {
-        const bases = [base]
-        if (!bases.includes('https://admin.helloaca.xyz')) bases.push('https://admin.helloaca.xyz')
-        if (!bases.includes(window.location.origin)) bases.push(window.location.origin)
         let success = false
+        let lastMsg = ''
         for (const b of bases) {
           try {
             const res = await fetch(`${b}/api/app`, {
@@ -232,26 +242,35 @@
               success = true
               await loadAll()
               break
+            } else {
+              const msg = typeof data?.error === 'string' ? data.error : ''
+              if (msg) lastMsg = msg
             }
           } catch {}
         }
-        if (!success) errEl.textContent = 'Network or configuration error'
+        if (!success) errEl.textContent = lastMsg || 'Network or configuration error'
       } catch {
         errEl.textContent = 'Network error'
       }
     }
 
     async function fetchMetrics() {
-      const base = computeApiBase()
+      const bases = getBases()
       const from = String(document.getElementById('fromInput').value || '')
       const to = String(document.getElementById('toInput').value || '')
-      const url = new URL(`${base}/api/app`)
-      url.searchParams.set('action', 'admin_metrics')
-      if (from) url.searchParams.set('from', from)
-      if (to) url.searchParams.set('to', to)
-      const res = await fetch(url.toString(), { headers: { 'X-Admin-Token': adminToken, 'X-Admin-Email': adminEmail } })
-      const data = await res.json().catch(() => null)
-      if (!res.ok || !data?.totals) return
+      let data = null
+      for (const b of bases) {
+        try {
+          const url = new URL(`${b}/api/app`)
+          url.searchParams.set('action', 'admin_metrics')
+          if (from) url.searchParams.set('from', from)
+          if (to) url.searchParams.set('to', to)
+          const res = await fetch(url.toString(), { headers: { 'X-Admin-Token': adminToken, 'X-Admin-Email': adminEmail } })
+          const d = await res.json().catch(() => null)
+          if (res.ok && d?.totals) { data = d; break }
+        } catch {}
+      }
+      if (!data?.totals) return
       document.getElementById('statCard').textContent = formatUSD(data.totals.revenue_card_usd)
       document.getElementById('statCrypto').textContent = formatUSD(data.totals.revenue_crypto_usd)
       document.getElementById('statTotal').textContent = formatUSD(data.totals.revenue_total_usd)
@@ -273,7 +292,7 @@
         type: 'bar',
         data: {
           labels: ['Card', 'Crypto'],
-          datasets: [{ label: 'Revenue (USD)', data: [Number(data.totals.revenue_card_usd || 0), Number(data.totals.revenue_crypto_usd || 0)], backgroundColor: ['#4f46e5', '#22c55e'] }]
+          datasets: [{ label: 'Revenue (USD)', data: [Number(data.totals.revenue_card_usd || 0), Number(data.totals.revenue_crypto_usd || 0)], backgroundColor: ['#4ECCA3', '#3DBB90'] }]
         },
         options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
       })
@@ -286,7 +305,7 @@
         type: 'pie',
         data: {
           labels: ['Card', 'Crypto'],
-          datasets: [{ data: [Number(data.totals.transactions_card_count || 0), Number(data.totals.transactions_crypto_count || 0)], backgroundColor: ['#4f46e5', '#22c55e'] }]
+          datasets: [{ data: [Number(data.totals.transactions_card_count || 0), Number(data.totals.transactions_crypto_count || 0)], backgroundColor: ['#4ECCA3', '#3DBB90'] }]
         },
         options: { responsive: true }
       })
@@ -301,8 +320,8 @@
         data: {
           labels: daily.map(d => d.date),
           datasets: [
-            { label: 'Reports', data: daily.map(d => Number(d.reports || 0)), borderColor: '#4f46e5', backgroundColor: '#4f46e5' },
-            { label: 'Messages', data: daily.map(d => Number(d.messages || 0)), borderColor: '#22c55e', backgroundColor: '#22c55e' }
+            { label: 'Reports', data: daily.map(d => Number(d.reports || 0)), borderColor: '#4ECCA3', backgroundColor: '#4ECCA3' },
+            { label: 'Messages', data: daily.map(d => Number(d.messages || 0)), borderColor: '#3DBB90', backgroundColor: '#3DBB90' }
           ]
         },
         options: { responsive: true, plugins: { legend: { display: true } }, scales: { y: { beginAtZero: true } } }
@@ -310,60 +329,84 @@
     }
 
     async function sendNotification() {
-      const base = computeApiBase()
+      const bases = getBases()
       const title = String(document.getElementById('notifTitle').value || '')
       const body = String(document.getElementById('notifBody').value || '')
       const emailsValue = String(document.getElementById('notifEmails').value || '')
       const broadcast = document.getElementById('notifBroadcast').checked
       const type = String(document.getElementById('notifType').value || 'system')
       const emails = emailsValue ? emailsValue.split(',').map(s => s.trim()).filter(Boolean) : []
-      const res = await fetch(`${base}/api/app`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken, 'X-Admin-Email': adminEmail },
-        body: JSON.stringify({ action: 'admin_notify', title, body, type, emails, broadcast })
-      })
-      const data = await res.json().catch(() => null)
-      document.getElementById('notifResult').textContent = res.ok ? `Sent: ${String(data?.sent || 0)}` : String(data?.error || 'Failed')
+      let ok = false, result = null
+      for (const b of bases) {
+        try {
+          const res = await fetch(`${b}/api/app`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken, 'X-Admin-Email': adminEmail },
+            body: JSON.stringify({ action: 'admin_notify', title, body, type, emails, broadcast })
+          })
+          const data = await res.json().catch(() => null)
+          if (res.ok) { ok = true; result = data; break }
+        } catch {}
+      }
+      document.getElementById('notifResult').textContent = ok ? `Sent: ${String(result?.sent || 0)}` : 'Failed'
       await fetchMetrics()
     }
 
     async function sendEmails() {
-      const base = computeApiBase()
+      const bases = getBases()
       const subject = String(document.getElementById('emailSubject').value || '')
       const html = String(document.getElementById('emailHtml').value || '')
       const emailsValue = String(document.getElementById('emailList').value || '')
       const userIdsValue = String(document.getElementById('emailUserIds').value || '')
       const emails = emailsValue ? emailsValue.split(',').map(s => s.trim()).filter(Boolean) : []
       const userIds = userIdsValue ? userIdsValue.split(',').map(s => s.trim()).filter(Boolean) : []
-      const res = await fetch(`${base}/api/app`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken, 'X-Admin-Email': adminEmail },
-        body: JSON.stringify({ action: 'admin_email', subject, html, emails, userIds })
-      })
-      const data = await res.json().catch(() => null)
-      document.getElementById('emailResult').textContent = res.ok ? `Sent: ${String(data?.sent || 0)}/${String(data?.requested || 0)}` : String(data?.error || 'Failed')
+      let ok = false, result = null
+      for (const b of bases) {
+        try {
+          const res = await fetch(`${b}/api/app`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken, 'X-Admin-Email': adminEmail },
+            body: JSON.stringify({ action: 'admin_email', subject, html, emails, userIds })
+          })
+          const data = await res.json().catch(() => null)
+          if (res.ok) { ok = true; result = data; break }
+        } catch {}
+      }
+      document.getElementById('emailResult').textContent = ok ? `Sent: ${String(result?.sent || 0)}/${String(result?.requested || 0)}` : 'Failed'
     }
 
     async function setCredits() {
-      const base = computeApiBase()
+      const bases = getBases()
       const email = String(document.getElementById('creditEmail').value || '')
       const userId = String(document.getElementById('creditUserId').value || '')
       const amount = Number(document.getElementById('creditAmount').value || 0)
       const mode = String(document.getElementById('creditMode').value || 'add')
-      const res = await fetch(`${base}/api/app`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken, 'X-Admin-Email': adminEmail },
-        body: JSON.stringify({ action: 'admin_set_credits', email: email || undefined, userId: userId || undefined, amount, mode })
-      })
-      const data = await res.json().catch(() => null)
-      document.getElementById('creditResult').textContent = res.ok ? `New balance userId=${String(data?.userId || '')}: ${String(data?.new_balance || '')}` : String(data?.error || 'Failed')
+      let ok = false, result = null
+      for (const b of bases) {
+        try {
+          const res = await fetch(`${b}/api/app`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken, 'X-Admin-Email': adminEmail },
+            body: JSON.stringify({ action: 'admin_set_credits', email: email || undefined, userId: userId || undefined, amount, mode })
+          })
+          const data = await res.json().catch(() => null)
+          if (res.ok) { ok = true; result = data; break }
+        } catch {}
+      }
+      document.getElementById('creditResult').textContent = ok ? `New balance userId=${String(result?.userId || '')}: ${String(result?.new_balance || '')}` : 'Failed'
     }
 
     async function loadContacts() {
-      const base = computeApiBase()
-      const res = await fetch(`${base}/api/app?action=admin_contacts`, { headers: { 'X-Admin-Token': adminToken, 'X-Admin-Email': adminEmail } })
-      const data = await res.json().catch(() => null)
-      if (!res.ok || !Array.isArray(data?.contacts)) return
+      const bases = getBases()
+      let data = null
+      for (const b of bases) {
+        try {
+          const res = await fetch(`${b}/api/app?action=admin_contacts`, { headers: { 'X-Admin-Token': adminToken, 'X-Admin-Email': adminEmail } })
+          const d = await res.json().catch(() => null)
+          if (res.ok && Array.isArray(d?.contacts)) { data = d; break }
+        } catch {}
+      }
+      if (!Array.isArray(data?.contacts)) return
       const tbody = document.getElementById('contactsTableBody')
       tbody.innerHTML = ''
       for (const c of data.contacts) {
