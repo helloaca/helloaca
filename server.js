@@ -46,6 +46,18 @@ const server = http.createServer((req, res) => {
             res.end(content2, 'utf-8');
             return;
           }
+          if (filePath.startsWith('./admin')) {
+            fs.readFile('./public/admin/index.html', (err3, content3) => {
+              if (!err3) {
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.end(content3, 'utf-8');
+                return;
+              }
+              res.writeHead(404, { 'Content-Type': 'text/html' });
+              res.end('<h1>404 Not Found</h1>', 'utf-8');
+            });
+            return;
+          }
           res.writeHead(404, { 'Content-Type': 'text/html' });
           res.end('<h1>404 Not Found</h1>', 'utf-8');
         });
