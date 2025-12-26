@@ -1,5 +1,31 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
+ import type { VercelRequest, VercelResponse } from '@vercel/node'
+ import { createClient } from '@supabase/supabase-js'
+ import fs from 'fs'
+ import path from 'path'
+ 
+ let cachedLogoDataUri: string | null = null
+ async function getLogoDataUri(): Promise<string> {
+   if (cachedLogoDataUri) return cachedLogoDataUri
+   const envB64 = String(process.env.EMAIL_LOGO_BASE64 || '').trim()
+   if (envB64) {
+     cachedLogoDataUri = envB64.startsWith('data:') ? envB64 : `data:image/png;base64,${envB64}`
+     return cachedLogoDataUri
+   }
+   try {
+     const p = path.join(process.cwd(), 'public', 'helloaca.png')
+     const buf = fs.readFileSync(p)
+     cachedLogoDataUri = `data:image/png;base64,${Buffer.from(buf).toString('base64')}`
+     return cachedLogoDataUri
+   } catch {}
+   try {
+     const r = await fetch('https://helloaca.xyz/helloaca.png')
+     const ab = await r.arrayBuffer()
+     cachedLogoDataUri = `data:image/png;base64,${Buffer.from(ab as ArrayBuffer).toString('base64')}`
+     return cachedLogoDataUri
+   } catch {}
+   cachedLogoDataUri = ''
+   return cachedLogoDataUri
+ }
 
 function setCors(res: VercelResponse, origin: string) {
   res.setHeader('Access-Control-Allow-Origin', origin || '*')
@@ -275,7 +301,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ sent: targets.length })
     }
 
-    if (action === 'admin_email') {
+     if (action === 'admin_email') {
       if (!adminTokenEnv || adminHeader !== adminTokenEnv || (adminEmailHeader && adminEmailHeader.toLowerCase() !== allowedAdminEmail.toLowerCase())) return res.status(401).json({ error: 'Unauthorized' })
       const { emails, userIds, subject, html } = body as { emails?: string[]; userIds?: string[]; subject?: string; html?: string }
       if (!subject || !html) return res.status(400).json({ error: 'Missing subject or html' })
@@ -290,12 +316,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const apiKey = process.env.RESEND_API_KEY
       if (!apiKey) return res.status(500).json({ error: 'Email not configured' })
       let ok = 0
+      const logo = await getLogoDataUri()
+      const finalHtml = logo ? `<div style="font-family:Inter,Arial,sans-serif;color:#111827"><div style="margin:0 0 12px"><img src="${logo}" alt="helloaca" style="width:120px;height:auto;display:block"></div>${html}</div>` : html
       for (const to of toList) {
         try {
           const r = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-            body: JSON.stringify({ from: process.env.EMAIL_FROM || 'helloaca <noreply@helloaca.xyz>', to, subject, html })
+            body: JSON.stringify({ from: process.env.EMAIL_FROM || 'helloaca <noreply@helloaca.xyz>', to, subject, html: finalHtml })
           })
           if (r.ok) ok += 1
         } catch {}
@@ -314,10 +342,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         targetId = String(data?.id || '')
       }
       if (!targetId) return res.status(404).json({ error: 'User not found' })
-      const { data: profile } = await supabase.from('user_profiles').select('id,credits_balance').eq('id', targetId).single()
+      const { data: profile } = await supabase.from('user_profiles').select('id,credits_balance,email').eq('id', targetId).single()
       const current = Number(profile?.credits_balance || 0)
       const next = mode === 'set' ? Number(amount) : current + Number(amount)
       await supabase.from('user_profiles').update({ credits_balance: next }).eq('id', targetId)
+      try { await supabase.from('notifications').insert({ user_id: targetId, title: 'Credits rewarded', body: `You have been rewarded with ${Number(amount)} credit(s).`, type: 'system', read: false }) } catch {}
+       try {
+        const apiKey = process.env.RESEND_API_KEY
+        if (apiKey && profile?.email && /\S+@\S+\.\S+/.test(String(profile.email))) {
+          const logo = await getLogoDataUri()
+          const head = logo ? `<div style="margin:0 0 12px"><img src="${logo}" alt="helloaca" style="width:120px;height:auto;display:block"></div>` : ''
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+            body: JSON.stringify({
+              from: process.env.EMAIL_FROM || 'helloaca <noreply@helloaca.xyz>',
+              to: String(profile.email),
+              subject: 'Credits rewarded',
+              html: `<div style="font-family:Inter,Arial,sans-serif;color:#111827">${head}<h2 style="margin:0 0 8px">Credits rewarded</h2><p style="margin:0">Your account has been credited with <strong>${Number(amount)}</strong> credit(s).</p><p style="margin:12px 0 0">Thank you for using Helloaca.</p></div>`
+            })
+          })
+        }
+      } catch {}
       return res.status(200).json({ userId: targetId, new_balance: next })
     }
 

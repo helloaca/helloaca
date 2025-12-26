@@ -38,6 +38,7 @@
     .hidden { display: none; }
     table { width: 100%; border-collapse: collapse; }
     th, td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; }
+    td.message { white-space: normal; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; display: -webkit-box; overflow: hidden; }
     th { color: var(--muted); font-weight: 500; }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     .header h1 { font-family: 'Space Grotesk', Inter, sans-serif; font-size: 26px; margin: 0; }
@@ -61,7 +62,7 @@
         <div>
           <div class="stat">
             <span class="label">Email</span>
-            <input id="emailInput" type="email" class="input" placeholder="ozoemenachidile@gmail.com" value="ozoemenachidile@gmail.com">
+            <input id="emailInput" type="email" class="input" placeholder="email" value="admin@helloaca.xyz">
           </div>
         </div>
         <div>
@@ -413,7 +414,7 @@
         const tr = document.createElement('tr')
         const td1 = document.createElement('td'); td1.textContent = String(c.email || '')
         const td2 = document.createElement('td'); td2.textContent = String(c.name || '')
-        const td3 = document.createElement('td'); td3.textContent = String(c.message || '').slice(0, 160)
+        const td3 = document.createElement('td'); td3.className = 'message'; td3.textContent = String(c.message || '').slice(0, 160)
         const td4 = document.createElement('td'); td4.textContent = new Date(String(c.created_at || '')).toLocaleString()
         tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4)
         tbody.appendChild(tr)

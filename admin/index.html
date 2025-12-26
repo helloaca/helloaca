@@ -13,35 +13,39 @@
     * { box-sizing: border-box; }
     html, body { margin:0; padding:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); }
     a { color: var(--text); text-decoration: none; }
-    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
-    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 24px; box-shadow: 0px 6px 18px rgba(0,0,0,0.06); }
-    .grid { display: grid; gap: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: 0px 6px 18px rgba(0,0,0,0.06); }
+    .grid { display: grid; gap: 16px; }
     .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .grid-responsive { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
-    .row { display: flex; gap: 12px; align-items: center; }
-    .row-wrap { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-    .input { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: #FFFFFF; color: var(--text); outline: none; }
-    .select { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: #FFFFFF; color: var(--text); outline: none; }
-    .textarea { width: 100%; min-height: 120px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: #FFFFFF; color: var(--text); outline: none; }
-    .btn { padding: 12px 18px; border-radius: 12px; border: 1px solid var(--accent); background: #FFFFFF; color: #000000; cursor: pointer; transition: all .2s ease; }
+    .row { display: flex; gap: 10px; align-items: center; }
+    .row-wrap { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: #FFFFFF; color: var(--text); outline: none; }
+    .select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: #FFFFFF; color: var(--text); outline: none; }
+    .textarea { width: 100%; min-height: 100px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: #FFFFFF; color: var(--text); outline: none; }
+    .btn { padding: 10px 14px; border-radius: 12px; border: 1px solid var(--accent); background: #FFFFFF; color: #000000; cursor: pointer; transition: all .2s ease; }
     .btn:hover { background: var(--accent); color: #FFFFFF; }
     .btn-primary { background: var(--accent); border-color: var(--accent); color: #FFFFFF; }
     .btn-primary:hover { background: var(--accent2); }
     .btn-danger { background: var(--red); border-color: var(--red); color: #FFFFFF; }
     .btn-success { background: var(--accent); border-color: var(--accent); color: #FFFFFF; }
-    .title { font-family: 'Space Grotesk', Inter, sans-serif; font-size: 24px; font-weight: 700; margin: 0 0 12px; }
+    .title { font-family: 'Space Grotesk', Inter, sans-serif; font-size: 20px; font-weight: 700; margin: 0 0 10px; }
     .subtitle { font-size: 14px; color: var(--muted); margin: 0 0 16px; }
-    .stat { display: flex; flex-direction: column; gap: 4px; }
+    .stat { display: flex; flex-direction: column; gap: 2px; }
     .stat .label { font-size: 12px; color: var(--muted); }
-    .stat .value { font-size: 18px; font-weight: 600; }
+    .stat .value { font-size: 16px; font-weight: 600; }
     .hidden { display: none; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; }
+    .table-wrap { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    th, td { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; word-break: break-word; overflow-wrap: anywhere; }
+     td.message { white-space: normal; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; display: -webkit-box; overflow: hidden; }
     th { color: var(--muted); font-weight: 500; }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .header h1 { font-family: 'Space Grotesk', Inter, sans-serif; font-size: 26px; margin: 0; }
+    .header h1 { font-family: 'Space Grotesk', Inter, sans-serif; font-size: 22px; margin: 0; }
     .tag { font-size: 12px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+    .panel-sm { max-height: 340px; overflow: hidden; }
+    .panel-sm .table-wrap { max-height: 240px; overflow: auto; }
   </style>
 </head>
 <body>
@@ -92,7 +96,7 @@
             <div class="stat"><span class="label">Crypto (USD)</span><span id="statCrypto" class="value">0</span></div>
             <div class="stat"><span class="label">Total (USD)</span><span id="statTotal" class="value">0</span></div>
           </div>
-          <canvas id="revenueChart" style="margin-top: 16px; height: 220px;"></canvas>
+          <canvas id="revenueChart" style="margin-top: 12px; height: 160px;"></canvas>
         </div>
         <div class="panel">
           <div class="title">Users & Activity</div>
@@ -106,18 +110,18 @@
             <div class="stat"><span class="label">Messages</span><span id="statMessages" class="value">0</span></div>
             <div class="stat"><span class="label">Contact Submissions</span><span id="statContacts" class="value">0</span></div>
           </div>
-          <canvas id="txPieChart" style="margin-top: 16px; height: 220px;"></canvas>
+          <canvas id="txPieChart" style="margin-top: 12px; height: 160px;"></canvas>
         </div>
       </div>
 
-      <div class="panel" style="margin-top:20px;">
+      <div class="panel panel-sm" style="margin-top:16px;">
         <div class="title">Usage</div>
         <div class="row-wrap" style="margin-bottom:12px;">
           <input id="fromInput" type="date" class="input" style="max-width:200px;">
           <input id="toInput" type="date" class="input" style="max-width:200px;">
           <button id="refreshBtn" class="btn">Refresh</button>
         </div>
-        <canvas id="usageLineChart" style="height:280px;"></canvas>
+        <canvas id="usageLineChart" style="height:220px;"></canvas>
       </div>
 
       <div class="grid grid-responsive" style="margin-top:20px;">
@@ -166,8 +170,9 @@
           </div>
         </div>
 
-        <div class="panel">
+        <div class="panel panel-sm">
           <div class="title">Contact Submissions</div>
+          <div class="table-wrap">
           <table>
             <thead>
               <tr>
@@ -179,6 +184,7 @@
             </thead>
             <tbody id="contactsTableBody"></tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>
@@ -413,7 +419,7 @@
         const tr = document.createElement('tr')
         const td1 = document.createElement('td'); td1.textContent = String(c.email || '')
         const td2 = document.createElement('td'); td2.textContent = String(c.name || '')
-        const td3 = document.createElement('td'); td3.textContent = String(c.message || '').slice(0, 160)
+        const td3 = document.createElement('td'); td3.className = 'message'; td3.textContent = String(c.message || '').slice(0, 160)
         const td4 = document.createElement('td'); td4.textContent = new Date(String(c.created_at || '')).toLocaleString()
         tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4)
         tbody.appendChild(tr)
