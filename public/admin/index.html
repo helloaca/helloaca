@@ -43,6 +43,7 @@
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     .header h1 { font-family: 'Space Grotesk', Inter, sans-serif; font-size: 26px; margin: 0; }
     .tag { font-size: 12px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+    .panel-sm { max-height: 320px; overflow: hidden; }
   </style>
 </head>
 <body>
@@ -62,7 +63,7 @@
         <div>
           <div class="stat">
             <span class="label">Email</span>
-            <input id="emailInput" type="email" class="input" placeholder="email" value="admin@helloaca.xyz">
+            <input id="emailInput" type="email" class="input" placeholder="email" value="example@example.com">
           </div>
         </div>
         <div>
@@ -111,14 +112,14 @@
         </div>
       </div>
 
-      <div class="panel" style="margin-top:20px;">
+      <div class="panel panel-sm" style="margin-top:16px;">
         <div class="title">Usage</div>
         <div class="row-wrap" style="margin-bottom:12px;">
           <input id="fromInput" type="date" class="input" style="max-width:200px;">
           <input id="toInput" type="date" class="input" style="max-width:200px;">
           <button id="refreshBtn" class="btn">Refresh</button>
         </div>
-        <canvas id="usageLineChart" style="height:280px;"></canvas>
+        <canvas id="usageLineChart" style="height:160px;"></canvas>
       </div>
 
       <div class="grid grid-responsive" style="margin-top:20px;">
