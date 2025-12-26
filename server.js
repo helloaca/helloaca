@@ -11,6 +11,9 @@ const server = http.createServer((req, res) => {
   if (filePath === './') {
     filePath = './index.html';
   }
+  if (filePath === './admin' || filePath === './admin/' || filePath === './admin/index') {
+    filePath = './admin/index.html';
+  }
 
   const extname = String(path.extname(filePath)).toLowerCase();
   const mimeTypes = {
@@ -36,8 +39,16 @@ const server = http.createServer((req, res) => {
   fs.readFile(filePath, (error, content) => {
     if (error) {
       if (error.code === 'ENOENT') {
-        res.writeHead(404, { 'Content-Type': 'text/html' });
-        res.end('<h1>404 Not Found</h1>', 'utf-8');
+        const fallback = filePath.endsWith('/index') ? filePath + '.html' : filePath + '.html';
+        fs.readFile(fallback, (err2, content2) => {
+          if (!err2) {
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(content2, 'utf-8');
+            return;
+          }
+          res.writeHead(404, { 'Content-Type': 'text/html' });
+          res.end('<h1>404 Not Found</h1>', 'utf-8');
+        });
       } else {
         res.writeHead(500);
         res.end('Sorry, check with the site admin for error: ' + error.code + ' ..\n');
