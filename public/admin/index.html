@@ -36,8 +36,10 @@
     .stat .label { font-size: 12px; color: var(--muted); }
     .stat .value { font-size: 18px; font-weight: 600; }
     .hidden { display: none; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; }
+    .table-wrap { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    th, td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; word-break: break-word; overflow-wrap: anywhere; }
+    th:nth-child(3), td:nth-child(3) { width: 40%; }
     td.message { white-space: normal; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; display: -webkit-box; overflow: hidden; }
     th { color: var(--muted); font-weight: 500; }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -170,17 +172,19 @@
 
         <div class="panel">
           <div class="title">Contact Submissions</div>
-          <table>
-            <thead>
-              <tr>
-                <th>Email</th>
-                <th>Name</th>
-                <th>Message</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody id="contactsTableBody"></tbody>
-          </table>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Name</th>
+                  <th>Message</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="contactsTableBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
