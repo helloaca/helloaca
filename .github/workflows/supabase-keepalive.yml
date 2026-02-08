@@ -1,0 +1,28 @@
+name: Supabase Keepalive
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping keepalive endpoint
+        shell: bash
+        env:
+          KEEPALIVE_URL: ${{ vars.KEEPALIVE_URL }}
+        run: |
+          set -e
+          url="${KEEPALIVE_URL:-https://helloaca.xyz/api/app?action=keepalive}"
+          echo "Pinging: $url"
+          http_code=$(curl -sS -m 20 -o /dev/null -w "%{http_code}" "$url" || echo "000")
+          echo "HTTP code: $http_code"
+          if [ "$http_code" -eq 000 ]; then
+            echo "Request failed"
+          elif [ "$http_code" -ge 200 ] && [ "$http_code" -lt 500 ]; then
+            echo "Ping successful"
+          else
+            echo "Ping returned non-success status"
+          fi

@@ -110,7 +110,7 @@ const Footer: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-gray-300 hover:text-primary transition-colors"
-                aria-label="HelloACA on LinkedIn"
+                aria-label="Helloaca on LinkedIn"
               >
                 <Linkedin className="h-5 w-5" />
               </a>
@@ -119,14 +119,14 @@ const Footer: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-gray-300 hover:text-primary transition-colors"
-                aria-label="HelloACA on X"
+                aria-label="Helloaca on X"
               >
                 <Twitter className="h-5 w-5" />
               </a>
               <a
                 href="mailto:support@helloaca.xyz"
                 className="p-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-gray-300 hover:text-primary transition-colors"
-                aria-label="Email HelloACA support"
+                aria-label="Email Helloaca support"
               >
                 <Mail className="h-5 w-5" />
               </a>
@@ -136,7 +136,7 @@ const Footer: React.FC = () => {
 
         <div className="border-t border-gray-800 mt-6 sm:mt-8 pt-6 sm:pt-8 text-center">
           <p className="text-gray-400 text-sm sm:text-base">
-            © 2025 HelloACA. All rights reserved.
+            © 2025 Helloaca. All rights reserved.
           </p>
         </div>
       </div>

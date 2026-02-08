@@ -129,7 +129,7 @@
     See Demo
   </Button>
 </div>
-<p className="text-center text-sm text-gray-500 mt-3">Links point to `https://preview.helloaca.xyz` in staging.</p>
+<p className="text-center text-sm text-gray-500 mt-3">Links point to `https://helloaca.xyz` in staging.</p>
 ```
 
 #### **Dashboard Stats Grid Enhancement**

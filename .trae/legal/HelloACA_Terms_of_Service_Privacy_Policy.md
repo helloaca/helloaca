@@ -86,7 +86,7 @@ HelloACA is an AI-powered contract analysis platform that provides:
 - You may delete documents at any time
 - We may retain anonymized analytics data
 - Account data is retained for legal and operational purposes
-- Email notifications are sent via third-party provider (Resend) when configured; messages include links to `https://preview.helloaca.xyz`
+- Email notifications are sent via third-party provider (Resend) when configured; messages include links to `https://helloaca.xyz`
 
 ### 7. Subscription and Billing
 
@@ -173,7 +173,7 @@ HelloACA is an AI-powered contract analysis platform that provides:
 - Material changes require explicit consent
 
 ### 14. Contact Information
-- Website: https://preview.helloaca.xyz
+- Website: https://helloaca.xyz
 - Support: support@helloaca.xyz
 
 ---

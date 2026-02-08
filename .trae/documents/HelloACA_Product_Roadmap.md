@@ -192,7 +192,7 @@
 - Supabase backend infrastructure
 - Dashboard and contract history with usage statistics
 - Team collaboration: dynamic list shows owner, active members, and pending invites until acceptance
-- Public domain references updated to `https://preview.helloaca.xyz` across app, emails, and exports
+- Public domain references updated to `https://helloaca.xyz` across app, emails, and exports
 - CORS-preflight-enabled notify endpoint for emails and digest communications
 - Mixpanel identity merge on sign-in to associate anonymous activity with user profiles
 

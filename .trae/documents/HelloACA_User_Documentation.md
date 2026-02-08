@@ -19,7 +19,7 @@
 HelloACA is an AI-powered contract analysis platform that helps legal professionals, real estate agents, and business owners analyze contracts quickly and accurately. Using advanced Claude AI technology, HelloACA can detect risks, extract key clauses, and provide instant insights within 30 seconds.
 
 ### Quick Start Guide
-1. **Sign Up**: Create your free account at `https://preview.helloaca.xyz`
+1. **Sign Up**: Create your free account at `https://helloaca.xyz`
 2. **Upload Contract**: Drag and drop your PDF or DOCX contract file
 3. **Get Analysis**: Receive instant AI-powered contract insights
 4. **Chat & Explore**: Ask questions about your contract using our AI chat
@@ -148,7 +148,7 @@ npm run build
 #### Notifications
 - Email notifications (credits, analysis complete, weekly digest) are sent via Resend when configured
 ### System Notes
-- All public links and footers reference `https://preview.helloaca.xyz`
+- All public links and footers reference `https://helloaca.xyz`
 - The notify API implements CORS headers and handles OPTIONS preflight requests
 - Mixpanel identity is merged on sign-in to unify anonymous and user activity
 ### Interactive Chat Interface

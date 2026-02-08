@@ -27,20 +27,42 @@ const Reports: React.FC = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [downloadingReports, setDownloadingReports] = useState<Set<string>>(new Set())
+  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false)
+
+  const getReportsCacheKey = () => `reports_cache_${user?.id || 'anon'}`
+  const readCachedReports = (): ReportData[] => {
+    try {
+      const raw = localStorage.getItem(getReportsCacheKey())
+      return raw ? JSON.parse(raw) as ReportData[] : []
+    } catch {
+      return []
+    }
+  }
+  const writeCachedReports = (data: ReportData[]) => {
+    try {
+      localStorage.setItem(getReportsCacheKey(), JSON.stringify(data))
+    } catch { void 0 }
+  }
 
   // Load reports on component mount
   useEffect(() => {
+    const cached = readCachedReports()
+    const hasCached = cached && cached.length > 0
+    if (hasCached) {
+      setReports(cached)
+      setIsLoading(false)
+    }
+
     const timeoutId = setTimeout(() => {
-      if (isLoading) {
-        console.warn('Reports loading timeout - proceeding without data')
+      setShowTimeoutWarning(true)
+      if (!hasCached) {
         setIsLoading(false)
         setError('Loading is taking longer than expected. Please refresh the page.')
       }
     }, 15000)
 
-    ;(async () => {
+    void (async () => {
       try {
-        // Wait for session to be fully established
         let activeSession = null
         for (let i = 0; i < 10; i++) {
           const { data } = await supabase.auth.getSession()
@@ -57,6 +79,9 @@ const Reports: React.FC = () => {
         console.error('Session check failed', e)
       }
       await loadReports()
+      clearTimeout(timeoutId)
+      setShowTimeoutWarning(false)
+      setError(null)
     })()
 
     return () => clearTimeout(timeoutId)
@@ -113,6 +138,7 @@ const Reports: React.FC = () => {
       setError(null)
       const contractsWithAnalysis = await ContractService.getUserContractsWithAnalysis(user.id)
       setReports(contractsWithAnalysis)
+      writeCachedReports(contractsWithAnalysis)
     } catch (err) {
       console.error('Error loading reports:', err)
       setError('Failed to load reports. Please try again.')
@@ -344,6 +370,23 @@ const Reports: React.FC = () => {
                 className="ml-auto"
               >
                 Retry
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {!error && showTimeoutWarning && filteredReports.length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-8">
+            <div className="flex items-center">
+              <AlertCircle className="w-5 h-5 text-yellow-600 mr-2" />
+              <p className="text-yellow-800">Showing cached data. Fresh data may be delayed.</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowTimeoutWarning(false)}
+                className="ml-auto"
+              >
+                Dismiss
               </Button>
             </div>
           </div>

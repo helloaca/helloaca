@@ -24,7 +24,7 @@
 
 ### Company Overview
 
-HelloACA is a revolutionary AI-powered contract analysis platform that transforms how legal professionals and businesses review, analyze, and understand contracts. By leveraging advanced artificial intelligence through Claude AI integration, HelloACA reduces contract review time from hours to seconds while maintaining professional-grade accuracy and insights. The platform now supports team collaboration with dynamic member lists (owner, active members, pending invites) and uses `https://preview.helloaca.xyz` as the public domain for all links and exports.
+HelloACA is a revolutionary AI-powered contract analysis platform that transforms how legal professionals and businesses review, analyze, and understand contracts. By leveraging advanced artificial intelligence through Claude AI integration, HelloACA reduces contract review time from hours to seconds while maintaining professional-grade accuracy and insights. The platform now supports team collaboration with dynamic member lists (owner, active members, pending invites) and uses `https://helloaca.xyz` as the public domain for all links and exports.
 
 ### Mission Statement
 

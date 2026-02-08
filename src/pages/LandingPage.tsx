@@ -73,13 +73,11 @@ const LandingPage: React.FC = () => {
                   strings: [
                     'you',
                     'founders',
-                    'lawyers',
-                    'procurement',
-                    'contract managers',
                     'freelancers',
+                    'Solopreneurs',
                     'vendors',
                     'buyers',
-                    'teams'
+                    'everyone'
                   ],
                   autoStart: true,
                   loop: true,
@@ -91,7 +89,7 @@ const LandingPage: React.FC = () => {
           </AnimateOnScroll>
           <AnimateOnScroll delay={100}>
           <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Upload. Analyze. Understand. Start free with 1 contract/month. Buy credits for additional analyses.
+            The Solution for Everyone Who Can't Afford a Lawyer to Review that Contract
           </p>
           </AnimateOnScroll>
           <AnimateOnScroll delay={200}>
@@ -435,16 +433,16 @@ const LandingPage: React.FC = () => {
           </div>
           </AnimateOnScroll>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 items-stretch gap-6 sm:gap-8">
             {/* Free Plan */}
             <AnimateOnScroll>
-            <Card>
+            <Card className="h-full flex flex-col">
               <CardHeader className="pb-4 sm:pb-6">
                 <CardTitle className="text-lg sm:text-xl">Free Plan</CardTitle>
                 <div className="text-2xl sm:text-3xl font-bold">$0</div>
                 <CardDescription className="text-sm sm:text-base">Perfect for trying out HelloACA</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex flex-col h-full">
                 <ul className="space-y-2 sm:space-y-3 mb-6">
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
@@ -460,7 +458,7 @@ const LandingPage: React.FC = () => {
                   </li>
                 </ul>
                 <Button 
-                  className="w-full min-h-[48px] text-base bg-[#5ACEA8] text-white hover:bg-[#49C89A]"
+                  className="mt-auto w-full min-h-[48px] text-base bg-[#5ACEA8] text-white hover:bg-[#49C89A]"
                   onClick={() => {
                     trackPricing.selectPlan('free')
                     navigate('/register')
@@ -474,7 +472,7 @@ const LandingPage: React.FC = () => {
             
             {/* Credits */}
             <AnimateOnScroll delay={100}>
-            <Card className="border-2 border-primary relative">
+            <Card className="h-full flex flex-col border-2 border-primary relative">
               <div className="absolute -top-3 right-4">
                 <span className="bg-[#5ACEA8] text-white px-3 sm:px-4 py-1 rounded-full text-xs sm:text-sm font-medium shadow">
                   Most Popular
@@ -482,10 +480,10 @@ const LandingPage: React.FC = () => {
               </div>
               <CardHeader className="pb-4 sm:pb-6">
                 <CardTitle className="text-lg sm:text-xl">Credits</CardTitle>
-                <div className="text-2xl sm:text-3xl font-bold">From $7</div>
+                <div className="text-2xl sm:text-3xl font-bold">From $2</div>
                 <CardDescription className="text-sm sm:text-base">Buy credits for additional analyses</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex flex-col h-full">
                 <ul className="space-y-2 sm:space-y-3 mb-6">
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
@@ -493,7 +491,7 @@ const LandingPage: React.FC = () => {
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-                    <span className="text-sm sm:text-base">Bundles: 1 ($7), 5 ($30), 10 ($55)</span>
+                    <span className="text-sm sm:text-base">Bundles: 1 ($2), 5 ($9), 10 ($15)</span>
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
@@ -501,7 +499,7 @@ const LandingPage: React.FC = () => {
                   </li>
                 </ul>
                 <Button 
-                  className="w-full min-h-[48px] text-base bg-transparent border border-[#5ACEA8] text-[#5ACEA8] hover:bg-[#5ACEA8]/10"
+                  className="mt-auto w-full min-h-[48px] text-base bg-transparent border border-[#5ACEA8] text-[#5ACEA8] hover:bg-[#5ACEA8]/10"
                   onClick={() => {
                     trackPricing.selectPlan('credits')
                     navigate('/pricing')
@@ -527,7 +525,7 @@ const LandingPage: React.FC = () => {
               <p className="text-gray-600 text-base sm:text-lg mt-2">No spam. Unsubscribe anytime.</p>
             </div>
             <form
-              className="mx-auto max-w-xl flex items-center gap-3"
+              className="mx-auto max-w-xl flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
               onSubmit={(e) => {
                 e.preventDefault()
                 const valid = /.+@.+\..+/.test(newsletterEmail)
@@ -541,9 +539,9 @@ const LandingPage: React.FC = () => {
                 value={newsletterEmail}
                 onChange={(e) => setNewsletterEmail(e.target.value)}
                 placeholder="Email address"
-                className="flex-1 h-12 rounded-button border border-gray-300 bg-white px-4 text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                className="flex-1 min-w-0 w-full h-12 rounded-button border border-gray-300 bg-white px-4 text-base focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              <Button type="submit" size="md" className="h-12 px-6">Subscribe</Button>
+              <Button type="submit" size="md" className="h-12 px-6 w-full sm:w-auto">Subscribe</Button>
             </form>
           </div>
           </AnimateOnScroll>
