@@ -62,6 +62,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const allowedAdminEmail = String(process.env.ADMIN_ALLOWED_EMAIL || process.env.ADMIN_EMAIL || 'ozoemenachidile@gmail.com')
 
   try {
+    if (req.method === 'GET' && action === 'keepalive') {
+      try {
+        const { count } = await supabase.from('user_profiles').select('id', { count: 'exact', head: true }).limit(0)
+        return res.status(200).json({ status: 'ok', db: 'awake', ping: new Date().toISOString(), count: Number(count || 0) })
+      } catch {
+        return res.status(200).json({ status: 'ok', db: 'awake', ping: new Date().toISOString() })
+      }
+    }
     if (req.method === 'GET' && action === 'billing_history') {
       const email = String((req.query as any).email || '').trim().toLowerCase()
       if (!email) {

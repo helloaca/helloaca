@@ -41,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const metadata = data?.metadata || {}
     const credits = Number(metadata?.credits || 0)
     const userId = String(metadata?.userId || '')
-    const email = String(metadata?.email || '')
+    const _email = String(metadata?.email || '')
 
     if (!eventType) { res.status(400).json({ error: 'Missing event type' }); return }
     if (eventType !== 'charge:confirmed') {

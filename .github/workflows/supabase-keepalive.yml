@@ -15,7 +15,7 @@ jobs:
           KEEPALIVE_URL: ${{ vars.KEEPALIVE_URL }}
         run: |
           set -e
-          url="${KEEPALIVE_URL:-https://helloaca.xyz/api/keepalive}"
+          url="${KEEPALIVE_URL:-https://helloaca.xyz/api/app?action=keepalive}"
           echo "Pinging: $url"
           http_code=$(curl -sS -m 20 -o /dev/null -w "%{http_code}" "$url" || echo "000")
           echo "HTTP code: $http_code"
