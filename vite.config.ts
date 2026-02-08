@@ -19,5 +19,8 @@ export default defineConfig({
       allow: ['..', './api']
     },
     allowedHosts: ['.ngrok-free.app']
+  },
+  build: {
+    chunkSizeWarningLimit: 2000
   }
 })
