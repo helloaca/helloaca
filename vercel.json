@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/api/keepalive", "destination": "/api/app?action=keepalive" },
     { "source": "/api/:path*", "destination": "/api/:path*" },
     { "source": "/admin", "destination": "/admin/index.html" },
     { "source": "/admin/", "destination": "/admin/index.html" },
